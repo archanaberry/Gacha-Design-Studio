@@ -1,0 +1,43 @@
+div {
+    position: absolute
+    ;
+}
+
+div[selected] {
+    border: 2px solid blue;
+}
+
+/* Menonaktifkan pemilihan teks pada semua elemen kecuali input */
+body *:not(input) {
+    user-select: none;
+}
+
+/* Gaya tambahan untuk input */
+input {
+    /* Pastikan untuk memungkinkan pemilihan teks di dalam input */
+    user-select: text;
+}
+
+.layer {
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    z-index: 1;
+}
+
+.flipped-horizontal img {
+    transform: scaleX(-1);
+}
+
+.flipped-vertical img {
+    transform: scaleY(-1);
+}
+
+#rotationControl {
+    width: 200px;
+}
+
+#rotationIndicator {
+    text-align: center;
+    margin-top: 5px;
+}
