@@ -24,4 +24,4 @@ Kunjungi [Gacha Life 2 Assets](https://drive.google.com/file/d/1RKEoUYibFckKS10P
 
 ## Cara buka?
 Kamu tinggal download repositori ini dengan chrome, nyalakan mode desktop, lalu pencet download zip.
-Setelah berhasil download buka file index.html nya dan langsung rangkai sesuka mu XD
+Setelah berhasil download buka file `index.html` nya dan langsung rangkai sesuka mu XD
