@@ -25,3 +25,15 @@ Kunjungi [Gacha Life 2 Assets](https://drive.google.com/file/d/1RKEoUYibFckKS10P
 ## Cara buka?
 Kamu tinggal download repositori ini dengan chrome, nyalakan mode desktop, lalu pencet download zip.
 Setelah berhasil download buka file `index.html` nya dan langsung rangkai sesuka mu XD
+
+## Kekurangan dan Kendala
+
+| Kekurangan                                    | Deskripsi                                                                                      |
+|-----------------------------------------------|------------------------------------------------------------------------------------------------|
+| Keterbatasan Aset                             | Saat ini, game masih terbatas dalam jumlah aset yang tersedia karena baru dirilis.             |
+| Karakter Dummy/Template                       | Karakter dalam game masih dalam bentuk dummy atau template kosong, belum memiliki rambut atau aksesori yang lengkap. |
+| Zoom Belum Aktif                              | Fitur zoom untuk melihat detail lebih jauh dalam pembuatan karakter atau desain pakaian masih belum aktif. |
+| Flip Vertikal dan Horizontal Bermasalah      | Fitur flip vertikal dan horizontal saat ini mengalami masalah teknis yang membuatnya ngebug.   |
+| Selektor Karakter Belum Aktif Sepenuhnya     | Selektor karakter masih belum berfungsi sepenuhnya, sehingga pengguna belum dapat dengan mudah memilih karakter yang ingin dimodifikasi. |
+| Tidak Ada Fitur Berbagi Karakter dengan Kode atau Upload Aset SVG | Fitur untuk berbagi karakter menggunakan kode atau mengunggah aset SVG sebagai tambahan aset belum ditambahkan. |
+
