@@ -16,4 +16,5 @@ Gacha Design Studio adalah sebuah game fanmade (buatan dari para penggemar) yang
 
 ## Link
 
+![Gacha Life 2](archanaberry/gachaassets.png)
 Kunjungi [Gacha Life 2 Assets](https://drive.google.com/file/d/1RKEoUYibFckKS10PS7cGm9bbfmgZJIp2/view?usp=drive_link) untuk berkustomisasi karakter yang anda inginkan UwU.
