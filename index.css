@@ -4,9 +4,12 @@ body {
     background-size: cover;
 }
 
-div {
-    position: absolute
-    ;
+.input-container {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    z-index: 15;
+    opacity: 0.2;
 }
 
 /* Menonaktifkan pemilihan teks pada semua elemen kecuali input */
@@ -35,14 +38,6 @@ input {
 
 .layer.selected {
     outline: 2px solid blue;
-}
-
-.flipped-horizontal img {
-    transform: scaleX(-1);
-}
-
-.flipped-vertical img {
-    transform: scaleY(-1);
 }
 
 #rotationControl {

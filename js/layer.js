@@ -3,16 +3,27 @@ class Layer {
     #name = null;
     #x = 0;
     #y = 0;
-    #_rotation = 0;
+    #rotation = 0;
+    #scale = 1;
+    #flipX = false;
+    #flipY = false;
     #fillImage = null;
     #outlineImage = null;
     #onmousedown = null;
 
-    constructor(name, fillImage, outlineImage) {
+    constructor(name, fillImage, outlineImage, initial) {
         this.#name = name;
         this.#fillImage = fillImage;
         this.#outlineImage = outlineImage;
         this.#initElement();
+        if(!initial) return;
+        if('x' in initial) this.#x = initial.x;
+        if('y' in initial) this.#y = initial.y;
+        if('rotation' in initial) this.#rotation = initial.rotation;
+        if('scale' in initial) this.#scale = initial.scale;
+        if('flipX' in initial) this.#flipX = initial.flipX;
+        if('flipY' in initial) this.#flipY = initial.flipY;
+        this.#updateElement();
     }
 
     #initElement() {
@@ -46,6 +57,22 @@ class Layer {
         return this.#y;
     }
 
+    get rotation() {
+        return this.#rotation;
+    }
+
+    get scale() {
+        return this.#scale;
+    }
+
+    get isFlipX() {
+        return this.#flipX;
+    }
+
+    get isFlipY() {
+        return this.#flipY;
+    }
+
     set x(value) {
         this.#x = value;
         this.#updateElement();
@@ -56,9 +83,36 @@ class Layer {
         this.#updateElement();
     }
 
+    set rotation(value) {
+        this.#rotation = value;
+        this.#updateElement();
+    }
+
+    set scale(value) {
+        this.#scale = value;
+        this.#updateElement();
+    }
+
+    set flipX(value) {
+        this.#flipX = value;
+        this.#updateElement();
+    }
+
+    set flipY(value) {
+        this.#flipY = value;
+        this.#updateElement();
+    }
+
     #updateElement() {
         this.element.style.left = this.#x + 'px';
         this.element.style.top = this.#y + 'px';
+        const transforms = [
+            `rotate(${this.#rotation}deg)`,
+            `scale(${this.#scale})`,
+        ];
+        if(this.#flipX) transforms.push('scaleX(-1)');
+        if(this.#flipY) transforms.push('scaleY(-1)');
+        this.element.style.transform = transforms.join(' ');
     }
 
     /**
