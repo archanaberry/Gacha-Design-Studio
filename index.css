@@ -1,10 +1,15 @@
-div {
-    position: absolute
-    ;
+body {
+    margin: 0;
+    background-image: url('assets/background.png');
+    background-size: cover;
 }
 
-div[selected] {
-    border: 2px solid blue;
+.input-container {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    z-index: 15;
+    opacity: 0.2;
 }
 
 /* Menonaktifkan pemilihan teks pada semua elemen kecuali input */
@@ -25,12 +30,14 @@ input {
     z-index: 1;
 }
 
-.flipped-horizontal img {
-    transform: scaleX(-1);
+.layer > :not(:first-child) {
+    position: absolute;
+    top: 0;
+    left: 0;
 }
 
-.flipped-vertical img {
-    transform: scaleY(-1);
+.layer.selected {
+    outline: 2px solid blue;
 }
 
 #rotationControl {
