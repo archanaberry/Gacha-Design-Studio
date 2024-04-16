@@ -46,4 +46,5 @@ Setelah berhasil download buka file `index.html` nya dan langsung rangkai sesuka
 Tablet 2000x1200 (Landscape mode)
 ![Gacha Life 2](archanaberry/screenshot2.png)
 PC/Laptop 1366x768 (Landscape mode)
+Diperbarui
 ![Gacha Life 2](archanaberry/screenshot1.png)
