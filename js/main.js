@@ -4,14 +4,15 @@ let selected = null;
 
 const layers = [
     
-    // Tangan kiri
-    new Layer('Tangan kiri', 'assets/finger1.svg', 'assets/finger2.svg'),
-    new Layer('Lengan atas kiri', 'assets/arm1.svg', 'assets/arm2.svg'),
-    new Layer('Lengan bawah kiri', 'assets/hand1.svg', 'assets/hand2.svg'),
+    // lapisan //
+    // Tangan kanan
+    new Layer('Lengan atas kanan', 'assets/arm1.svg', 'assets/arm2.svg', {flipX: true}),
+    new Layer('Lengan bawah kanan', 'assets/hand1.svg', 'assets/hand2.svg', {flipX: true}),
+    new Layer('Tangan kanan', 'assets/finger3.svg', 'assets/finger4.svg', {flipX: true}),
 
-    // Kaki kiri
-    new Layer('Kaki kiri', 'assets/foot1.svg', 'assets/foot2.svg'),
-    new Layer('Paha atas kiri', 'assets/leg1.svg', 'assets/leg2.svg'),
+    // Kaki kanan
+    new Layer('Paha atas kanan', 'assets/leg1.svg', 'assets/leg2.svg', {flipX: true}),
+    new Layer('Kaki kanan', 'assets/foot1.svg', 'assets/foot2.svg', {flipX: true}),
 
     // Kepala
     new Layer('Badan', 'assets/body1.svg', 'assets/body2.svg'),
@@ -19,14 +20,15 @@ const layers = [
     // Badan
     new Layer('Kepala', 'assets/head1.svg', 'assets/head2.svg'),
 
-    // Tangan kanan
-    new Layer('Tangan kanan', 'assets/finger3.svg', 'assets/finger4.svg', {flipX: true})
-    new Layer('Lengan atas kanan', 'assets/arm1.svg', 'assets/arm2.svg', {flipX: true})
-    new Layer('Lengan bawah kanan', 'assets/hand1.svg', 'assets/hand2.svg', {flipX: true})
+    // Tangan kiri
+    new Layer('Lengan atas kiri', 'assets/arm1.svg', 'assets/arm2.svg'),
+    new Layer('Lengan bawah kiri', 'assets/hand1.svg', 'assets/hand2.svg'),
+    new Layer('Tangan kiri', 'assets/finger1.svg', 'assets/finger2.svg'),
 
-    // Kaki kanan
-    new Layer('Kaki kanan', 'assets/foot1.svg', 'assets/foot2.svg', {flipX: true})
-    new Layer('Paha atas kanan', 'assets/leg1.svg', 'assets/leg2.svg', {flipX: true})
+    // Kaki kiri
+    new Layer('Paha atas kiri', 'assets/leg1.svg', 'assets/leg2.svg'),
+    new Layer('Kaki kiri', 'assets/foot1.svg', 'assets/foot2.svg'),
+    // Lapisan //
 ];
 
 // Mendefinisikan koordinat awal ketika halaman dimuat
