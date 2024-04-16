@@ -15,7 +15,10 @@ Gacha Design Studio adalah sebuah game fanmade (buatan dari para penggemar) yang
 | Mode Fashion Show | Tunjukkan desain pakaian terbaik Anda dalam kompetisi mode virtual dengan pemain lain.      |
 | Koleksi Item      | Kumpulkan berbagai item fashion dan aksesoris untuk menambah variasi dalam desain Anda.      |
 | Berbagi karakter  | Bagikan karakter anda untuk berkolaborasi dengan teman anda lewat kode karakter dan juga impor |
-| Aset vektor       | Menjadikan kualitas gambar di karakter gacha mu jadi tajam dan tanpa penurunan kualitas hanya saja sedikit lagyy |
+| Aset Vektor       | Menjadikan kualitas gambar di karakter gacha mu jadi tajam dan tanpa penurunan kualitas hanya saja sedikit lagyy |
+| Map Vektor        | Sebuah map dunia fiktif permainan yang menjadikan nya sangat luas tanpa penurunan kualitas dan bisa di zoom |
+| Studio Pose       | Buatlah pose dengan mudah dengan gaya karakter yang anda inginkan dan animasi pose (untuk animasi ditunggu) |
+| Bisa dimainkan secara offline | Kamu bebas memainkan game ini disaat tanpa ada kuota internet dengan sepuas puas nya UwU |
 
 ## Link
 
@@ -26,10 +29,13 @@ Kunjungi [Gacha Life 2 Assets](https://drive.google.com/file/d/1RKEoUYibFckKS10P
 Kamu tinggal download repositori ini dengan chrome, nyalakan mode desktop, lalu pencet download zip.
 Setelah berhasil download buka file `index.html` nya dan langsung rangkai sesuka mu XD
 
+* Ini dia
+![Gacha Life 2](archanaberry/downloadrepo.png)
+
 ## Kekurangan dan Kendala
 
-✅ Berhasil di tangani.
-❎ Belum di tangani.
+* ✅ Berhasil di tangani.
+* ❎ Belum di tangani.
 
 | Kekurangan                                    | Deskripsi                                                                                      | Status |
 |-----------------------------------------------|------------------------------------------------------------------------------------------------|--------|
@@ -39,7 +45,8 @@ Setelah berhasil download buka file `index.html` nya dan langsung rangkai sesuka
 | Flip Vertikal dan Horizontal Bermasalah      | Fitur flip vertikal dan horizontal saat ini mengalami masalah teknis yang membuatnya ngebug.   | ✅ |
 | Selektor Karakter Belum Aktif Sepenuhnya     | Selektor karakter masih belum berfungsi sepenuhnya, sehingga pengguna belum dapat dengan mudah memilih karakter yang ingin dimodifikasi. | ✅ |
 | Tidak Ada Fitur Berbagi Karakter dengan Kode atau Upload Aset SVG | Fitur untuk berbagi karakter menggunakan kode atau mengunggah aset SVG sebagai tambahan aset belum ditambahkan. | ❎ |
-| Input box posisi Y nya bermasalah | Ketika bisa diubah nilai nya tetapi tidak mengalami perubahan posisi | ❎ |
+| Input box posisi Y, Lebar/Width, dan Tinggi/Height nya bermasalah | Ketika bisa diubah nilai nya tetapi tidak mengalami perubahan posisi | ❎ |
+| Pengingat jika tidak sengaja ke refresh | Untuk mencegah kehilangan posisi pose ataupun rangkai karakter Gacha mu | ❎ |
 
 ## Tangkapan Layar
 
