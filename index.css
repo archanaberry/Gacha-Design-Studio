@@ -1,10 +1,12 @@
+body {
+    margin: 0;
+    background-image: url('assets/background.png');
+    background-size: cover;
+}
+
 div {
     position: absolute
     ;
-}
-
-div[selected] {
-    border: 2px solid blue;
 }
 
 /* Menonaktifkan pemilihan teks pada semua elemen kecuali input */
@@ -23,6 +25,16 @@ input {
     left: 0px;
     top: 0px;
     z-index: 1;
+}
+
+.layer > :not(:first-child) {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.layer.selected {
+    outline: 2px solid blue;
 }
 
 .flipped-horizontal img {
