@@ -37,3 +37,9 @@ Setelah berhasil download buka file `index.html` nya dan langsung rangkai sesuka
 | Selektor Karakter Belum Aktif Sepenuhnya     | Selektor karakter masih belum berfungsi sepenuhnya, sehingga pengguna belum dapat dengan mudah memilih karakter yang ingin dimodifikasi. |
 | Tidak Ada Fitur Berbagi Karakter dengan Kode atau Upload Aset SVG | Fitur untuk berbagi karakter menggunakan kode atau mengunggah aset SVG sebagai tambahan aset belum ditambahkan. |
 
+## Tangkapan Layar
+
+Tablet 2000x1200 (Landscape mode)
+![Gacha Life 2](archanaberry/screenshot2.png)
+PC/Laptop 1366x768 (Landscape mode)
+![Gacha Life 2](archanaberry/screenshot1.png)
