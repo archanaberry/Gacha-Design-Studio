@@ -45,8 +45,10 @@ Setelah berhasil download buka file `index.html` nya dan langsung rangkai sesuka
 | Flip Vertikal dan Horizontal Bermasalah      | Fitur flip vertikal dan horizontal saat ini mengalami masalah teknis yang membuatnya ngebug.   | ✅ |
 | Selektor Karakter Belum Aktif Sepenuhnya     | Selektor karakter masih belum berfungsi sepenuhnya, sehingga pengguna belum dapat dengan mudah memilih karakter yang ingin dimodifikasi. | ✅ |
 | Tidak Ada Fitur Berbagi Karakter dengan Kode atau Upload Aset SVG | Fitur untuk berbagi karakter menggunakan kode atau mengunggah aset SVG sebagai tambahan aset belum ditambahkan. | ❎ |
-| Input box posisi Y, Lebar/Width, dan Tinggi/Height nya bermasalah | Ketika bisa diubah nilai nya tetapi tidak mengalami perubahan posisi | ❎ |
+| Input box Lebar/Width, dan Tinggi/Height nya bermasalah | Ketika bisa diubah nilai nya tetapi tidak mengalami perubahan posisi | ❎ |
 | Pengingat jika tidak sengaja ke refresh | Untuk mencegah kehilangan posisi pose ataupun rangkai karakter Gacha mu | ❎ |
+| Belum ada main menu | Supaya terkesan ada menu awal permainan | ❎ |
+| Belum ada BGM | Fitur untuk menyegarkan dengan musik yang aesthetic agar tidak monoton | ❎ |
 
 ## Tangkapan Layar
 
