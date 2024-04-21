@@ -12,7 +12,7 @@ button {
 /* Memuat font lokal */
 @font-face {
   font-family: "Comfortaa"; /* Nama font */
-  src: url("Comfortaa-Regular.ttf") format("truetype"); /* Lokasi font */
+  src: url("../../assets/font/Comfortaa-Regular.ttf") format("truetype"); /* Lokasi font */
 }
 
 /* Memuat font lokal */
@@ -355,4 +355,4 @@ button span {
     top: 0;
     left: 0;
     z-index: -1;
-}
+    }
