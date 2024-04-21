@@ -1,0 +1,10 @@
+Inget!
+DL untuk yang di download game nya agar portabel di hp maupun pc yang dimainkan untuk offline
+HS untuk dihosting agar bisa publish ataupun publik dan bisa online dan banyak dukungan backend nya
+
+Tolong perbaiki bug tombol impor, ekspor nya susah dipencet dan berikan jeda 0.5 untuk memunculkan popup, dan juga kedua tombol ini sulit di pojok kanan kan di atas 100% X 100% Y
+Lalu tombol dari 1 sampai 6 tolong diperbaiki animasi dan layout nya karena ga normal kliking nya.
+perbaiki agar bisa horizontal dan responsif di vertikal maupun horizontal,
+pasangin pemutar music yang menyetel lagu secara acak dan buatkan layar sentuh di studio pose nya.
+
+// by Archana Berry //
