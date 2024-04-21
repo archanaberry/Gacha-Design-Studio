@@ -54,3 +54,9 @@
 function showCode() {
             alert("Kode karakter online mu: c3fe85b536260157e43175650ab3d6cc7739d08208cfe38ae17f7fe13b8d8fc4");
         }
+
+/* Peringatan buka studio pose */
+function bukaStudio() {
+            alert("Studio ini sedang tahap perbaruan jika dibuka mungkin fitur nya belum disempurnakan...");
+            window.open("studiopose.html", "_blank");
+        }
