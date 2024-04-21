@@ -8,6 +8,10 @@
 
 Gacha Design Studio adalah sebuah game fanmade (buatan dari para penggemar) yang mengambil inspirasi dari Gacha Life 2 yang dikembangkan oleh Lunime. Game ini memungkinkan pemain untuk merancang karakter, memilih pakaian, dan menciptakan desain yang unik.
 
+# Tipe cabang (branch) repositori
+* DL untuk edisi didownload agar bisa dimainkan secara offline di browser seperti chrome langsung dengan membuka file `index.html`
+* HS untuk edisi hosting online di vps/panel/termux agar bisa bantu dikembangkan untuk server dan dimainkan dengan bersama kolaborator
+
 ## Fitur Utama
 
 | Fitur             | Deskripsi                                                                                   |
