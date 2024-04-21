@@ -34,7 +34,7 @@ Kunjungi [Gacha Life 2 Assets](https://drive.google.com/file/d/1RKEoUYibFckKS10P
 
 ## Cara buka?
 Kamu tinggal download repositori ini dengan chrome, nyalakan mode desktop, lalu pencet download zip.
-Setelah berhasil download buka file `index.html` nya dan langsung rangkai sesuka mu XD
+Setelah berhasil download buka file `mainmenu.html` atau `index.html` nya dan langsung rangkai sesuka mu XD
 
 * Ini dia
 ![Gacha Life 2](archanaberry/downloadrepo.png)
@@ -56,6 +56,7 @@ Setelah berhasil download buka file `index.html` nya dan langsung rangkai sesuka
 | Pengingat jika tidak sengaja ke refresh | Untuk mencegah kehilangan posisi pose ataupun rangkai karakter Gacha mu | ❎ |
 | Belum ada main menu | Supaya terkesan ada menu awal permainan | ❎ |
 | Belum ada BGM | Fitur untuk menyegarkan dengan musik yang aesthetic agar tidak monoton | ❎ |
+| Design UI/UX masih berantakan | Untuk menambah ke estetika game ini agar menarik pengunjung :3 | ❎ |
 
 ## Tangkapan Layar
 * Main menu
