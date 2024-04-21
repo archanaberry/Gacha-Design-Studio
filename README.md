@@ -58,7 +58,11 @@ Setelah berhasil download buka file `index.html` nya dan langsung rangkai sesuka
 | Belum ada BGM | Fitur untuk menyegarkan dengan musik yang aesthetic agar tidak monoton | ❎ |
 
 ## Tangkapan Layar
+* Main menu
+Tablet 1200x2000 (Portrait mode)
+![Gacha Life 2](archanaberry/screenshot3.png)
 
+* Mode Studio Pose
 Tablet 2000x1200 (Landscape mode)
 ![Gacha Life 2](archanaberry/screenshot2.png)
 PC/Laptop 1366x768 (Landscape mode)
