@@ -1,0 +1,358 @@
+body {
+    user-select: none; /* Mencegah pemilihan teks di luar input box */
+}
+
+/* Menghapus border dan background default dari tombol */
+button {
+  border: none;
+  background: none;
+  padding: 0;
+  position: relative; /* agar bisa menempatkan teks secara relatif */
+}
+/* Memuat font lokal */
+@font-face {
+  font-family: "Comfortaa"; /* Nama font */
+  src: url("Comfortaa-Regular.ttf") format("truetype"); /* Lokasi font */
+}
+
+/* Memuat font lokal */
+@font-face {
+  font-family: "Comfortaa-Bold"; /* Nama font */
+  src: url("Comfortaa-Bold.ttf") format("truetype"); /* Lokasi font */
+}
+
+/* Layout menu */
+
+.menu1 .button, .menu2 .button, .menu3 .button, .menu4 .button, .menu5 .button, .menu6 .button {
+  position: absolute;
+}
+
+.menula1 {
+    left: 26%;
+    top: 70%
+}
+
+.menula2 {
+    left: 46%;
+    top: 70%;
+}
+
+.menula3 {
+    left: 64%;
+    top: 70%;
+}
+
+.menula4 {
+    left: 46%;
+    top: 80%;
+}
+
+.menula5 {
+  left: -0.5%;
+  top: 93.5%;
+  position: fixed;
+}
+
+.menula6 {
+  left: 87.9%;
+  top: 93.5%;
+  position: fixed;
+}
+
+.menuic1 {
+  position: absolute;
+  left: 81%;
+  top: 110%;
+  zoom: 3;
+}
+
+.menuic2 {
+  position: absolute;
+  left: 80%;
+  top: 135%;
+  zoom: 3;
+}
+
+.menuic3 {
+  position: absolute;
+  left: 75%;
+  top: 70%;
+  zoom: 0.9;
+}
+
+.menuic4 {
+  position: absolute;
+  left: 65%;
+  top: 140%;
+  zoom: 2.5;
+}
+
+.menuic5 {
+  position: absolute;
+  left: 80%;
+  top: 95%;
+  zoom: 1.25;
+}
+
+.menuic6 {
+  position: absolute;
+  left: 91%;
+  top: 80%;
+  zoom: 0.85;
+}
+
+.menuicbg {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+/* Responsif untuk layout menu horizontal */
+@media (max-width: 768px) {
+  .menula1 {
+    left: 10%;
+    top: 20%;
+  }
+
+  .menula2 {
+    left: 40%;
+    top: 20%;
+  }
+
+  .menula3 {
+    left: 70%;
+    top: 20%;
+  }
+
+  .menula4 {
+    left: 40%;
+    top: 40%;
+  }
+
+  .menula5 {
+    left: 10%;
+    top: 60%;
+    position: absolute;
+  }
+
+  .menula6 {
+    left: 70%;
+    top: 60%;
+    position: absolute;
+  }
+
+  .menuic1 {
+    left: 81%;
+    top: 110%;
+    zoom: 2;
+  }
+
+  .menuic2 {
+    left: 80%;
+    top: 135%;
+    zoom: 2;
+  }
+
+  .menuic3 {
+    left: 75%;
+    top: 70%;
+    zoom: 0.6;
+  }
+
+  .menuic4 {
+    left: 65%;
+    top: 140%;
+    zoom: 1.5;
+  }
+
+  .menuic5 {
+    left: 80%;
+    top: 95%;
+    zoom: 1;
+  }
+
+  .menuic6 {
+    left: 91%;
+    top: 80%;
+    zoom: 0.7;
+  }
+}
+
+/* Kustomisasi tombol Impor Karakter */
+.imporoc {
+  transform: scale(1.2); /* zoom 2 */
+  font-size: 14px; /* besarkan ukuran font */
+  left: 70%;
+  top: 3%;
+  color: white; /* ubah warna teks menjadi putih */
+  font-family: "Comfortaa", sans-serif; /* ganti font menjadi font lokal */
+  transition: all 0.3s;
+  position: fixed; /* posisi tetap */
+}
+
+/* Kustomisasi tombol Ekspor Karakter */
+.eksporoc {
+  transform: scale(1.2); /* zoom 2 dan flip-x */
+  font-size: 14px; /* besarkan ukuran font */
+  color: white; /* ubah warna teks menjadi putih */
+  left: 86%;
+  top: 3%;
+  font-family: "Comfortaa", sans-serif; /* ganti font menjadi font lokal */
+  transition: all 0.3s;
+  position: fixed; /* posisi tetap */
+}
+
+/* Mengatur gaya teks */
+.button span {
+  font-size: 18px; /* besarkan ukuran font */
+  color: white; /* ubah warna teks menjadi putih */
+  font-family: "Comfortaa-Bold"; /* ganti font menjadi font lokal */
+}
+
+.version-ft {
+  font-size: 18px; /* besarkan ukuran font */
+  color: black; /* ubah warna teks menjadi putih */
+  font-family: "Comfortaa-Bold"; /* ganti font menjadi font lokal */
+  text-shadow:
+                -1px -1px 0 #FFFFFF,  
+                1px -1px 0 #FFFFFF,
+                -1px 1px 0 #FFFFFF,
+                1px 1px 0 #FFFFFF;
+}
+
+.version-ft {
+    position: fixed; absolute;
+    top: 0%;
+    left: 0%;
+}
+
+.menu-ft {
+  font-size: 18px; /* besarkan ukuran font */
+  color: black; /* ubah warna teks menjadi putih */
+  font-family: "Comfortaa-Bold"; /* ganti font menjadi font lokal */
+  text-shadow:
+                -1px -1px 0 #FFFFFF,  
+                1px -1px 0 #FFFFFF,
+                -1px 1px 0 #FFFFFF,
+                1px 1px 0 #FFFFFF;
+}
+
+button span {
+  position: absolute; /* agar bisa menempatkan teks secara absolut */
+  top: 35%; /* posisi teks di tengah vertikal */
+  left: 40%; /* posisi teks di tengah horizontal */
+  white-space: nowrap; /* Hindari pemisahan teks menjadi newline */
+}
+
+.imporoc-span,
+.eksporoc-span {
+  position: absolute; /* agar bisa menempatkan teks secara absolut */
+  top: 35%; /* posisi teks di tengah vertikal */
+  left: 8.5%; /* posisi teks di tengah horizontal */
+  white-space: nowrap; /* Hindari pemisahan teks menjadi newline */
+}
+
+.imporoc:active {
+    transform: scale(0.95);
+}
+
+.eksporoc:active {
+    transform: scale(0.95);
+}
+
+.imporoc:active img {
+    margin-right: 5px;
+}
+
+.eksporoc:active img {
+    margin-right: 5px;
+}
+
+.imporoc:after {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    top: 50%;
+    left: 50%;
+    transition: all 0.3s;
+    z-index: -1;
+    transform: translate(-50%, -50%) scale(0);
+}
+.eksporoc:after {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    top: 50%;
+    left: 50%;
+    transition: all 0.3s;
+    z-index: -1;
+    transform: translate(-50%, -50%) scale(0);
+}
+
+.imporoc:hover:after,
+.eksporoc:hover:after {
+    transform: translate(-50%, -50%) scale(3);
+}
+
+  .menu {
+    position: relative;
+  }
+
+.button {
+    margin: 5px;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+}
+
+.button:hover {
+    transform: scale(1.1);
+}
+
+.button:active:after {
+    width: 100%;
+    height: 100%;
+    top: 50%;
+    left: 50%;
+    transition: all 0.3s;
+    z-index: -1;
+    transform: translate(-50%, -50%) scale(2);
+    content: "";
+    position: absolute;
+}
+
+  
+.archanaberrydev img {
+  position: absolute;
+  top: 30%;
+  zoom: 2;
+  left: -4%;
+  transform: rotate(45deg);
+}
+
+.gachadesignstudio {
+    position: relative;
+    height: 100vh;
+}
+
+.gachadesignstudio img {
+    width: auto;
+    height: auto;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    zoom: 0.5;
+    top: 20%;
+}
+
+.main-menu-bg {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: -1;
+}
