@@ -57,6 +57,6 @@ function showCode() {
 
 /* Peringatan buka studio pose */
 function bukaStudio() {
-            alert("Studio ini sedang tahap perbaruan jika dibuka mungkin fitur nya belum disempurnakan...");
+            alert("Archana Berry mengingatkan bahwa!!!\n\nStudio ini sedang tahap perbaruan jika dibuka mungkin fitur nya belum disempurnakan...");
             window.open("studiopose.html", "_blank");
-        }
+}
