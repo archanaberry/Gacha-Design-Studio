@@ -51,21 +51,38 @@ const rotationIndicator = document.getElementById('rotationIndicator');
  * @param {Layer} layer 
  */
 function onlayerdragstart(e, layer) {
-    // Mendapatkan koordinat awal mouse
-    initialX = e.clientX;
-    initialY = e.clientY;
+    // Mendapatkan koordinat awal mouse/jari
+    if(e.targetTouches) {
+        initialX = e.targetTouches[0].clientX;
+        initialY = e.targetTouches[0].clientY;
+    } else {
+        initialX = e.clientX;
+        initialY = e.clientY;
+    }
 
     // Menandai layer yang dipilih
     selectLayer(layer);
 
-    // Menambahkan event listener untuk mengikuti pergerakan mouse
+    // Menambahkan event listener untuk mengikuti pergerakan mouse/jari
     document.addEventListener('mousemove', onlayerdrag);
     document.addEventListener('mouseup', onlayerdragend);
+    document.addEventListener('touchmove', onlayerdrag);
+    document.addEventListener('touchend', onlayerdragend);
 }
 
 function onlayerdrag(e) {
-    var dx = e.clientX - initialX;
-    var dy = e.clientY - initialY;
+    // Koordinat mouse/jari
+    let px, py;
+    if(e.targetTouches) {
+        px = e.targetTouches[0].clientX;
+        py = e.targetTouches[0].clientY;
+    } else {
+        px = e.clientX;
+        py = e.clientY;
+    }
+
+    let dx = px - initialX;
+    let dy = py - initialY;
 
     // Memperbarui koordinat elemen gambar
     selected.x += dx;
@@ -74,14 +91,16 @@ function onlayerdrag(e) {
     updateCoordInput();
 
     // Memperbarui koordinat awal mouse
-    initialX = e.clientX;
-    initialY = e.clientY;
+    initialX = px;
+    initialY = py;
 }
 
 function onlayerdragend(e) {
     // Menghapus event listener setelah selesai drag
     document.removeEventListener('mousemove', onlayerdrag);
     document.removeEventListener('mouseup', onlayerdragend);
+    document.removeEventListener('touchmove', onlayerdrag);
+    document.removeEventListener('touchend', onlayerdragend);
 }
 
 
