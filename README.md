@@ -73,4 +73,4 @@ Diperbarui
 ![Gacha Life 2](archanaberry/screenshot1.png)
 
 ## Bahasa pemrograman yang dipakai
-<img src="archanaberry/htmx.png" alt="HTML dengan dukungan JavaScript" width="100" height="100">
+<img src="archanaberry/htmx.png" alt="HTML dengan dukungan JavaScript" width="192" height="108">
