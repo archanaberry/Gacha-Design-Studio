@@ -69,3 +69,6 @@ Tablet 2000x1200 (Landscape mode)
 PC/Laptop 1366x768 (Landscape mode)
 Diperbarui
 ![Gacha Life 2](archanaberry/screenshot1.png)
+
+## Bahasa pemrograman yang dipakai
+<img src="archanaberry/javascript.png" alt="JavaScript" width="100" height="100">
