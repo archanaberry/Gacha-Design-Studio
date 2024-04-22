@@ -9,7 +9,7 @@ class Layer {
     #flipY = false;
     #fillImage = null;
     #outlineImage = null;
-    #onmousedown = null;
+    #ondragstart = null;
 
     constructor(name, fillImage, outlineImage, initial) {
         this.#name = name;
@@ -131,15 +131,17 @@ class Layer {
      */
     attach(dstRoot, ondragstart) {
         dstRoot.appendChild(this.element);
-        this.#onmousedown = (e) => {
+        this.#ondragstart = (e) => {
             ondragstart(e, this);
         };
 
-        this.element.addEventListener('mousedown', this.#onmousedown);
+        this.element.addEventListener('mousedown', this.#ondragstart);
+        this.element.addEventListener('touchstart', this.#ondragstart);
     }
 
     detach() {
         this.element.parentElement.removeChild(this.element);
-        this.element.removeEventListener('mousedown', this.#onmousedown);
+        this.element.removeEventListener('mousedown', this.#ondragstart);
+        this.element.removeEventListener('touchstart', this.#ondragstart);
     }
 }
