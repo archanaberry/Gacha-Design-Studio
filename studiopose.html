@@ -29,6 +29,10 @@
         <label for="rotationControl">Rotate:</label>
         <input type="range" id="rotationControl" min="0" max="360" value="0" oninput="handleRotation(this.value)">
         <div id="rotationIndicator">0</div>
+        <button onclick="exportAsSVG()">Ekspor sebagai SVG</button>
+        <input type="text" id="svgFileName" placeholder="Nama file SVG">
+        <button onclick="exportAsHTML()">Ekspor sebagai HTML</button>
+        <input type="text" id="htmlFileName" placeholder="Nama file HTML">
     </div>
     <div class="container"></div>
 
