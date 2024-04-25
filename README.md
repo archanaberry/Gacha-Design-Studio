@@ -99,7 +99,7 @@ const layers = [
 | Tidak Ada Fitur Berbagi Karakter dengan Kode atau Upload Aset SVG | Fitur untuk berbagi karakter menggunakan kode atau mengunggah aset SVG sebagai tambahan aset belum ditambahkan. | ❎ |
 | Input box Lebar/Width, dan Tinggi/Height nya bermasalah | Ketika bisa diubah nilai nya tetapi tidak mengalami perubahan posisi | ❎ |
 | Pengingat jika tidak sengaja ke refresh | Untuk mencegah kehilangan posisi pose ataupun rangkai karakter Gacha mu | ❎ |
-| Belum ada main menu | Supaya terkesan ada menu awal permainan | ❎ |
+| Belum ada main menu | Supaya terkesan ada menu awal permainan | ✅ |
 | Belum ada BGM | Fitur untuk menyegarkan dengan musik yang aesthetic agar tidak monoton | ❎ |
 | Design UI/UX masih berantakan | Untuk menambah ke estetika game ini agar menarik pengunjung :3 | ❎ |
 
@@ -116,4 +116,5 @@ Diperbarui
 ![Gacha Life 2](archanaberry/screenshot1.png)
 
 ## Bahasa pemrograman yang dipakai
+<img src="archanaberry/HTML.png" alt="HTML versi 5" width="192" height="108">
 <img src="archanaberry/htmx.png" alt="HTML dengan dukungan JavaScript" width="192" height="108">
