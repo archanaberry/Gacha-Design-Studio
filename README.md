@@ -37,6 +37,8 @@ Kunjungi [Gacha Life 2 Assets](https://drive.google.com/file/d/1RKEoUYibFckKS10P
 ## Cara buka?
 Kamu tinggal download repositori ini dengan chrome, nyalakan mode desktop, lalu pencet download zip.
 Setelah berhasil download buka file `mainmenu.html` atau `index.html` nya dan langsung rangkai sesuka mu XD
+* Ini dia
+![Gacha Life 2](archanaberry/downloadrepo.png)
 
 ## Cara menambahkan assets karakter ke studio poser
 ```
@@ -80,9 +82,6 @@ const layers = [
 
 ];
 ```
-
-* Ini dia
-![Gacha Life 2](archanaberry/downloadrepo.png)
 
 ## Kekurangan dan Kendala
 
