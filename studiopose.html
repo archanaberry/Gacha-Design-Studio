@@ -11,6 +11,8 @@
 
     <!-- Input box untuk koordinat -->
     <div class="input-container">
+        <label for="layerName">Layer:</label>
+        <input type="text" id="layerName" oninput="handleLayerName(this.value)">
         <label for="xCoord">Posisi X:</label>
         <input type="text" id="xCoord" oninput="handleXCoord(this.value)">
         <label for="yCoord">Posisi Y:</label>
@@ -29,10 +31,13 @@
         <label for="rotationControl">Rotate:</label>
         <input type="range" id="rotationControl" min="0" max="360" value="0" oninput="handleRotation(this.value)">
         <div id="rotationIndicator">0</div>
+        <button onclick="moveLayerUp()">Naikkan</button>
+        <button onclick="moveLayerDown()">Turunkan</button>
         <button onclick="exportAsSVG()">Ekspor sebagai SVG</button>
         <input type="text" id="svgFileName" placeholder="Nama file SVG">
         <button onclick="exportAsHTML()">Ekspor sebagai HTML</button>
         <input type="text" id="htmlFileName" placeholder="Nama file HTML">
+        
     </div>
     <div class="container"></div>
 
