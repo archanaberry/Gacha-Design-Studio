@@ -211,3 +211,33 @@ function handleFlipVertical(value) {
     if(!selected) return;
     selected.flipY = value;
 }
+
+function moveLayerUp() {
+    if (!selected) return;
+    const currentIndex = layers.indexOf(selected);
+    if (currentIndex < layers.length - 1) {
+        const temp = layers[currentIndex];
+        layers[currentIndex] = layers[currentIndex + 1];
+        layers[currentIndex + 1] = temp;
+        renderLayers();
+    }
+}
+
+function moveLayerDown() {
+    if (!selected) return;
+    const currentIndex = layers.indexOf(selected);
+    if (currentIndex > 0) {
+        const temp = layers[currentIndex];
+        layers[currentIndex] = layers[currentIndex - 1];
+        layers[currentIndex - 1] = temp;
+        renderLayers();
+    }
+}
+
+function renderLayers() {
+    const container = document.querySelector('.container');
+    container.innerHTML = '';
+    for (const layer of layers) {
+        layer.attach(container, onlayerdragstart);
+    }
+}
