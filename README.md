@@ -77,7 +77,7 @@ const layers = [
 
 // tambahkan dengan format //
 // new Layer('Nama anggota tubuh', 'assets/anggotaBadanOutline.svg', 'assets/anggotaBadan.svg'),
-// Jangan lups diganti dan disesuaikan
+// Jangan lupa diganti dan disesuaikan
 // seperti ini ygy //
 
 ];
@@ -101,6 +101,7 @@ const layers = [
 | Belum ada main menu | Supaya terkesan ada menu awal permainan | ✅ |
 | Belum ada BGM | Fitur untuk menyegarkan dengan musik yang aesthetic agar tidak monoton | ❎ |
 | Design UI/UX masih berantakan | Untuk menambah ke estetika game ini agar menarik pengunjung :3 | ❎ |
+| Loading Main Menu | Berfungsi untuk meload semua source game web ini | ✅ |
 
 ## Tangkapan Layar
 * Main menu
