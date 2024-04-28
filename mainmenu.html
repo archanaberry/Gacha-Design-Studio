@@ -3,77 +3,101 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" type="text/css" href="css/mainmenu/mainmenu.css">
-    <link rel="icon" type="image/png" href="assets/ui/iconapp.png">
+<link rel="stylesheet" type="text/css" href="css/mainmenu/mainmenu.css">
+<link rel="stylesheet" type="text/css" href="css/mainmenu/loading.css">
+<link rel="icon" type="image/png" href="assets/ui/iconapp.png">
 <title>Gacha Design Studio - Main Menu</title>
-<!--tambahkan music auto player random -->
-    <script src="js/mainmenu/mainmenu.js"></script>
+<script src="js/mainmenu/mainmenu.js"></script>
+<script src="js/mainmenu/loading.js"></script>
+<script src="js/mainmenu/menubgm.js"></script>
 </head>
 <body>
 
-<div>
-<button class="imporoc" onclick="alert('Dalam status pengembangan...');">
-  <img src="assets/ui/mainmenu/icon/impoc.svg" alt="Impor karakter">
-  <span>Impor</span>
-</button>
-
-<button class="eksporoc" onclick="showCode();">
-  <img src="assets/ui/mainmenu/icon/expoc.svg" alt="Ekspor karakter">
-  <span class="eksporoc-span">Ekspor</span>
-</button>
-</div>
-    
-<img src="assets/ui/mainmenu.png" class="main-menu-bg" alt="Main Menu Background">
-<p class="version-ft">Version 0.01_Alpha</p>
-    
-<div class="gachadesignstudio">
-    <img src="assets/ui/gachadesignstudio.png" alt="Gacha Design Studio">
-</div>
-    
-  <div class="archanaberrydev">
-  <img class="archanaberrydev" src="assets/ui/mainmenu/developers.svg" alt="Archana Berry">
+<div id="loading" class="loading">
+  <div class="loading-content">
+    <div class="loading-svg">
+      <img src="assets/ui/loading.svg" alt="Loading...">
+    </div>
+    <div class="loading-img">
+      <img src="assets/ui/loading_image.svg" alt="Loading Image">
+    </div>
+    <div id="tapScreen" class="tap-screen" style="display: none;">
+      <p>Tap the screen</p>
+    </div>
+  </div>
 </div>
 
-<div class="menu1">
-  <button class="button menula1" onclick="alert('Menu Setelan menyatakan:\nMenu ini sedang dalam tahap pengembangan...');">
-    <img src="assets/ui/mainmenu/icon/icon0.svg" class="menuicbg" alt="Ikon">
-    <img src="assets/ui/mainmenu/icon/icon4.svg" class="menuic1" alt="Setelan">
-  </button>
+<!-- Layer Menu -->
+<div id="layer2" class="layer2">
+  <!-- Menu Content -->
+  <div>
+    <div>
+      <button class="imporoc" onclick="alert('Dalam status pengembangan...');">
+        <img src="assets/ui/mainmenu/icon/impoc.svg" alt="Impor karakter">
+        <span>Impor</span>
+      </button>
+      
+      <button class="eksporoc" onclick="showCode();">
+        <img src="assets/ui/mainmenu/icon/expoc.svg" alt="Ekspor karakter">
+        <span class="eksporoc-span">Ekspor</span>
+      </button>
+      </div>
+          
+      <img src="assets/ui/mainmenu.png" class="main-menu-bg" alt="Main Menu Background">
+      <p class="version-ft">Version 0.01_Alpha</p>
+          
+      <div class="gachadesignstudio">
+          <img src="assets/ui/gachadesignstudio.png" alt="Gacha Design Studio">
+      </div>
+          
+        <div class="archanaberrydev">
+        <img class="archanaberrydev" src="assets/ui/mainmenu/developers.svg" alt="Archana Berry">
+      </div>
+      
+      <div class="menu1">
+        <button class="button menula1" onclick="alert('Menu Setelan menyatakan:\nMenu ini sedang dalam tahap pengembangan...');">
+          <img src="assets/ui/mainmenu/icon/icon0.svg" class="menuicbg" alt="Ikon">
+          <img src="assets/ui/mainmenu/icon/icon4.svg" class="menuic1" alt="Setelan">
+        </button>
+      </div>
+      
+      <div class="menu4">
+        <button class="button menula4" onclick="alert('Menu Setelan Resource menyatakan:\nMenu ini sedang dalam tahap pengembangan...');">
+          <img src="assets/ui/mainmenu/icon/icon0.svg" class="menuicbg" alt="Ikon">
+          <img src="assets/ui/mainmenu/icon/icon7.svg" class="menuic4" alt="Manajemen Sumber Daya (Resource)">
+        </button>
+      </div>
+      
+      <div class="menu2">
+        <button class="button menula2" onclick="bukaStudio()">
+          <img src="assets/ui/mainmenu/icon/icon0.svg" class="menuicbg" alt="Ikon">
+          <img src="assets/ui/mainmenu/icon/icon2.svg" class="menuic2" alt="Studio">
+        </button>
+      </div>
+      
+      <div class="menu3">
+        <button class="button menula3" onclick="alert('Menu Toko menyatakan:\nMenu ini sedang dalam tahap pengembangan...');">
+          <img src="assets/ui/mainmenu/icon/icon0.svg" class="menuicbg" alt="Ikon">
+          <img src="assets/ui/mainmenu/icon/icon6.svg" class="menuic3" alt="Toko">
+        </button>
+      </div>
+      
+      <div class="menu5">
+        <button class="button menula5" onclick="alert('Fitur Animator menyampaikan:\nMode ini sedang dalam tahap pengembangan...');">
+          <img src="assets/ui/mainmenu/icon/icon0.svg" class="menuicbg" alt="Ikon">
+          <img src="assets/ui/mainmenu/icon/icon9.svg" class="menuic5" alt="Animator">
+        </button>
+      </div>
+      
+      <div class="menu6">
+        <button class="button menula6" onclick="alert('Daftar Perubahan (ChangeLog) dari Gacha Design Studio:\n\nTarget:\nv2.0_Beta menyediakan studio animator bisa simpen animasi pakai svg ataupun ke mp4 dengan audio\nDitunggu...\n\nv0.01_Alpha DL (Offline Playable): Baru dirilis di github\nBugs:\n1. Zoom ga bisa ke input lagi dilayar sentuh entah itu kena versi PC?\n2. Input box Height (Tinggi) dan Width (Lebar) belum bisa (karena belum dihandle)\n3. UI/UX nya belum stabil di beberapa perangkat (device) baik mode potrait ataupun lanskap\n4. Studio Pose nya masih tidak bisa di drag/seret pakai layar sentuh\n5. Tombol Impor atau Ekspor karakter nya sulit disentuh\n6. Semua fitur masih banyak bug\n7. Music (BGM) main menu belum ada\n8. Hanya bahasa Indonesia belum bisa switch bahasa\n9. Masih ada selector (pemilih) berwarna biru jika ditekan di tombol ini seharusnya dihilangkan\n\nBedakan DL dan HS kalau DL itu download source nya langsung untuk di dijalankan di browser seperti X-plore, HTML Viewer, Chrome, Mozilla Firefox, Microsoft Edge, Opera Mini, dll.\n\nDan untuk HS itu perlu dihosting pakai VPS atau Panel atau Termux yang memiliki fitur online server cloud dan bisa meringankan perangkat kecil jika dirasa kebesaran hanya dengan membuka tautan(link) dari hostingan nya itu sendiri, misal pakai program backend (garis belakang sistem situs permainan) seperti Nodejs, Nginx, Laravel, Python, dll\n\nSemoga ini ga akan menjadi WIP project :3');">
+          <img src="assets/ui/mainmenu/icon/icon0.svg" class="menuicbg" alt="Ikon">
+          <img src="assets/ui/mainmenu/icon/icon8.svg" class="menuic6" alt="Log perubahan (ChangeLog)">
+        </button>
+      </div>
 </div>
 
-<div class="menu4">
-  <button class="button menula4" onclick="alert('Menu Setelan Resource menyatakan:\nMenu ini sedang dalam tahap pengembangan...');">
-    <img src="assets/ui/mainmenu/icon/icon0.svg" class="menuicbg" alt="Ikon">
-    <img src="assets/ui/mainmenu/icon/icon7.svg" class="menuic4" alt="Manajemen Sumber Daya (Resource)">
-  </button>
-</div>
-
-<div class="menu2">
-  <button class="button menula2" onclick="bukaStudio()">
-    <img src="assets/ui/mainmenu/icon/icon0.svg" class="menuicbg" alt="Ikon">
-    <img src="assets/ui/mainmenu/icon/icon2.svg" class="menuic2" alt="Studio">
-  </button>
-</div>
-
-<div class="menu3">
-  <button class="button menula3" onclick="alert('Menu Toko menyatakan:\nMenu ini sedang dalam tahap pengembangan...');">
-    <img src="assets/ui/mainmenu/icon/icon0.svg" class="menuicbg" alt="Ikon">
-    <img src="assets/ui/mainmenu/icon/icon6.svg" class="menuic3" alt="Toko">
-  </button>
-</div>
-
-<div class="menu5">
-  <button class="button menula5" onclick="alert('Fitur Animator menyampaikan:\nMode ini sedang dalam tahap pengembangan...');">
-    <img src="assets/ui/mainmenu/icon/icon0.svg" class="menuicbg" alt="Ikon">
-    <img src="assets/ui/mainmenu/icon/icon9.svg" class="menuic5" alt="Animator">
-  </button>
-</div>
-
-<div class="menu6">
-  <button class="button menula6" onclick="alert('Daftar Perubahan (ChangeLog) dari Gacha Design Studio:\n\nTarget:\nv2.0_Beta menyediakan studio animator bisa simpen animasi pakai svg ataupun ke mp4 dengan audio\nDitunggu...\n\nv0.01_Alpha DL (Offline Playable): Baru dirilis di github\nBugs:\n1. Zoom ga bisa ke input lagi dilayar sentuh entah itu kena versi PC?\n2. Input box Height (Tinggi) dan Width (Lebar) belum bisa (karena belum dihandle)\n3. UI/UX nya belum stabil di beberapa perangkat (device) baik mode potrait ataupun lanskap\n4. Studio Pose nya masih tidak bisa di drag/seret pakai layar sentuh\n5. Tombol Impor atau Ekspor karakter nya sulit disentuh\n6. Semua fitur masih banyak bug\n7. Music (BGM) main menu belum ada\n8. Hanya bahasa Indonesia belum bisa switch bahasa\n9. Masih ada selector (pemilih) berwarna biru jika ditekan di tombol ini seharusnya dihilangkan\n\nBedakan DL dan HS kalau DL itu download source nya langsung untuk di dijalankan di browser seperti X-plore, HTML Viewer, Chrome, Mozilla Firefox, Microsoft Edge, Opera Mini, dll.\n\nDan untuk HS itu perlu dihosting pakai VPS atau Panel atau Termux yang memiliki fitur online server cloud dan bisa meringankan perangkat kecil jika dirasa kebesaran hanya dengan membuka tautan(link) dari hostingan nya itu sendiri, misal pakai program backend (garis belakang sistem situs permainan) seperti Nodejs, Nginx, Laravel, Python, dll\n\nSemoga ini ga akan menjadi WIP project :3');">
-    <img src="assets/ui/mainmenu/icon/icon0.svg" class="menuicbg" alt="Ikon">
-    <img src="assets/ui/mainmenu/icon/icon8.svg" class="menuic6" alt="Log perubahan (ChangeLog)">
-  </button>
-</div>
+<!-- Audio BGM -->
+<audio id="bgm" autoplay loop></audio>
 </body>
 </html>
