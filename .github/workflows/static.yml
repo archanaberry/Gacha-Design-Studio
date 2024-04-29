@@ -30,14 +30,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v2  # Gunakan versi terbaru dari actions/checkout
       - name: Setup Pages
-        uses: actions/configure-pages@v5
+        uses: crazy-max/ghaction-github-pages@v3.7.0
+        with:
+          target_branch: gh-pages
+          build_dir: ./
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-artifact@v2  # Perbarui nama aksi
         with:
           # Upload entire repository
-          path: '.'
+          path: .
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
