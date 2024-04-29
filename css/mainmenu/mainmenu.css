@@ -21,185 +21,28 @@ button {
   src: url("../../assets/font/Comfortaa-Bold.ttf") format("truetype"); /* Lokasi font */
 }
 
-/* Layout menu */
-
-.menu1 .button, .menu2 .button, .menu3 .button, .menu4 .button, .menu5 .button, .menu6 .button {
+[class*=menuic] {
   position: absolute;
+  transform: translate(-50%, -50%);
+  top: 50%;
+  left: 50%;
+  width: 35%;
 }
 
-.menula1 {
-    left: 26%;
-    top: 70%
+.button {
+  display: inline-flex;
 }
 
-.menula2 {
-    left: 46%;
-    top: 70%;
+.button > .bg {
+  width: 14.625vmin;
 }
 
-.menula3 {
-    left: 64%;
-    top: 70%;
-}
-
-.menula4 {
-    left: 46%;
-    top: 80%;
-}
-
-.menula5 {
-  left: -0.5%;
-  top: 93.5%;
-  position: fixed;
-}
-
-.menula6 {
-  left: 87.9%;
-  top: 93.5%;
-  position: fixed;
-}
-
-.menuic1 {
-  position: absolute;
-  left: 81%;
-  top: 110%;
-  zoom: 3;
-}
-
-.menuic2 {
-  position: absolute;
-  left: 80%;
-  top: 135%;
-  zoom: 3;
-}
-
-.menuic3 {
-  position: absolute;
-  left: 75%;
-  top: 70%;
-  zoom: 0.9;
-}
-
-.menuic4 {
-  position: absolute;
-  left: 65%;
-  top: 140%;
-  zoom: 2.5;
-}
-
-.menuic5 {
-  position: absolute;
-  left: 80%;
-  top: 95%;
-  zoom: 1.25;
-}
-
-.menuic6 {
-  position: absolute;
-  left: 91%;
-  top: 80%;
-  zoom: 0.85;
-}
-
-.menuicbg {
-  position: absolute;
-  left: 0;
-  top: 0;
-}
-
-/* Responsif untuk layout menu horizontal */
-@media (max-width: 768px) {
-  .menula1 {
-    left: 10%;
-    top: 20%;
-  }
-
-  .menula2 {
-    left: 40%;
-    top: 20%;
-  }
-
-  .menula3 {
-    left: 70%;
-    top: 20%;
-  }
-
-  .menula4 {
-    left: 40%;
-    top: 40%;
-  }
-
-  .menula5 {
-    left: 10%;
-    top: 60%;
-    position: absolute;
-  }
-
-  .menula6 {
-    left: 70%;
-    top: 60%;
-    position: absolute;
-  }
-
-  .menuic1 {
-    left: 81%;
-    top: 110%;
-    zoom: 2;
-  }
-
-  .menuic2 {
-    left: 80%;
-    top: 135%;
-    zoom: 2;
-  }
-
-  .menuic3 {
-    left: 75%;
-    top: 70%;
-    zoom: 0.6;
-  }
-
-  .menuic4 {
-    left: 65%;
-    top: 140%;
-    zoom: 1.5;
-  }
-
-  .menuic5 {
-    left: 80%;
-    top: 95%;
-    zoom: 1;
-  }
-
-  .menuic6 {
-    left: 91%;
-    top: 80%;
-    zoom: 0.7;
-  }
-}
-
-/* Kustomisasi tombol Impor Karakter */
-.imporoc {
-  transform: scale(1.2); /* zoom 2 */
-  font-size: 14px; /* besarkan ukuran font */
-  left: 70%;
-  top: 3%;
-  color: white; /* ubah warna teks menjadi putih */
-  font-family: "Comfortaa", sans-serif; /* ganti font menjadi font lokal */
-  transition: all 0.3s;
-  position: fixed; /* posisi tetap */
-}
-
-/* Kustomisasi tombol Ekspor Karakter */
+/* Kustomisasi tombol Impor dan Ekspor Karakter */
+.imporoc,
 .eksporoc {
-  transform: scale(1.2); /* zoom 2 dan flip-x */
-  font-size: 14px; /* besarkan ukuran font */
   color: white; /* ubah warna teks menjadi putih */
-  left: 86%;
-  top: 3%;
   font-family: "Comfortaa", sans-serif; /* ganti font menjadi font lokal */
   transition: all 0.3s;
-  position: fixed; /* posisi tetap */
 }
 
 /* Mengatur gaya teks */
@@ -210,6 +53,7 @@ button {
 }
 
 .version-ft {
+  margin-left: 1rem;
   font-size: 18px; /* besarkan ukuran font */
   color: black; /* ubah warna teks menjadi putih */
   font-family: "Comfortaa-Bold"; /* ganti font menjadi font lokal */
@@ -218,12 +62,9 @@ button {
                 1px -1px 0 #FFFFFF,
                 -1px 1px 0 #FFFFFF,
                 1px 1px 0 #FFFFFF;
-}
-
-.version-ft {
-    position: fixed; absolute;
-    top: 0%;
-    left: 0%;
+  position: fixed;
+  top: 0%;
+  left: 0%;
 }
 
 .menu-ft {
@@ -235,21 +76,62 @@ button {
                 1px -1px 0 #FFFFFF,
                 -1px 1px 0 #FFFFFF,
                 1px 1px 0 #FFFFFF;
+  }
+
+.container-top,
+.container-middle,
+.container-bottom {
+  padding: 1rem;
+  position: absolute;
+  left: 0px;
+  right: 0px;
+}
+  
+.container-top {
+  text-align: right;
+  top: 0px;
+  z-index: 1;
 }
 
-button span {
-  position: absolute; /* agar bisa menempatkan teks secara absolut */
-  top: 35%; /* posisi teks di tengah vertikal */
-  left: 40%; /* posisi teks di tengah horizontal */
-  white-space: nowrap; /* Hindari pemisahan teks menjadi newline */
+.container-middle {
+  transform: translateY(50%);
+  bottom: 25%;
 }
 
-.imporoc-span,
-.eksporoc-span {
+.container-middle .button {
+  margin: 3%;
+}
+
+
+.container-bottom {
+  bottom: 0px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.imporoc {
+  margin-right: 1rem;
+}
+
+.imporoc img,
+.eksporoc img {
+  width: 23.25vmin;
+}
+
+.imporoc span,
+.eksporoc span {
+  font-size: 3vmin;
   position: absolute; /* agar bisa menempatkan teks secara absolut */
-  top: 35%; /* posisi teks di tengah vertikal */
-  left: 8.5%; /* posisi teks di tengah horizontal */
   white-space: nowrap; /* Hindari pemisahan teks menjadi newline */
+  bottom: 37%;
+}
+
+.eksporoc span {
+  left: 9.5%;
+}
+
+.imporoc span {
+  left: 38%;
 }
 
 .imporoc:active {
@@ -258,10 +140,6 @@ button span {
 
 .eksporoc:active {
     transform: scale(0.95);
-}
-
-.imporoc:active img {
-    margin-right: 5px;
 }
 
 .eksporoc:active img {
@@ -294,13 +172,11 @@ button span {
     transform: translate(-50%, -50%) scale(3);
 }
 
-  .menu {
+.menu {
     position: relative;
-  }
+}
 
 .button {
-    margin: 5px;
-    padding: 10px 20px;
     font-size: 16px;
     cursor: pointer;
     transition: all 0.3s;
@@ -323,13 +199,12 @@ button span {
     position: absolute;
 }
 
-  
 .archanaberrydev img {
   position: absolute;
   top: 30%;
-  zoom: 2;
   left: -4%;
   transform: rotate(45deg);
+  width: 30vmin;
 }
 
 .gachadesignstudio {
@@ -338,13 +213,12 @@ button span {
 }
 
 .gachadesignstudio img {
-    width: auto;
+    width: 80%;
     height: auto;
     position: absolute;
     left: 50%;
-    transform: translateX(-50%);
-    zoom: 0.5;
-    top: 20%;
+    transform: translate(-50%, -50%);
+    top: 30%;
 }
 
 .main-menu-bg {
@@ -355,4 +229,10 @@ button span {
     top: 0;
     left: 0;
     z-index: -1;
-    }
+}
+
+@media screen and (orientation: landscape) {
+  .gachadesignstudio img {
+    width: 50%;
+  }
+}
