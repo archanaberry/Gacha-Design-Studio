@@ -32,7 +32,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
       - name: Setup Pages
-        uses: crazy-max/ghaction-github-pages@v3.7.2
+        uses: crazy-max/ghaction-github-pages@v3.7.1
         with:
           target_branch: gh-pages
           build_dir: ./
