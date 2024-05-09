@@ -101,7 +101,7 @@ const layers = [
 | Input box Lebar/Width, dan Tinggi/Height nya bermasalah | Ketika bisa diubah nilai nya tetapi tidak mengalami perubahan posisi | ❎ |
 | Pengingat jika tidak sengaja ke refresh | Untuk mencegah kehilangan posisi pose ataupun rangkai karakter Gacha mu | ❎ |
 | Belum ada main menu | Supaya terkesan ada menu awal permainan | ✅ |
-| Belum ada BGM | Fitur untuk menyegarkan dengan musik yang aesthetic agar tidak monoton (hanya saja harus pakai aplikasi apk khususny) | ✅ |
+| Belum ada BGM | Fitur untuk menyegarkan suasana dengan musik yang aesthetic agar tidak monoton (hanya saja harus pakai aplikasi apk dikhususkan!) | ✅ |
 | Design UI/UX masih berantakan | Untuk menambah ke estetika game ini agar menarik pengunjung :3 | ❎ |
 | Loading Main Menu | Berfungsi untuk meload semua source game web ini | ✅ |
 | Sudah ditambah ikon thumbnail karakter | Ikon karakter agar mudah dicari dan menambah estetika profile karakter gacha mu :> | ❎ |
