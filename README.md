@@ -34,9 +34,11 @@ Gacha Design Studio adalah sebuah game fanmade (buatan dari para penggemar) yang
 ![Gacha Life 2](archanaberry/gachaassets.png)
 Kunjungi [Gacha Life 2 Assets](https://drive.google.com/file/d/1RKEoUYibFckKS10PS7cGm9bbfmgZJIp2/view?usp=drive_link) untuk berkustomisasi karakter yang anda inginkan UwU.
 
+# Untuk saat ini versi aset nya masih v0.01_alpha...
+
 ## Cara buka?
-Kamu tinggal download repositori ini dengan chrome, nyalakan mode desktop, lalu pencet download zip.
-Setelah berhasil download buka file `mainmenu.html` atau `index.html` nya dan langsung rangkai sesuka mu XD
+Kamu tinggal download repositori ini dengan game browser "GachaDesignStudio.apk" nya, klik setuju pada penyimpanan, lalu tunggu sampai ke download semua resource zip nya.
+Setelah berhasil download secara otomatis kebuka game nya di file `mainmenu.html` nya dan langsung rangkai sesuka mu XD
 * Ini dia
 ![Gacha Life 2](archanaberry/downloadrepo.png)
 
