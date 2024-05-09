@@ -3,8 +3,8 @@
 ![Gacha Design Studio](archanaberry/banner.png)
 
 # Tipe cabang (branch) repositori
-* DL untuk edisi didownload agar bisa dimainkan secara offline di browser seperti chrome langsung dengan membuka file `index.html`
-* HS untuk edisi hosting online di vps/panel/termux agar bisa bantu dikembangkan untuk server dan dimainkan dengan bersama kolaborator
+* DL untuk edisi didownload agar bisa dimainkan resource game nya pakai game browser GachaDesignStudio.apk (com.lunime.githubcollab.archanaberry.gachadesignstudio)
+* HS untuk edisi hosting online di vps/panel/termux agar bisa bantu dikembangkan untuk server dan dimainkan dengan bersama kolaborator tetapi harus pakai game browser khusus
 
 # Ikon aplikasi web nya
 
@@ -78,7 +78,7 @@ const layers = [
     // Lapisan //
 
 // tambahkan dengan format //
-// new Layer('Nama anggota tubuh', 'assets/anggotaBadanOutline.svg', 'assets/anggotaBadan.svg'),
+// new Layer('Nama anggota tubuh', 'assets/anggotaBadanOutline.svg', 'tambahan...', 'assets/anggotaBadan.svg'),
 // Jangan lupa diganti dan disesuaikan
 // seperti ini ygy //
 
