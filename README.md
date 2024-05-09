@@ -119,4 +119,4 @@ Diperbarui
 ## Bahasa pemrograman yang dipakai
 <img src="archanaberry/HTML.png" alt="HTML versi 5" width="192" height="108">
 <img src="archanaberry/htmx.png" alt="HTML dengan dukungan JavaScript" width="192" height="108">
-<img src="archanaberry/CSS完全に理解した.png" alt="Dukungan CSS" width="192" height="108">
+<img src="archanaberry/CSS.png" alt="Dukungan CSS" width="192" height="108">
