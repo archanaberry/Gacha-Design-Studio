@@ -29,6 +29,8 @@ document.addEventListener("DOMContentLoaded", function() {
     if (firstClick) {
       bgmAudio.play();
       firstClick = false;
+    } else if (bgmAudio.paused) {
+      bgmAudio.play();
     }
   });
 
@@ -43,8 +45,16 @@ document.addEventListener("DOMContentLoaded", function() {
   // Event listener untuk memainkan lagu berikutnya saat lagu selesai
   bgmAudio.addEventListener("ended", playNextBGM);
 
+  // Event listener untuk memantau audio lain yang sedang diputar
+  document.addEventListener("visibilitychange", function() {
+    if (document.visibilityState === 'visible' && bgmAudio.paused && !firstClick) {
+      bgmAudio.play();
+    }
+  });
+
   // Mulai memutar lagu pertama
   bgmAudio.loop = true;
+  bgmAudio.play();
 
   // Fungsi untuk mengacak urutan array
   function shuffle(array) {
