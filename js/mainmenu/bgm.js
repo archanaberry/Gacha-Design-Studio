@@ -29,13 +29,6 @@ function shuffle(array) {
   return array;
 }
 
-// Fungsi untuk memutar lagu berikutnya
-function playNextBGM() {
-  currentBGMIndex = (currentBGMIndex + 1) % bgmList.length;
-  bgmAudio.src = "assets/audio/music/mainmenu/" + bgmList[currentBGMIndex] + ".mp3";
-  bgmAudio.play();
-}
-
 // Acak urutan lagu pertama
 bgmList = shuffle(bgmList);
 
@@ -45,15 +38,15 @@ var bgmAudio = new Audio();
 // Set atribut loop untuk mengulang audio secara terus menerus
 bgmAudio.loop = true;
 
-// Fungsi untuk memulai audio saat pertama kali dijalankan
-function startAudio() {
-  playNextBGM();
-  // Hapus event listener "click" setelah audio dimulai
-  document.removeEventListener("click", startAudio);
+// Fungsi untuk memutar lagu berikutnya
+function playNextBGM() {
+  currentBGMIndex = (currentBGMIndex + 1) % bgmList.length;
+  bgmAudio.src = "assets/audio/music/mainmenu/" + bgmList[currentBGMIndex] + ".mp3";
+  bgmAudio.play();
 }
 
-// Menambahkan event listener "click" ke elemen body untuk memulai audio pada interaksi pertama
-document.addEventListener("click", startAudio);
+// Mulai memutar lagu pertama
+playNextBGM();
 
 // Menambahkan event listener untuk memutar lagu berikutnya saat lagu selesai
 bgmAudio.addEventListener("ended", playNextBGM);
@@ -61,4 +54,13 @@ bgmAudio.addEventListener("ended", playNextBGM);
 // Menambahkan event listener "beforeunload" untuk mengacak urutan lagu sebelum halaman dimuat ulang
 window.addEventListener("beforeunload", function () {
   bgmList = shuffle(bgmList);
+});
+
+// Menambahkan event listener "click" ke elemen body untuk mematikan atau memainkan kembali audio pada interaksi pertama
+document.body.addEventListener("click", function () {
+  if (bgmAudio.paused) {
+    bgmAudio.play();
+  } else {
+    bgmAudio.pause();
+  }
 });
