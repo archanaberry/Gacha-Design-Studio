@@ -1,24 +1,24 @@
-// Daftar lagu
+// Daftar nama file lagu (tanpa ekstensi)
 var bgmList = [
-  "menu0.wav",
-  "menu1.wav",
-  "menu2.wav",
-  "menu3.wav",
-  "menu4.wav",
-  "menu5.wav",
-  "menu6.wav"
+  "menu0",
+  "menu1",
+  "menu2",
+  "menu3",
+  "menu4",
+  "menu5",
+  "menu6"
 ];
 
 // Acak urutan lagu
 bgmList = shuffle(bgmList);
 
 var currentBGMIndex = 0;
-var bgmAudio = new Audio("assets/audio/music/mainmenu/" + bgmList[currentBGMIndex]);
+var bgmAudio = new Audio("assets/audio/music/mainmenu/" + bgmList[currentBGMIndex] + ".wav");
 
 // Fungsi untuk memutar lagu berikutnya
 function playNextBGM() {
   currentBGMIndex = (currentBGMIndex + 1) % bgmList.length;
-  bgmAudio.src = "assets/audio/music/mainmenu/" + bgmList[currentBGMIndex];
+  bgmAudio.src = "assets/audio/music/mainmenu/" + bgmList[currentBGMIndex] + ".wav";
   bgmAudio.play();
 }
 
@@ -46,3 +46,9 @@ function shuffle(array) {
   
   return array;
 }
+
+// Menambahkan pemicu gesture dengan klik di seluruh halaman web
+document.body.addEventListener("click", function(event) {
+  // Panggil fungsi untuk memutar lagu berikutnya saat ada klik di halaman
+  playNextBGM();
+});
