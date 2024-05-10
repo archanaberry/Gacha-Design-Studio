@@ -9,25 +9,6 @@ var bgmList = [
   "menu6"
 ];
 
-// Acak urutan lagu
-bgmList = shuffle(bgmList);
-
-var currentBGMIndex = 0;
-var bgmAudio = new Audio("assets/audio/music/mainmenu/" + bgmList[currentBGMIndex] + ".wav");
-
-// Fungsi untuk memutar lagu berikutnya
-function playNextBGM() {
-  currentBGMIndex = (currentBGMIndex + 1) % bgmList.length;
-  bgmAudio.src = "assets/audio/music/mainmenu/" + bgmList[currentBGMIndex] + ".wav";
-  bgmAudio.play();
-}
-
-// Saat lagu selesai, putar lagu berikutnya
-bgmAudio.addEventListener("ended", playNextBGM);
-
-// Mulai memutar lagu pertama
-bgmAudio.play();
-
 // Fungsi untuk mengacak urutan array
 function shuffle(array) {
   var currentIndex = array.length, temporaryValue, randomIndex;
@@ -46,6 +27,25 @@ function shuffle(array) {
   
   return array;
 }
+
+// Acak urutan lagu
+bgmList = shuffle(bgmList);
+
+var currentBGMIndex = 0;
+var bgmAudio = new Audio();
+
+// Fungsi untuk memutar lagu berikutnya
+function playNextBGM() {
+  currentBGMIndex = (currentBGMIndex + 1) % bgmList.length;
+  bgmAudio.src = "assets/audio/music/mainmenu/" + bgmList[currentBGMIndex] + ".mp3";
+  bgmAudio.play();
+}
+
+// Menambahkan event listener untuk memutar lagu berikutnya saat lagu selesai
+bgmAudio.addEventListener("ended", playNextBGM);
+
+// Mulai memutar lagu pertama
+playNextBGM();
 
 // Menambahkan pemicu gesture dengan klik di seluruh halaman web
 document.body.addEventListener("click", function(event) {
