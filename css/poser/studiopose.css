@@ -1,0 +1,76 @@
+/* Gaya untuk garis splitter */
+#splitter {
+    width: 100%;
+    height: 10px; /* Atur tinggi garis splitter */
+    background-color: blue;
+    cursor: ns-resize; /* Ubah kursor saat di atas garis splitter */
+    touch-action: none; /* Untuk mencegah scrolling saat menyentuh garis splitter */
+}
+body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden;
+}
+
+.panel1, .panel2 {
+    margin: 0;
+    background: none;
+    background-size: cover;
+    width: 300px;
+    height: 200px;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    position: relative;
+}
+
+#imageUpload1, #imageUpload2 {
+    margin-bottom: 10px;
+}
+
+#imageUpload1,
+#imageUpload2 {
+    margin-bottom: 20px;
+}
+
+.input-container {
+        width: 100%;
+        height: calc(100% - 5px); /* Atur tinggi panel dengan CSS Grid */
+        overflow: auto;
+}
+
+/* Menonaktifkan pemilihan teks pada semua elemen kecuali input */
+body *:not(input) {
+    user-select: none;
+}
+
+/* Gaya tambahan untuk input */
+input {
+    /* Pastikan untuk memungkinkan pemilihan teks di dalam input */
+    user-select: text;
+}
+
+.layer {
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    z-index: 0;
+}
+
+.layer > :not(:first-child) {
+    position: absolute;
+    top: 0;
+    left: 0;
+}.layer.selected {
+    outline: 1px solid blue;
+}
+
+#rotationControl {
+    width: 200px;
+}
+
+#rotationIndicator {
+    text-align: center;
+    margin-top: 5px;
+}
