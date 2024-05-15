@@ -38,6 +38,7 @@ const yCoordInput = document.getElementById('yCoord');
 const heightInput = document.getElementById('height');
 const widthInput = document.getElementById('width');
 const zoomInput = document.getElementById('zoom');
+const layerNameInput = document.getElementById('layerName');
 const rotationControl = document.getElementById('rotationControl');
 const flipHorizontal = document.getElementById('flipHorizontal');
 const flipVertical = document.getElementById('flipVertical');
@@ -164,6 +165,7 @@ function selectLayer(layer) {
     updateCoordInput();
     widthInput.value = selected.element.clientWidth;
     heightInput.value = selected.element.clientHeight;
+    layerNameInput.value = selected.name;
     rotationControl.value = selected.rotation;
     flipHorizontal.checked = selected.isFlipX;
     flipVertical.checked = selected.isFlipY;
@@ -175,6 +177,10 @@ function deselectLayer() {
     if(!selected) return;
     selected.selected = false;
     selected = null;
+}
+
+function handleLayerName(value) {
+    selected.name = value;
 }
 
 function updateCoordInput() {
