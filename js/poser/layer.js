@@ -73,6 +73,10 @@ class Layer {
         return this.#flipY;
     }
 
+    set name(name) {
+        this.#name = name;
+    }
+
     set x(value) {
         this.#x = value;
         this.#updateElement();
