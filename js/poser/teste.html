@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Increment Decrement Counter</title>
+<style>
+  body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    font-family: Arial, sans-serif;
+  }
+  .counter-container {
+    text-align: center;
+  }
+  .button {
+    font-size: 2rem;
+    padding: 10px 20px;
+    margin: 5px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .count-display {
+    font-size: 3rem;
+    margin: 20px 0;
+  }
+</style>
+</head>
+<body>
+<div class="counter-container">
+  <div id="count" class="count-display">0</div>
+  <div>
+    <button id="decrement" class="button">-</button>
+    <button id="increment" class="button">+</button>
+  </div>
+</div>
+
+<script>
+  let count = 0;
+  let interval;
+
+  const countDisplay = document.getElementById('count');
+  const incrementButton = document.getElementById('increment');
+  const decrementButton = document.getElementById('decrement');
+
+  function updateCount() {
+    countDisplay.textContent = count;
+  }
+
+  function startIncrement() {
+    interval = setInterval(() => {
+      count++;
+      updateCount();
+    }, 100);
+  }
+
+  function startDecrement() {
+    interval = setInterval(() => {
+      count--;
+      updateCount();
+    }, 100);
+  }
+
+  function stopChange() {
+    clearInterval(interval);
+  }
+
+  incrementButton.addEventListener('mousedown', startIncrement);
+  incrementButton.addEventListener('touchstart', startIncrement);
+
+  decrementButton.addEventListener('mousedown', startDecrement);
+  decrementButton.addEventListener('touchstart', startDecrement);
+
+  document.addEventListener('mouseup', stopChange);
+  document.addEventListener('touchend', stopChange);
+  document.addEventListener('touchcancel', stopChange);
+
+  // Prevent default scrolling behavior for touch events
+  document.addEventListener('touchmove', event => event.preventDefault(), { passive: false });
+
+  updateCount();
+</script>
+</body>
+</html>

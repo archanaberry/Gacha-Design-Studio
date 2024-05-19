@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Drag to Select with Flip</title>
+<style>
+  body, html {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    overflow: hidden; /* Prevent scrollbars */
+  }
+  #container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+  .selection-box {
+    position: absolute;
+    z-index: 999;
+    border: 1px solid #007bff;
+    background-color: rgba(0, 123, 255, 0.3);
+  }
+  .circle {
+    position: absolute;
+    width: 50px;
+    height: 50px;
+    background-color: red;
+    border-radius: 50%;
+  }
+</style>
+</head>
+<body>
+
+<input type="number" id="circleCount" placeholder="Jumlah lingkaran">
+<button onclick="tambahLingkaran()">Tambahkan Lingkaran</button>
+<button onclick="aktifkanSelector()">Aktifkan Selector</button>
+<button onclick="nonaktifkanSelector()">Nonaktifkan Selector</button>
+<div id="container"></div>
+
+<script>
+  let isSelectorActive = false;
+  let isDragging = false;
+  let startX, startY, prevX, prevY;
+  let selectedElements = [];
+  let selectedOffsetX = 0;
+  let selectedOffsetY = 0;
+
+  document.addEventListener('DOMContentLoaded', function() {
+    const container = document.getElementById('container');
+    let startX, startY;
+    const selectionBox = document.createElement('div');
+    selectionBox.className = 'selection-box';
+    container.appendChild(selectionBox);
+
+    function setSelectionBox(x, y, w, h) {
+      selectionBox.style.left = x + 'px';
+      selectionBox.style.top = y + 'px';
+      selectionBox.style.width = Math.abs(w) + 'px';
+      selectionBox.style.height = Math.abs(h) + 'px';
+
+      // Flip the box if necessary
+      if (w < 0) {
+        selectionBox.style.left = (x + w) + 'px';
+      }
+      if (h < 0) {
+        selectionBox.style.top = (y + h) + 'px';
+      }
+    }
+
+    function clearSelectionBox() {
+      selectionBox.style.width = '0px';
+      selectionBox.style.height = '0px';
+    }
+
+    function tambahLingkaran() {
+      const circleCount = document.getElementById('circleCount').value;
+      for (let i = 0; i < circleCount; i++) {
+        const circle = document.createElement('div');
+        circle.className = 'circle';
+        circle.style.left = Math.random() * (container.offsetWidth - 50) + 'px';
+        circle.style.top = Math.random() * (container.offsetHeight - 50) + 'px';
+        container.appendChild(circle);
+      }
+    }
+
+    function aktifkanSelector() {
+      isSelectorActive = true;
+    }
+
+    function nonaktifkanSelector() {
+      isSelectorActive = false;
+      selectedElements.forEach(element => {
+        element.classList.remove('selected');
+      });
+      selectedElements = [];
+    }
+
+    function selectElements() {
+      const circles = document.querySelectorAll('.circle');
+      circles.forEach(circle => {
+        const rect = circle.getBoundingClientRect();
+        const circleX = rect.left + rect.width / 2;
+        const circleY = rect.top + rect.height / 2;
+        if (
+          circleX > startX &&
+          circleX < prevX &&
+          circleY > startY &&
+          circleY < prevY
+        ) {
+          if (!selectedElements.includes(circle)) {
+            selectedElements.push(circle);
+            circle.classList.add('selected');
+          }
+        }
+      });
+    }
+
+    function deselectElements() {
+      selectedElements.forEach(element => {
+        element.classList.remove('selected');
+      });
+      selectedElements = [];
+    }
+
+    container.addEventListener('mousedown', function(e) {
+      if (!isSelectorActive) return;
+      startX = e.clientX;
+      startY = e.clientY;
+      prevX = startX;
+      prevY = startY;
+      isDragging = true;
+      setSelectionBox(startX, startY, 0, 0);
+      deselectElements();
+    });
+
+    container.addEventListener('mousemove', function(e) {
+      if (isDragging && isSelectorActive) {
+        const currentX = e.clientX;
+        const currentY = e.clientY;
+        const width = currentX - startX;
+        const height = currentY - startY;
+        setSelectionBox(startX, startY, width, height);
+        prevX = currentX;
+        prevY = currentY;
+        selectElements();
+      }
+    });
+
+    container.addEventListener('mouseup', function(e) {
+      isDragging = false;
+      clearSelectionBox();
+    });
+
+    container.addEventListener('touchstart', function(e) {
+      if (!isSelectorActive) return;
+      const touch = e.touches[0];
+      startX = touch.clientX;
+      startY = touch.clientY;
+      prevX = startX;
+      prevY = startY;
+      isDragging = true;
+      setSelectionBox(startX, startY, 0, 0);
+      deselectElements();
+    }, {passive: true});
+
+    container.addEventListener('touchmove', function(e) {
+      if (isDragging && isSelectorActive) {
+        const touch = e.touches[0];
+        const currentX = touch.clientX;
+        const currentY = touch.clientY;
+        const width = currentX - startX;
+        const height = currentY - startY;
+        setSelectionBox(startX, startY, width, height);
+        prevX = currentX;
+        prevY = currentY;
+        selectElements();
+        e.preventDefault();
+      }
+    }, {passive: false});
+
+    container.addEventListener('touchend', function(e) {
+      isDragging = false;
+      clearSelectionBox();
+    });
+
+    container.addEventListener('mousedown', function(e) {
+      if (isSelectorActive) return;
+      const mouseX = e.clientX;
+      const mouseY = e.clientY;
+      selectedElements.forEach(element => {
+        const rect = element.getBoundingClientRect();
+        const offsetX = mouseX - rect.left;
+        const offsetY = mouseY - rect.top;
+        element.addEventListener('mousemove', dragElement);
+        element.setAttribute('data-offset-x', offsetX);
+        element.setAttribute('data-offset-y', offsetY);
+      });
+    });
+
+    container.addEventListener('mouseup', function(e) {
+      if (isSelectorActive) return;
+      selectedElements.forEach(element => {
+        element.removeEventListener('mousemove', dragElement);
+      });
+    });
+
+    function dragElement(e) {
+      if (isSelectorActive) return;
+      const mouseX = e.clientX;
+      const mouseY = e.clientY;
+      const offsetX = parseInt(e.target.getAttribute('data-offset-x'));
+      const offsetY = parseInt(e.target.getAttribute('data-offset-y'));
+      const newX = mouseX - offsetX;
+      const newY = mouseY - offsetY;
+      e.target.style.left = newX + 'px';
+      e.target.style.top = newY + 'px';
+    }
+  });
+</script>
+
+</body>
+</html>

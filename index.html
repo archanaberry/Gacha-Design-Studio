@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="title">Studio Sandbox - Gacha Design Studio</title>
+    <link rel="icon" type="image/png" href="assets/icon.png">
+    <link rel="stylesheet" type="text/css" href="css/poser/studiopose.css">
+</head>
+<body>
+
+    <!-- Panel atas -->
+    <div class="panel1 container" id="panel1">
+    </div>
+
+    <!-- Panel bawah -->
+    <div class="panel2 input-container" id="panel2">
+        
+<!-- Tombol arah -->
+<label for="sensitivitySlider">Sensitivitas:</label>
+<input type="range" id="sensitivitySlider" min="0.1" max="100" step="0.1" value="0.1" oninput="handleSensitivity(this.value)">
+<input type="text" id="sensitivityInput" readonly>
+<button class="button" id="move-up" onmousedown="startMove('up')" ontouchstart="startMove('up')">🔼</button>
+        <button class="button" id="move-down" onmousedown="startMove('down')" ontouchstart="startMove('down')">🔽</button>
+        <button class="button" id="move-left" onmousedown="startMove('left')" ontouchstart="startMove('left')">◀️️</button>
+        <button class="button" id="move-right" onmousedown="startMove('right')" ontouchstart="startMove('right')">▶️️</button>
+
+        <input type="file" id="imageUpload1" accept="image/*">
+        <button onclick="setBackground('panel1')">Setel background panel atas</button>
+        <input type="file" id="imageUpload2" accept="image/*">
+        <button onclick="setBackground('panel2')">Setel background panel bawah</button>
+        <label for="characterName">Nama Karakter:</label>
+        <input type="text" id="characterName" oninput="handleCharacterName(this.value)">
+        
+        <label for="opacitySlider1">Opasitas Panel1:</label>
+        <input type="range" id="opacitySlider1" class="opacitySlider" min="0" max="100" value="100" oninput="setOpacity('panel1')">
+        <input type="text" id="opacityInput1" class="opacityInput" readonly>
+
+        <label for="opacitySlider2">Opasitas Panel2:</label>
+        <input type="range" id="opacitySlider2" class="opacitySlider" min="0" max="100" value="100" oninput="setOpacity('panel2')">
+        <input type="text" id="opacityInput2" class="opacityInput" readonly>
+
+        <label for="layerName">Lapisan:</label>
+        <input type="text" id="layerName" oninput="handleLayerName(this.value)">
+        <label for="xCoord">Posisi X:</label>
+        <input type="text" id="xCoord" oninput="handleXCoord(this.value)">
+        <label for="yCoord">Posisi Y:</label>
+        <input type="text" id="yCoord" oninput="handleYCoord(this.value)">
+        <label for="width">Lebar:</label>
+        <input type="text" id="width" placeholder="Lebar">
+        <label for="height">Tinggi:</label>
+        <input type="text" id="height" placeholder="Tinggi">
+        <label for="zoom">Zoom:</label>
+        <input type="text" id="zoom" oninput="handleZoom(this.value)">
+        <label for="flipHorizontal">Flip Horizontal:</label>
+        <input type="checkbox" id="flipHorizontal" onchange="handleFlipHorizontal(this.checked)">
+        <label for="flipVertical">Flip Vertikal:</label>
+        <input type="checkbox" id="flipVertical" onchange="handleFlipVertical(this.checked)">
+        <br>
+        <label for="rotationControl">Rotasi:</label>
+        <input type="range" id="rotationControl" min="0" max="360" value="0" oninput="handleRotation(this.value)">
+        <div id="rotationIndicator">0</div>
+        <button onclick="moveLayerUp()">Naikkan</button>
+        <button onclick="moveLayerDown()">Turunkan</button>
+        <button onclick="exportAsSVG()">Ekspor sebagai SVG</button>
+        <input type="text" id="svgFileName" placeholder="Nama file SVG">
+        <button onclick="exportAsHTML()">Ekspor sebagai HTML</button>
+        <input type="text" id="htmlFileName" placeholder="Nama file HTML">
+
+        <br>
+        <button id="toggleSelectorBtn" onclick="toggleSelector()">Nyalakan Seleksi</button>
+        <button id="groupBtn" onclick="groupSelectedLayers()">Grupkan</button>
+        <button id="ungroupBtn" onclick="ungroupSelectedLayers()">Pisahkan</button>
+        <button id="deleteBtn" onclick="deleteSelectedLayer()">Hapus Lapisan</button>
+        
+        <input type="file" id="svgUpload" accept=".svg" style="display:none" onchange="addSVG(event)">
+        <button onclick="document.getElementById('svgUpload').click()">Tambahkan SVG</button>
+        <input type="file" id="imageUpload" accept="image/*" style="display:none" onchange="addImage(event)">
+        <button onclick="document.getElementById('imageUpload').click()">Tambahkan Sisipan</button>
+        
+    </div>
+
+    <!-- Garis splitter -->
+    <div id="splitter"></div>
+
+    <!-- Skrip -->
+    <script src="js/poser/layer.js"></script>
+    <script src="js/poser/studiopose.js"></script>
+    <script src="js/poser/splitter.js"></script>
+    <script src="js/poser/background.js"></script>
+    <script src="js/poser/opacity.js"></script>
+    <script src="js/poser/selector.js"></script>
+    <script src="js/poser/key.js"></script>
+    <script src="js/poser/sensivity.js"></script>
+    <script src="js/poser/upload.js"></script>
+    <!-- Skrip -->
+
+</body>
+</html>

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Drag to Select with Flip</title>
+<style>
+  body, html {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    overflow: hidden; /* Prevent scrollbars */
+  }
+  #container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+  .selection-box {
+    position: absolute;
+    z-index: 999;
+    border: 1px solid #007bff;
+    background-color: rgba(0, 123, 255, 0.3);
+  }
+</style>
+</head>
+<body>
+
+<div id="container"></div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const container = document.getElementById('container');
+    let startX, startY, isDragging = false;
+    const selectionBox = document.createElement('div');
+    selectionBox.className = 'selection-box';
+    container.appendChild(selectionBox);
+
+    function setSelectionBox(x, y, w, h) {
+      selectionBox.style.left = x + 'px';
+      selectionBox.style.top = y + 'px';
+      selectionBox.style.width = Math.abs(w) + 'px';
+      selectionBox.style.height = Math.abs(h) + 'px';
+
+      // Flip the box if necessary
+      if (w < 0) {
+        selectionBox.style.left = (x + w) + 'px';
+      }
+      if (h < 0) {
+        selectionBox.style.top = (y + h) + 'px';
+      }
+    }
+
+    function clearSelectionBox() {
+      selectionBox.style.width = '0px';
+      selectionBox.style.height = '0px';
+    }
+
+    container.addEventListener('mousedown', function(e) {
+      startX = e.clientX;
+      startY = e.clientY;
+      isDragging = true;
+      setSelectionBox(startX, startY, 0, 0);
+    });
+
+    container.addEventListener('mousemove', function(e) {
+      if (isDragging) {
+        const currentX = e.clientX;
+        const currentY = e.clientY;
+        const width = currentX - startX;
+        const height = currentY - startY;
+        setSelectionBox(startX, startY, width, height);
+      }
+    });
+
+    container.addEventListener('mouseup', function(e) {
+      isDragging = false;
+      clearSelectionBox();
+    });
+
+    // Touch events
+    container.addEventListener('touchstart', function(e) {
+      const touch = e.touches[0];
+      startX = touch.clientX;
+      startY = touch.clientY;
+      isDragging = true;
+      setSelectionBox(startX, startY, 0, 0);
+    }, {passive: true});
+
+    container.addEventListener('touchmove', function(e) {
+      if (isDragging) {
+        const touch = e.touches[0];
+        const currentX = touch.clientX;
+        const currentY = touch.clientY;
+        const width = currentX - startX;
+        const height = currentY - startY;
+        setSelectionBox(startX, startY, width, height);
+        e.preventDefault();
+      }
+    }, {passive: false});
+
+    container.addEventListener('touchend', function(e) {
+      isDragging = false;
+      clearSelectionBox();
+    });
+  });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns:ffdec="https://www.free-decompiler.com/flash" xmlns:xlink="http://www.w3.org/1999/xlink" ffdec:objectType="shape" height="19.95px" width="16.7px" xmlns="http://www.w3.org/2000/svg">
+  <g transform="matrix(1.0, 0.0, 0.0, 1.0, 8.45, 10.0)">
+    <path d="M-2.7 -0.8 Q-3.8 -2.4 -2.95 -4.1 -2.15 -5.85 -0.45 -3.9 1.2 -1.9 2.8 1.5 L2.95 1.75 3.1 2.2 3.2 2.35 3.35 2.55 Q2.4 3.6 2.05 4.55 L1.9 5.05 M2.05 4.55 L-0.95 2.4" fill="none" stroke="#54453c" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.69803923" stroke-width="1.0"/>
+    <path d="M0.65 -8.5 Q-3.9 -9.8 -6.1 -7.75 -8.35 -5.7 -6.85 -0.8 -5.3 4.1 0.8 8.1 4.55 10.05 7.25 7.4" fill="none" stroke="#54453c" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.0"/>
+  </g>
+</svg>
