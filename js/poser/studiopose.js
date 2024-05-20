@@ -5,22 +5,22 @@ let selected = null;
 const layers = [
     // lapisan //
     // Tangan kanan
-    new Layer('Lengan atas kanan', 'assets/arm1.svg', 'assets/arm2.svg', {flipX: true}),
-    new Layer('Lengan bawah kanan', 'assets/hand1.svg', 'assets/hand2.svg', {flipX: true}),
-    new Layer('Tangan kanan', 'assets/finger3.svg', 'assets/finger4.svg', {flipX: true}),
+    new Layer('Lengan atas kanan', 'assets/arm1.svg', null, null, null, null, null, null, null, null, 'assets/arm2.svg', {flipX: true}),
+    new Layer('Lengan bawah kanan', 'assets/hand1.svg', null, null, null, null, null, null, null, null, 'assets/hand2.svg', {flipX: true}),
+    new Layer('Tangan kanan', 'assets/finger3.svg', null, null, null, null, null, null, null, null, 'assets/finger4.svg', {flipX: true}),
     // Kaki kanan
-    new Layer('Paha atas kanan', 'assets/leg1.svg', 'assets/leg2.svg', {flipX: true}),
-    new Layer('Kaki kanan', 'assets/foot1.svg', 'assets/foot2.svg', {flipX: true}),
+    new Layer('Paha atas kanan', 'assets/leg1.svg', null, null, null, null, null, null, null, null, 'assets/leg2.svg', {flipX: true}),
+    new Layer('Kaki kanan', 'assets/foot1.svg', null, null, null, null, null, null, null, null, 'assets/foot2.svg', {flipX: true}),
     // Kepala dan badan
-    new Layer('Badan', 'assets/body1.svg', 'assets/body2.svg'),
-    new Layer('Kepala', 'assets/head1.svg', 'assets/head2.svg'),
+    new Layer('Badan', 'assets/body1.svg', null, null, null, null, null, null, null, null, 'assets/body2.svg'),
+    new Layer('Kepala', 'assets/head1.svg', null, null, null, null, null, null, null, null, 'assets/head2.svg'),
     // Tangan kiri
-    new Layer('Lengan atas kiri', 'assets/arm1.svg', 'assets/arm2.svg'),
-    new Layer('Lengan bawah kiri', 'assets/hand1.svg', 'assets/hand2.svg'),
-    new Layer('Tangan kiri', 'assets/finger1.svg', 'assets/finger2.svg'),
+    new Layer('Lengan atas kiri', 'assets/arm1.svg', null, null, null, null, null, null, null, null, 'assets/arm2.svg'),
+    new Layer('Lengan bawah kiri', 'assets/hand1.svg', null, null, null, null, null, null, null, null, 'assets/hand2.svg'),
+    new Layer('Tangan kiri', 'assets/finger1.svg', null, null, null, null, null, null, null, null, 'assets/finger2.svg'),
     // Kaki kiri
-    new Layer('Paha atas kiri', 'assets/leg1.svg', 'assets/leg2.svg'),
-    new Layer('Kaki kiri', 'assets/foot1.svg', 'assets/foot2.svg'),
+    new Layer('Paha atas kiri', 'assets/leg1.svg', null, null, null, null, null, null, null, null, 'assets/leg2.svg'),
+    new Layer('Kaki kiri', 'assets/foot1.svg', null, null, null, null, null, null, null, null, 'assets/foot2.svg'),
     // lapisan //
 ];
 

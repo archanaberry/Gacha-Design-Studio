@@ -40,29 +40,28 @@ class Layer {
     }
 
     #initElement() {
-        this.#element = document.createElement('div');
-        this.#element.classList.add('layer');
+        this.element = document.createElement('div');
+        this.element.classList.add('layer');
 
         for (const [key, src] of Object.entries(this.#images)) {
+            // Skip jika tidak ada gambarnya (entah ini bener atau gk)
+            if(!src) continue;
             const imgElement = document.createElement('img');
             imgElement.src = src;
             imgElement.alt=key;
             imgElement.classList.add(key);
-            this.#element.appendChild(imgElement);
+            this.element.appendChild(imgElement);
+            imgElement.draggable = false;
         }
 
-        for (const el of [this.#element, ...this.#element.querySelectorAll('img')]) {
-            el.draggable = false;
-        }
-
-        this.#element.addEventListener('click', () => this.select());
+        this.element.addEventListener('click', () => this.select());
     }
 
     #updateElement() {
-        this.#element.style.transform = `translate(${this.#x}px, ${this.#y}px) scale(${this.#scale}) rotate(${this.#rotation}deg)`;
-        if (this.#flipX) this.#element.style.transform += ' scaleX(-1)';
-        if (this.#flipY) this.#element.style.transform += ' scaleY(-1)';
-        for (const img of this.#element.querySelectorAll('img')) {
+        this.element.style.transform = `translate(${this.#x}px, ${this.#y}px) scale(${this.#scale}) rotate(${this.#rotation}deg)`;
+        if (this.#flipX) this.element.style.transform += ' scaleX(-1)';
+        if (this.#flipY) this.element.style.transform += ' scaleY(-1)';
+        for (const img of this.element.querySelectorAll('img')) {
             img.style.filter = `drop-shadow(0 0 0 ${this.#color})`;
         }
     }
