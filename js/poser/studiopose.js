@@ -219,7 +219,7 @@ function handleFlipVertical(value) {
     selected.flipY = value;
 }
 
-function moveLayerUp() {
+function moveSelectedLayersUp() {
     if (!selected) return;
     const currentIndex = layers.indexOf(selected);
     if (currentIndex < layers.length - 1) {
@@ -230,7 +230,7 @@ function moveLayerUp() {
     }
 }
 
-function moveLayerDown() {
+function moveSelectedLayersDown() {
     if (!selected) return;
     const currentIndex = layers.indexOf(selected);
     if (currentIndex > 0) {
