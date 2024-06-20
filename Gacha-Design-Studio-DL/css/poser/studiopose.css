@@ -1,0 +1,50 @@
+body {
+    margin: 0;
+    background-image: url('../../assets/ui/background/background.png');
+    background-size: cover;
+}
+
+.input-container {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    z-index: 15;
+    opacity: 0.2;
+}
+
+/* Menonaktifkan pemilihan teks pada semua elemen kecuali input */
+body *:not(input) {
+    user-select: none;
+}
+
+/* Gaya tambahan untuk input */
+input {
+    /* Pastikan untuk memungkinkan pemilihan teks di dalam input */
+    user-select: text;
+}
+
+.layer {
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    z-index: 1;
+}
+
+.layer > :not(:first-child) {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.layer.selected {
+    outline: 2px solid blue;
+}
+
+#rotationControl {
+    width: 200px;
+}
+
+#rotationIndicator {
+    text-align: center;
+    margin-top: 5px;
+}

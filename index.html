@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title id="title">Studio Sandbox - Gacha Design Studio</title>
+    <title id="title">Studio Character - Gacha Design Studio</title>
     <link rel="icon" type="image/png" href="assets/icon.png">
     <link rel="stylesheet" type="text/css" href="css/poser/studiopose.css">
 </head>
@@ -60,8 +60,8 @@
         <label for="rotationControl">Rotasi:</label>
         <input type="range" id="rotationControl" min="0" max="360" value="0" oninput="handleRotation(this.value)">
         <div id="rotationIndicator">0</div>
-        <button onclick="moveSelectedLayersUp()">Naikkan</button>
-        <button onclick="moveSelectedLayersDown()">Turunkan</button>
+        <button onclick="moveLayerUp()">Naikkan</button>
+        <button onclick="moveLayerDown()">Turunkan</button>
         <button onclick="exportAsSVG()">Ekspor sebagai SVG</button>
         <input type="text" id="svgFileName" placeholder="Nama file SVG">
         <button onclick="exportAsHTML()">Ekspor sebagai HTML</button>
@@ -77,6 +77,12 @@
         <button onclick="document.getElementById('svgUpload').click()">Tambahkan SVG</button>
         <input type="file" id="imageUpload" accept="image/*" style="display:none" onchange="addImage(event)">
         <button onclick="document.getElementById('imageUpload').click()">Tambahkan Sisipan</button>
+
+        <input type="file" id="svgUpload" accept=".svg" multiple style="display:none" onchange="addSVG(event)">
+        <button onclick="document.getElementById('svgUpload').click()">Tambahkan SVG</button>
+        <input type="file" id="imageUpload" accept="image/*" style="display:none" onchange="addImage(event)">
+        <button onclick="document.getElementById('imageUpload').click()">Tambahkan Sisipan</button>
+
         
     </div>
 
@@ -93,8 +99,7 @@
     <script src="js/poser/key.js"></script>
     <script src="js/poser/sensivity.js"></script>
     <script src="js/poser/upload.js"></script>
-    <script src="js/poser/delete.js"></script>
-    <script src="js/poser/group.js"></script>
+    <script src="js/poser/upload2.js"></script>
     <!-- Skrip -->
 
 </body>
