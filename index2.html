@@ -69,9 +69,12 @@
 
         <br>
         <button id="toggleSelectorBtn">Nyalakan Seleksi</button>
-        <button id="groupBtn" onclick="groupSelectedLayers()">Grupkan</button>
-        <button id="ungroupBtn" onclick="ungroupSelectedLayers()">Pisahkan</button>
-        <button id="deleteBtn" onclick="deleteSelectedLayer()">Hapus Lapisan</button>
+        <button class="button" onclick="groupLayers()">Grupkan</button>
+        <button class="button" onclick="ungroupLayers()">Pisahkan Grup</button>
+        <button class="button" onclick="deleteSelectedLayer()">Hapus Lapisan</button>
+        <input type="color" id="colorPicker" value="#000000" onchange="changeSVGColor(this.value)">
+
+
         
         <input type="file" id="svgUpload" accept=".svg" style="display:none" onchange="addSVG(event)">
         <button onclick="document.getElementById('svgUpload').click()">Tambahkan SVG</button>
@@ -82,33 +85,6 @@
         <button onclick="document.getElementById('svgUpload').click()">Tambahkan SVG</button>
         <input type="file" id="imageUpload" accept="image/*" style="display:none" onchange="addImage(event)">
         <button onclick="document.getElementById('imageUpload').click()">Tambahkan Sisipan</button>
-
-        <button class="button" onclick="groupLayers()">Grupkan</button>
-        <button class="button" onclick="ungroupLayers()">Pisahkan Grup</button>
-
-        <button onclick="deleteSelectedLayer()">Hapus Lapisan</button>
-        <button onclick="ungroupSelectedLayers()">Pisahkan</button>
-        <button onclick="groupSelectedLayers()">Grupkan</button>
-
-        <button id="groupLayersBtn">Group Layers</button>
-        <button id="ungroupLayersBtn">Ungroup Layers</button>
-        <button id="deleteGroupBtn">Delete Group</button>
-
-        <!-- Color Input -->
-<input type="color" id="colorInput" value="#ffffff">
-
-<!-- Buttons for Copy, Group, Ungroup, and Delete -->
-<button id="copyButton">Salin</button>
-<button id="groupButton">Grupkan</button>
-<button id="ungroupButton">Pisahkan Grup</button>
-<button id="deleteButton">Hapus</button>
-
-<button id="toggleSelectorBtn">Nyalakan Seleksi</button>
-<button id="copyButton">Salin</button>
-<button id="groupButton">Grupkan</button>
-<button id="ungroupButton">Pisahkan Grup</button>
-<button id="deleteButton">Hapus</button>
-<input type="color" id="colorPicker" value="#000000">
 
     </div>
 

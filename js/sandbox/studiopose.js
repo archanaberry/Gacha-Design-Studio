@@ -284,12 +284,9 @@ function deleteSelectedLayers() {
     selectedLayers = [];
 }
 
-function changeColorOfSelectedLayers(color) {
-    selectedLayers.forEach(layerObj => {
-        const svgs = layerObj.element.querySelectorAll('svg');
-        svgs.forEach(svg => {
-            svg.style.fill = color;
-        });
+function changeSVGColor(color) {
+    const svgs = document.querySelectorAll('svg path'); // Adjust selector as necessary
+    svgs.forEach(svg => {
+        svg.setAttribute('fill', color);
     });
 }
-// layer //

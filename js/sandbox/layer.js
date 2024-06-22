@@ -1,14 +1,3 @@
-const baseImage = document.createElement('img');
-const trimImage = document.createElement('img');
-const shape1Image = document.createElement('img');
-const shape2Image = document.createElement('img');
-const shape3Image = document.createElement('img');
-const shape4Image = document.createElement('img');
-const shape5Image = document.createElement('img');
-const shadeImage = document.createElement('img');
-const lightImage = document.createElement('img');
-const outlineImage = document.createElement('img');
-
 class Layer {
     #name = null;
     #x = 0;
@@ -17,126 +6,53 @@ class Layer {
     #scale = 1;
     #flipX = false;
     #flipY = false;
-    #images = {};
+    #shape = null;
+    #color = 'f7efec';
     #ondragstart = null;
-    #color = '#ffffff';
-    #group = null;
-    #element = null;
+    isSelectable = true; // Properti untuk menentukan apakah layer bisa dipilih
 
-    constructor(name, baseImage, trimImage, shape1Image, shape2Image, shape3Image, shape4Image, shape5Image, shadeImage, lightImage, outlineImage, initial = {}) {
+    constructor(name, shape, initial) {
         this.#name = name;
-        this.#images = {
-            base: baseImage,
-            trim: trimImage,
-            shape1: shape1Image,
-            shape2: shape2Image,
-            shape3: shape3Image,
-            shape4: shape4Image,
-            shape5: shape5Image,
-            shade: shadeImage,
-            light: lightImage,
-            outline: outlineImage
-        };
+        this.#shape = shape;
         this.#initElement();
-
+        if (!initial) return;
         if ('x' in initial) this.#x = initial.x;
         if ('y' in initial) this.#y = initial.y;
         if ('rotation' in initial) this.#rotation = initial.rotation;
         if ('scale' in initial) this.#scale = initial.scale;
         if ('flipX' in initial) this.#flipX = initial.flipX;
         if ('flipY' in initial) this.#flipY = initial.flipY;
-        if ('color' in initial) this.#color = initial.color;
-        if ('group' in initial) this.#group = initial.group;
         this.#updateElement();
     }
-
-    // layer //
-    clone() {
-        const clonedLayer = new Layer(this.#name + ' copy', this.#images.base.src, this.#images.trim.src, this.#images.shape1.src, this.#images.shape2.src, this.#images.shape3.src, this.#images.shape4.src, this.#images.shape5.src, this.#images.shade.src, this.#images.light.src, this.#images.outline.src, {
-            x: this.#x,
-            y: this.#y,
-            rotation: this.#rotation,
-            scale: this.#scale,
-            flipX: this.#flipX,
-            flipY: this.#flipY,
-            color: this.#color,
-            group: this.#group
-        });
-        return clonedLayer;
-    }
-
-    groupLayer(group) {
-        this.#group = group;
-        group.appendChild(this.element);
-    }
-
-    ungroupLayer() {
-        if (this.#group) {
-            this.#group.removeChild(this.element);
-            this.#group = null;
-        }
-    }
-
-    deleteLayer() {
-        this.detach();
-        if (this.#group) {
-            this.#group.removeChild(this.element);
-        }
-    }
-
-    setColor(color) {
-        this.#color = color;
-        this.#updateElement();
-    } 
-    // layer //
-
-    /*
-    #initElement() {
-        this.element = document.createElement('div');
-        this.element.classList.add('layer');
-
-        for (const [key, src] of Object.entries(this.#images)) {
-            // Skip jika tidak ada gambarnya (entah ini bener atau gk)
-            if(!src) continue;
-            const imgElement = document.createElement('img');
-            imgElement.src = src;
-            imgElement.alt=key;
-            imgElement.classList.add(key);
-            this.element.appendChild(imgElement);
-            imgElement.draggable = false;
-        }
-
-        this.element.addEventListener('click', () => this.select());
-    }
-    */
 
     #initElement() {
         this.element = document.createElement('div');
         this.element.classList.add('layer');
 
-        for (const [key, src] of Object.entries(this.#images)) {
-            // Skip jika tidak ada gambarnya (entah ini benar atau tidak)
-            if (!src) continue;
-            const imgElement = document.createElement('img');
-            imgElement.src = src;
-            imgElement.alt = key;
-            imgElement.classList.add(key);
-            this.element.appendChild(imgElement);
-            imgElement.draggable = false;
-        }
-
-        // Use arrow function to maintain context of 'this'
-        this.element.addEventListener('click', () => this.select());
+        const fillImgElement = document.createElement('img');
+        fillImgElement.src = this.#shape;
+        this.element.appendChild(fillImgElement);
 
         // Disable fungsi drag bawaan browser
-        for(const el of [this.element, baseImage, trimImage, shape1Image, shape2Image, shape3Image, shape4Image, shape5Image, shadeImage, lightImage, outlineImage]) {
+        for (const el of [this.element, fillImgElement]) {
             el.draggable = false;
         }
+
+        this.element.addEventListener('click', () => {
+            if (this.isSelectable) this.select();
+        });
     }
+
     select() {
         this.isSelected = true;
         this.element.classList.add('selected');
-        console.log('Lapisan dipilih: ' + this.name);
+        console.log('Lapisan dipilih: ' + this.#name);
+    }
+
+    deselect() {
+        this.isSelected = false;
+        this.element.classList.remove('selected');
+        console.log('Lapisan tidak dipilih: ' + this.#name);
     }
 
     #updateElement() {
@@ -215,37 +131,18 @@ class Layer {
         this.#updateElement();
     }
 
-    /*
-    #updateElement() {
-        this.element.style.left = this.#x + 'px';
-        this.element.style.top = this.#y + 'px';
-        const transforms = [
-            `rotate(${this.#rotation}deg)`,
-            `scale(${this.#scale})`,
-        ];
-        if(this.#flipX) transforms.push('scaleX(-1)');
-        if(this.#flipY) transforms.push('scaleY(-1)');
-        this.element.style.transform = transforms.join(' ');
-    }
-    */
-
-    /**
-     * @param {boolean} selected
-     */
     set selected(selected) {
-        if(selected) {
+        if (selected) {
             this.element.classList.add('selected');
         } else {
             this.element.classList.remove('selected');
         }
     }
 
-    /**
-     * @param {HTMLElement} dstRoot
-     */
     attach(dstRoot, ondragstart) {
         dstRoot.appendChild(this.element);
         this.#ondragstart = (e) => {
+            if (!this.isSelectable) return; // Tambahkan kondisi ini
             ondragstart(e, this);
         };
 

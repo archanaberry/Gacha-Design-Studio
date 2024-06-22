@@ -1,0 +1,10 @@
+layer.js:121 Uncaught ReferenceError: baseImage is not defined
+    at #initElement (layer.js:121:40)
+    at new Layer (layer.js:29:26)
+    at reader.onload (upload2.js:32:26)
+#initElement @ layer.js:121
+Layer @ layer.js:29
+reader.onload @ upload2.js:32
+load (async)
+addImage @ upload2.js:31
+onchange @ index2.html:80

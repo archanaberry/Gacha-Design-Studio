@@ -3,7 +3,7 @@ function addSVG(event) {
     if (file) {
         const reader = new FileReader();
         reader.onload = function(e) {
-            const layer = new Layer(file.name, e.target.result, null, {x: 0, y: 0});
+            const layer = new Layer(file.name, e.target.result, { x: 0, y: 0 });
             layers.push(layer);
             layer.attach(document.querySelector('.container'), onlayerdragstart);
         };
@@ -16,7 +16,7 @@ function addImage(event) {
     if (file) {
         const reader = new FileReader();
         reader.onload = function(e) {
-            const layer = new Layer(file.name, e.target.result, null, {x: 0, y: 0});
+            const layer = new Layer(file.name, e.target.result, { x: 0, y: 0 });
             layers.push(layer);
             layer.attach(document.querySelector('.container'), onlayerdragstart);
         };
@@ -30,7 +30,7 @@ function handleDrop(e) {
     for (const file of files) {
         const reader = new FileReader();
         reader.onload = function(event) {
-            const layer = new Layer(file.name, event.target.result, null, null, null, null, null, null, null, null, null);
+            const layer = new Layer(file.name, event.target.result, { x: 0, y: 0 });
             layers.push(layer);
             layer.attach(document.querySelector('.container'), onlayerdragstart);
         };
