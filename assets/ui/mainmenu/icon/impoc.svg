@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg version="1.1" id="Layer_1"
+xmlns="http://www.w3.org/2000/svg"
+xmlns:xlink="http://www.w3.org/1999/xlink"
+xmlns:author="http://www.sothink.com"
+width="130px" height="62px"
+xml:space="preserve">
+<g id="22793" transform="matrix(1, 0, 0, 1, 50.9, 31.3)">
+<linearGradient
+id="LinearGradID_2195" gradientUnits="userSpaceOnUse" gradientTransform="matrix(0, 0.0364685, -0.0779419, 0, 13.95, -0.45)" spreadMethod ="pad" x1="-819.2" y1="0" x2="819.2" y2="0" >
+<stop  offset="0" style="stop-color:#5868B1;stop-opacity:1" />
+<stop  offset="1" style="stop-color:#6A60B1;stop-opacity:1" />
+</linearGradient>
+<path style="fill:url(#LinearGradID_2195) " d="M-44.1,28.65Q-49.9 26.5 -49.9 18.6L-49.9 -19.3Q-49.9 -30.3 -39 -30.3L66.9 -30.3Q77.8 -30.3 77.8 -19.3L77.8 18.6Q77.8 26.5 72.05 28.65Q69.85 29.45 66.9 29.45L-39 29.45Q-41.95 29.45 -44.1 28.65M70.7,24.9L70.65 24.9Q73.8 23.4 73.8 18.6L73.8 -19.3Q73.8 -26.3 66.9 -26.3L-39 -26.3Q-45.9 -26.3 -45.9 -19.3L-45.9 18.6Q-45.9 23.4 -42.7 24.9L-39 25.45L66.9 25.45L70.7 24.9" />
+<linearGradient
+id="LinearGradID_2196" gradientUnits="userSpaceOnUse" gradientTransform="matrix(0, 0.0315857, -0.0730591, 0, 13.95, -0.45)" spreadMethod ="pad" x1="-819.2" y1="0" x2="819.2" y2="0" >
+<stop  offset="0" style="stop-color:#404C82;stop-opacity:1" />
+<stop  offset="1" style="stop-color:#4A437C;stop-opacity:1" />
+</linearGradient>
+<path style="fill:url(#LinearGradID_2196) " d="M66.9,25.45L-39 25.45L-42.7 24.9Q-45.9 23.4 -45.9 18.6L-45.9 -19.3Q-45.9 -26.3 -39 -26.3L66.9 -26.3Q73.8 -26.3 73.8 -19.3L73.8 18.6Q73.8 23.4 70.65 24.9L70.7 24.9L66.9 25.45" />
+<path style="fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:3;stroke:#3E424E;stroke-opacity:1" d="M-39,29.45L66.9 29.45Q69.85 29.45 72.05 28.65Q77.8 26.5 77.8 18.6L77.8 -19.3Q77.8 -30.3 66.9 -30.3L-39 -30.3Q-49.9 -30.3 -49.9 -19.3L-49.9 18.6Q-49.9 26.5 -44.1 28.65Q-41.95 29.45 -39 29.45z" />
+<path style="fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:3;stroke:#EEF5FF;stroke-opacity:1" d="M-9.85,5.45Q-10.05 9.45 -14.2 9.45L-26 9.45Q-30.35 9.45 -30.35 5.1L-30.35 -6.8Q-30.35 -11.1 -26 -11.1L-14.2 -11.1Q-9.95 -11.1 -9.85 -6.9M-10.35,-0.9L-22.8 -0.9L-18.4 4.45M-18.4,-6L-22.8 -0.9" />
+</g>
+</svg>
