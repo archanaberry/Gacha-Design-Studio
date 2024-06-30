@@ -33,5 +33,5 @@ document.addEventListener("click", function() {
 
 // Tampilkan lapisan kedua setelah loading selesai
 window.onload = function() {
-  setTimeout(showTapScreen, 10000); // Menunggu 10 detik sebelum menampilkan "Tap the screen"
+  setTimeout(showTapScreen, 100); // Menunggu 10 detik sebelum menampilkan "Tap the screen"
 };
