@@ -122,3 +122,6 @@ Diperbarui
 <img src="archanaberry/HTML.png" alt="HTML versi 5" width="192" height="108">
 <img src="archanaberry/JavaScript.png" alt="JavaScript Murni" width="503.6" height="140.8">
 <img src="archanaberry/CSS.png" alt="CSS" width="338.7" height="230.5">
+
+## Terimakasih untuk:
+![lunime](archanaberry/lunime.svg)
