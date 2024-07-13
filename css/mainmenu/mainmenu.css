@@ -2,6 +2,28 @@ body {
     user-select: none; /* Mencegah pemilihan teks di luar input box */
 }
 
+/* Memblokir drag untuk semua elemen */
+        img, svg {
+            -webkit-user-drag: none;
+            -moz-user-drag: none;
+            -o-user-drag: none;
+            user-drag: none;
+        }
+        
+button {
+            outline: none;
+        }
+        
+        button:focus {
+            outline: none;
+            box-shadow: none;
+        }
+        
+        button:active {
+            outline: none;
+            box-shadow: none;
+        }
+
 /* Menghapus border dan background default dari tombol */
 button {
   border: none;
