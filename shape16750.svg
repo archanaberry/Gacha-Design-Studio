@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg version="1.1" id="Layer_1"
+xmlns="http://www.w3.org/2000/svg"
+xmlns:xlink="http://www.w3.org/1999/xlink"
+xmlns:author="http://www.sothink.com"
+width="105px" height="91px"
+xml:space="preserve">
+<g id="9309" transform="matrix(1, 0, 0, 1, 49.65, 26.45)">
+<path style="fill:#A4B7BB;fill-opacity:1" d="M-17.95,-0.25L-17.4 -0.05L-17.95 0.1L-17.95 -0.25" />
+<path style="fill:#D7F0F5;fill-opacity:1" d="M23.4,1.85L24 1.65L24 2.2L23.4 1.85" />
+<linearGradient
+id="LinearGradID_2572" gradientUnits="userSpaceOnUse" gradientTransform="matrix(0, 0.0713501, -0.0506897, 0, 7.7, -3.2)" spreadMethod ="pad" x1="-819.2" y1="0" x2="819.2" y2="0" >
+<stop  offset="0" style="stop-color:#BF9B65;stop-opacity:1" />
+<stop  offset="0.482353" style="stop-color:#5BA5CD;stop-opacity:1" />
+<stop  offset="1" style="stop-color:#BF5C88;stop-opacity:1" />
+</linearGradient>
+<path style="fill:url(#LinearGradID_2572) " d="M-17.95,0.1L-18.1 39.3L-18.65 53.2L-33.85 46.9L-33.85 -6.2L-33.55 -6.1L-17.95 -0.25L-17.95 0.1" />
+<linearGradient
+id="LinearGradID_2573" gradientUnits="userSpaceOnUse" gradientTransform="matrix(0, 0.0716858, -0.0154114, 0, 36.6, -2.7)" spreadMethod ="pad" x1="-819.2" y1="0" x2="819.2" y2="0" >
+<stop  offset="0" style="stop-color:#F5EA9F;stop-opacity:1" />
+<stop  offset="0.482353" style="stop-color:#91D8E9;stop-opacity:1" />
+<stop  offset="0.988235" style="stop-color:#E794C2;stop-opacity:1" />
+</linearGradient>
+<path style="fill:url(#LinearGradID_2573) " d="M39.8,48.5L23.95 55.4L24 2.2L24 1.65L39.9 -4L39.8 48.5" />
+<linearGradient
+id="LinearGradID_2574" gradientUnits="userSpaceOnUse" gradientTransform="matrix(-0.00688171, 0.0323944, -0.0387878, -0.00823975, -29.8, 21.8)" spreadMethod ="pad" x1="-819.2" y1="0" x2="819.2" y2="0" >
+<stop  offset="0" style="stop-color:#2C1F0F;stop-opacity:1" />
+<stop  offset="0.231373" style="stop-color:#1C311E;stop-opacity:1" />
+<stop  offset="0.482353" style="stop-color:#1D3856;stop-opacity:1" />
+<stop  offset="0.721569" style="stop-color:#2C2043;stop-opacity:1" />
+<stop  offset="0.988235" style="stop-color:#51192C;stop-opacity:1" />
+</linearGradient>
+<path style="fill:url(#LinearGradID_2574) " d="M-33.85,46.9L-49.15 40.5L-49.15 -11.95L-33.85 -6.2L-33.85 46.9M-18.1,39.3L-17.95 0.1L-17.4 -0.05L5.15 8.3L5.5 63.45L-18.65 53.2L-18.1 39.3" />
+<linearGradient
+id="LinearGradID_2575" gradientUnits="userSpaceOnUse" gradientTransform="matrix(0.00723267, 0.0332947, -0.0367279, 0.00798035, 36.55, 23.9)" spreadMethod ="pad" x1="-819.2" y1="0" x2="819.2" y2="0" >
+<stop  offset="0" style="stop-color:#4F381B;stop-opacity:1" />
+<stop  offset="0.231373" style="stop-color:#325836;stop-opacity:1" />
+<stop  offset="0.482353" style="stop-color:#274C74;stop-opacity:1" />
+<stop  offset="0.721569" style="stop-color:#46336B;stop-opacity:1" />
+<stop  offset="0.988235" style="stop-color:#6B203A;stop-opacity:1" />
+</linearGradient>
+<path style="fill:url(#LinearGradID_2575) " d="M39.8,48.5L39.9 -4L54.55 -9.2L54.55 42.15L39.8 48.5M5.15,8.3L23.4 1.85L24 2.2L23.95 55.4L5.5 63.45L5.15 8.3" />
+<path style="fill:#639EC7;fill-opacity:1" d="M24,1.65L23.4 1.85L20.3 0L35.9 -5.3L39.9 -4L24 1.65M-13.25,-1.55L-17.4 -0.05L-17.95 -0.25L-33.55 -6.1L-29.25 -7.35L-13.25 -1.55" />
+<path style="fill:#2E2210;fill-opacity:1" d="M47.85,-9.4L5.15 -23.55L-40.55 -11.4L-29.25 -7.35L-33.55 -6.1L-33.85 -6.2L-49.15 -11.95L4.5 -25.95L54.55 -9.2L39.9 -4L35.9 -5.3L47.85 -9.4M5.15,8.3L-17.4 -0.05L-13.25 -1.55L5.25 5.1L20.3 0L23.4 1.85L5.15 8.3" />
+<path style="fill:#64519F;fill-opacity:1" d="M-29.25,-7.35L-40.55 -11.4L5.15 -23.55L47.85 -9.4L35.9 -5.3L20.3 0L5.25 5.1L-13.25 -1.55L-29.25 -7.35" />
+<path style="fill:none;stroke-width:1;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:3;stroke:#000000;stroke-opacity:1" d="M54.55,42.15L39.8 48.5L39.9 -4L35.9 -5.3L20.3 0L23.4 1.85L24 1.65L39.9 -4L54.55 -9.2L4.5 -25.95L-49.15 -11.95L-33.85 -6.2L-33.55 -6.1L-29.25 -7.35L-40.55 -11.4L5.15 -23.55L47.85 -9.4L35.9 -5.3M20.3,0L5.25 5.1L-13.25 -1.55L-17.4 -0.05L5.15 8.3L23.4 1.85L24 2.2L24 1.65M24,2.2L23.95 55.4L39.8 48.5M23.95,55.4L5.5 63.45L-18.65 53.2L-33.85 46.9L-49.15 40.5L-49.15 -11.95M54.55,-9.2L54.55 42.15M-33.55,-6.1L-17.95 -0.25L-17.4 -0.05L-17.95 0.1L-18.1 39.3L-18.65 53.2M-13.25,-1.55L-29.25 -7.35M-33.85,-6.2L-33.85 46.9M-17.95,-0.25L-17.95 0.1" />
+</g>
+</svg>

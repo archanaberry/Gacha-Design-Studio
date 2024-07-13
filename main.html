@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=none">
+<link rel="stylesheet" type="text/css" href="css/mainmenu/mainmenu.css">
+<link rel="stylesheet" type="text/css" href="css/mainmenu/loading.css">
+<link rel="icon" type="image/png" href="assets/ui/iconapp.png">
+<title>Gacha Design Studio - Main Menu</title>
+<script src="js/mainmenu/mainmenu.js"></script>
+<script src="js/mainmenu/loading.js"></script>
+<script src="js/mainmenu/bgm.js"></script>
+<script src="js/menu/maintenanoce.js"></script>
+<script src="js/mainmenu/settings.js"></script>
+</head>
+<body>
+
+<div id="loading" class="loading">
+  <div class="loading-content">
+    <div class="loading-svg">
+      <img src="assets/ui/mainmenu/icon/loading.svg" alt="Loading...">
+    </div>
+    <div class="loading-img">
+      <img src="assets/ui//mainmenu/icon/icon12.svg" alt="Loading Image">
+    </div>
+    <div id="tapScreen" class="tap-screen" style="display: none;">
+    </div>
+  </div>
+</div>
+
+<!-- Layer Menu -->
+<div id="layer2" class="layer2">
+  <!-- Menu Content -->
+  <div>
+    <div class="container-top">
+      <button class="button imporoc" onclick="showMaintenance('Dalam status pengembangan...');">
+        <img src="assets/ui/mainmenu/icon/impoc.svg" alt="Impor karakter">
+        <span>Impor</span>
+      </button>
+      <button class="button eksporoc" onclick="showMaintenance('Dalam status pengembangan...');">
+        <img src="assets/ui/mainmenu/icon/expoc.svg" alt="Ekspor karakter">
+        <span>Ekspor</span>
+      </button>
+    </div>
+
+    <img src="assets/ui/mainmenu.png" class="main-menu-bg" alt="Main Menu Background">
+    <p class="version-ft">Version 0.01_Alpha</p>
+
+    <div class="gachadesignstudio">
+      <img src="assets/ui/gachadesignstudio.png" alt="Gacha Design Studio">
+    </div>
+
+    <div class="archanaberrydev">
+      <img class="archanaberrydev" src="assets/ui/mainmenu/developers.svg" alt="Archana Berry">
+    </div>
+
+    <div class="container-middle">
+      <div class="row">
+        <button class="button menu1" onclick="openSettings();">
+          <img src="assets/ui/mainmenu/icon/icon0.svg" class="bg" alt="Ikon">
+          <img src="assets/ui/mainmenu/icon/icon4.svg" class="menuic1" alt="Setelan">
+        </button>
+        
+        <button class="button menu2" onclick="showMaintenance()">
+          <img src="assets/ui/mainmenu/icon/icon0.svg" class="bg" alt="Ikon">
+          <img src="assets/ui/mainmenu/icon/icon2.svg" class="menuic2" alt="Studio">
+        </button>
+        
+        <button class="button menu3" onclick="showMaintenance('Menu Toko menyatakan:\nMenu ini sedang dalam tahap pengembangan...');">
+          <img src="assets/ui/mainmenu/icon/icon0.svg" class="bg" alt="Ikon" />
+          <img src="assets/ui/mainmenu/icon/icon6.svg" class="menuic3" alt="Toko" />
+        </button>
+      </div>
+
+      <div class="row">
+        <div class="button menu4" onclick="showMaintenance('Menu Setelan Resource menyatakan:\nMenu ini sedang dalam tahap pengembangan...');">
+          <img src="assets/ui/mainmenu/icon/icon0.svg" class="bg" alt="Ikon">
+          <img src="assets/ui/mainmenu/icon/icon7.svg" class="menuic4" alt="Manajemen Sumber Daya (Resource)">
+        </div>
+      </div>
+    </div>
+
+    <div class="container-bottom">
+      <button class="button menu5" onclick="showMaintenance('Fitur Animator menyampaikan:\nMode ini sedang dalam tahap pengembangan...');">
+        <img src="assets/ui/mainmenu/icon/icon0.svg" class="bg" alt="Ikon">
+        <img src="assets/ui/mainmenu/icon/icon9.svg" class="menuic5" alt="Animator">
+      </button>
+      
+      <button class="button menu6" onclick="showMaintenance('Daftar Perubahan (ChangeLog) dari Gacha Design Studio:\n\nTarget:\nv2.0_Beta menyediakan studio animator bisa simpen animasi pakai svg ataupun ke mp4 dengan audio\nDitunggu...\n\nv0.01_Alpha DL (Offline Playable): Baru dirilis di github\nBugs:\n1. Zoom ga bisa ke input lagi dilayar sentuh entah itu kena versi PC?\n2. Input box Height (Tinggi) dan Width (Lebar) belum bisa (karena belum dihandle)\n3. UI/UX nya belum stabil di beberapa perangkat (device) baik mode potrait ataupun lanskap\n4. Studio Pose nya masih tidak bisa di drag/seret pakai layar sentuh\n5. Tombol Impor atau Ekspor karakter nya sulit disentuh\n6. Semua fitur masih banyak bug\n7. Music (BGM) main menu belum ada\n8. Hanya bahasa Indonesia belum bisa switch bahasa\n9. Masih ada selector (pemilih) berwarna biru jika ditekan di tombol ini seharusnya dihilangkan\n\nBedakan DL dan HS kalau DL itu download source nya langsung untuk di dijalankan di browser seperti X-plore, HTML Viewer, Chrome, Mozilla Firefox, Microsoft Edge, Opera Mini, dll.\n\nDan untuk HS itu perlu dihosting pakai VPS atau Panel atau Termux yang memiliki fitur online server cloud dan bisa meringankan perangkat kecil jika dirasa kebesaran hanya dengan membuka tautan(link) dari hostingan nya itu sendiri, misal pakai program backend (garis belakang sistem situs permainan) seperti Nodejs, Nginx, Laravel, Python, dll\n\nSemoga ini ga akan menjadi WIP project :3');">
+        <img src="assets/ui/mainmenu/icon/icon0.svg" class="bg" alt="Ikon">
+        <img src="assets/ui/mainmenu/icon/icon8.svg" class="menuic6" alt="Log perubahan (ChangeLog)">
+      </button>
+    </div>
+</div>
+
+  <div id="maintenanceContainer"></div>
+
+</body>
+</html>
