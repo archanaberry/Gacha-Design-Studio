@@ -1,15 +1,50 @@
-body {
+/* Gaya untuk garis splitter */
+#splitter {
+    position: absolute;
+    width: 100%;
+    height: 10px; /* Atur tinggi garis splitter */
+    background-color: blue;
+    cursor: ns-resize; /* Ubah kursor saat di atas garis splitter */
+    touch-action: none; /* Untuk mencegah scrolling saat menyentuh garis splitter */
+}
+body, html {
     margin: 0;
-    background-image: url('../../assets/ui/background/background.png');
+    padding: 0;
+    height: 100%;
+    overflow: hidden;
+}
+
+.panel1, .panel2 {
+    margin: 0;
+    background: none;
     background-size: cover;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    position: relative;
+}
+
+.panel2 {
+    position: absolute;
+    bottom: 0px;
+    left: 0px;
+    right: 0px;
+}
+
+#imageUpload1, #imageUpload2 {
+    margin-bottom: 10px;
+}
+
+#imageUpload1,
+#imageUpload2 {
+    margin-bottom: 20px;
 }
 
 .input-container {
-    position: fixed;
-    top: 10px;
-    left: 10px;
-    z-index: 15;
-    opacity: 0.2;
+        width: 100%;
+        height: calc(100% - 5px); /* Atur tinggi panel dengan CSS Grid */
+        overflow: auto;
 }
 
 /* Menonaktifkan pemilihan teks pada semua elemen kecuali input */
@@ -27,7 +62,7 @@ input {
     position: absolute;
     left: 0px;
     top: 0px;
-    z-index: 1;
+    z-index: 0;
 }
 
 .layer > :not(:first-child) {
@@ -37,7 +72,7 @@ input {
 }
 
 .layer.selected {
-    outline: 2px solid blue;
+    outline: 1px solid blue;
 }
 
 #rotationControl {
@@ -47,4 +82,12 @@ input {
 #rotationIndicator {
     text-align: center;
     margin-top: 5px;
+}
+
+/* Gaya untuk Selector */
+.selection-box {
+    position: absolute;
+    z-index: 999;
+    border: 1px solid #007bff;
+    background-color: rgba(0, 123, 255, 0.3);
 }

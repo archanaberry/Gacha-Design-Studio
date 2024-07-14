@@ -2,27 +2,7 @@
 /** @type {Layer} Elemen yang sedang dipilih */
 let selected = null;
 
-const layers = [
-    // lapisan //
-    // Tangan kanan
-    new Layer('Lengan atas kanan', 'assets/arm1.svg', null, null, null, null, null, null, null, null, 'assets/arm2.svg', {flipX: true}),
-    new Layer('Lengan bawah kanan', 'assets/hand1.svg', null, null, null, null, null, null, null, null, 'assets/hand2.svg', {flipX: true}),
-    new Layer('Tangan kanan', 'assets/finger3.svg', null, null, null, null, null, null, null, null, 'assets/finger4.svg', {flipX: true}),
-    // Kaki kanan
-    new Layer('Paha atas kanan', 'assets/leg1.svg', null, null, null, null, null, null, null, null, 'assets/leg2.svg', {flipX: true}),
-    new Layer('Kaki kanan', 'assets/foot1.svg', null, null, null, null, null, null, null, null, 'assets/foot2.svg', {flipX: true}),
-    // Kepala dan badan
-    new Layer('Badan', 'assets/body1.svg', null, null, null, null, null, null, null, null, 'assets/body2.svg'),
-    new Layer('Kepala', 'assets/head1.svg', null, null, null, null, null, null, null, null, 'assets/head2.svg'),
-    // Tangan kiri
-    new Layer('Lengan atas kiri', 'assets/arm1.svg', null, null, null, null, null, null, null, null, 'assets/arm2.svg'),
-    new Layer('Lengan bawah kiri', 'assets/hand1.svg', null, null, null, null, null, null, null, null, 'assets/hand2.svg'),
-    new Layer('Tangan kiri', 'assets/finger1.svg', null, null, null, null, null, null, null, null, 'assets/finger2.svg'),
-    // Kaki kiri
-    new Layer('Paha atas kiri', 'assets/leg1.svg', null, null, null, null, null, null, null, null, 'assets/leg2.svg'),
-    new Layer('Kaki kiri', 'assets/foot1.svg', null, null, null, null, null, null, null, null, 'assets/foot2.svg'),
-    // lapisan //
-];
+const layers = [];
 
 /** 
  * Mendefinisikan koordinat awal ketika halaman dimuat 
@@ -86,11 +66,13 @@ function onlayerdrag(e) {
     let dx = px - initialX;
     let dy = py - initialY;
 
+    
     // Memperbarui koordinat elemen gambar
     selected.x += dx;
     selected.y += dy;
-
+    
     updateCoordInput();
+    
 
     // Memperbarui koordinat awal mouse
     initialX = px;
@@ -134,7 +116,6 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
-
 document.addEventListener('DOMContentLoaded', function() {
     // Pasang layer ke container ketika halaman selesai dimuat
     const container = document.querySelector('.container');
@@ -142,14 +123,14 @@ document.addEventListener('DOMContentLoaded', function() {
         layer.attach(container, onlayerdragstart);
     }
 
-    // Hapus seleksi ketika user mengklik elemen yang bukan layer
+    // Hapus seleksi ketika user mengklik elemen yang bukan layer atau panel1
     document.addEventListener('click', function(e) {
-        if(e.target.tagName !== 'HTML') {
-            return;
-        }
+        if(!selected || e.target.closest('.layer') || e.target.closest('#panel2') || e.target.id === 'splitter') return; // Memeriksa apakah yang diklik adalah objek layer, splitter atau panel
+        console.log(`Lapisan batal dipilih: ${selected.name}`);
         deselectLayer();
     });
 });
+
 
 /**
  * Panggil fungsi ini saat objek dipilih
@@ -180,6 +161,7 @@ function deselectLayer() {
 }
 
 function handleLayerName(value) {
+    if(!selected) return; // Tambahkan pengecekan disini
     selected.name = value;
 }
 
@@ -282,71 +264,29 @@ function addImage(event) {
     }
 }
 
-// Fungsi untuk menangani drag and drop
-function handleDrop(e) {
-    e.preventDefault();
-    const files = e.dataTransfer.files;
-    for (const file of files) {
-        const reader = new FileReader();
-        reader.onload = function(event) {
-            const layer = new Layer(file.name, event.target.result, null, {x: 0, y: 0});
-            layers.push(layer);
-            layer.attach(document.querySelector('.container'), onlayerdragstart);
-        };
-        reader.readAsDataURL(file);
+// layer //
+function copyLayer(layer) {
+    const copy = layer.cloneNode(true);
+    container.appendChild(copy);
+    if (layer.classList.contains('selected')) {
+        copy.classList.add('selected');
     }
 }
 
-function handleDragOver(e) {
-    e.preventDefault();
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-    // Existing code to attach layers
-    //...
-    // Add drag and drop event listeners
-    const container = document.querySelector('.container');
-    container.addEventListener('dragover', handleDragOver);
-    container.addEventListener('drop', handleDrop);
-});
-
-function groupLayers() {
-    const groupName = prompt('Nama grup:');
-    if (groupName) {
-        layers.forEach(layer => {
-            if (layer.selected) {
-                layer.group = groupName;
-            }
-        });
-    }
-}
-
-function ungroupLayers() {
-    layers.forEach(layer => {
-        if (layer.selected) {
-            layer.group = null;
+function deleteSelectedLayers() {
+    selectedLayers.forEach(layerObj => {
+        const parent = layerObj.element.parentNode;
+        layerObj.element.remove();
+        if (parent.classList.contains('layer-group') && parent.children.length === 0) {
+            parent.remove();
         }
     });
+    selectedLayers = [];
 }
 
-function deleteLayer() {
-    const selectedLayers = layers.filter(layer => layer.selected);
-    selectedLayers.forEach(layer => {
-        layer.element.remove();
-        const index = layers.indexOf(layer);
-        if (index > -1) {
-            layers.splice(index, 1);
-        }
+function changeSVGColor(color) {
+    const svgs = document.querySelectorAll('svg path'); // Adjust selector as necessary
+    svgs.forEach(svg => {
+        svg.setAttribute('fill', color);
     });
-}
-
-function changeLayerColor(color) {
-    const groupName = prompt('Nama grup:');
-    if (groupName) {
-        layers.forEach(layer => {
-            if (layer.group === groupName) {
-                layer.setColor(color);
-            }
-        });
-    }
 }

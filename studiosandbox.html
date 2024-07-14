@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title id="title">Studio Character - Gacha Design Studio</title>
+    <title id="title">Studio Sandbox - Gacha Design Studio</title>
     <link rel="icon" type="image/png" href="assets/icon.png">
     <link rel="stylesheet" type="text/css" href="css/poser/studiopose.css">
 </head>
@@ -20,7 +20,7 @@
 <label for="sensitivitySlider">Sensitivitas:</label>
 <input type="range" id="sensitivitySlider" min="0.1" max="100" step="0.1" value="0.1" oninput="handleSensitivity(this.value)">
 <input type="text" id="sensitivityInput" readonly>
-<button class="button" id="move-up" onmousedown="startMove('up')" ontouchstart="startMove('up')">🔼</button>
+        <button class="button" id="move-up" onmousedown="startMove('up')" ontouchstart="startMove('up')">🔼</button>
         <button class="button" id="move-down" onmousedown="startMove('down')" ontouchstart="startMove('down')">🔽</button>
         <button class="button" id="move-left" onmousedown="startMove('left')" ontouchstart="startMove('left')">◀️️</button>
         <button class="button" id="move-right" onmousedown="startMove('right')" ontouchstart="startMove('right')">▶️️</button>
@@ -68,10 +68,13 @@
         <input type="text" id="htmlFileName" placeholder="Nama file HTML">
 
         <br>
-        <button id="toggleSelectorBtn" onclick="toggleSelector()">Nyalakan Seleksi</button>
-        <button id="groupBtn" onclick="groupSelectedLayers()">Grupkan</button>
-        <button id="ungroupBtn" onclick="ungroupSelectedLayers()">Pisahkan</button>
-        <button id="deleteBtn" onclick="deleteSelectedLayer()">Hapus Lapisan</button>
+        <button id="toggleSelectorBtn">Nyalakan Seleksi</button>
+        <button class="button" onclick="groupLayers()">Grupkan</button>
+        <button class="button" onclick="ungroupLayers()">Pisahkan Grup</button>
+        <button class="button" onclick="deleteSelectedLayer()">Hapus Lapisan</button>
+        <input type="color" id="colorPicker" value="#000000" onchange="changeSVGColor(this.value)">
+
+
         
         <input type="file" id="svgUpload" accept=".svg" style="display:none" onchange="addSVG(event)">
         <button onclick="document.getElementById('svgUpload').click()">Tambahkan SVG</button>
@@ -83,23 +86,24 @@
         <input type="file" id="imageUpload" accept="image/*" style="display:none" onchange="addImage(event)">
         <button onclick="document.getElementById('imageUpload').click()">Tambahkan Sisipan</button>
 
-        
     </div>
 
     <!-- Garis splitter -->
     <div id="splitter"></div>
 
     <!-- Skrip -->
-    <script src="js/poser/layer.js"></script>
-    <script src="js/poser/studiopose.js"></script>
-    <script src="js/poser/splitter.js"></script>
-    <script src="js/poser/background.js"></script>
-    <script src="js/poser/opacity.js"></script>
-    <script src="js/poser/selector.js"></script>
-    <script src="js/poser/key.js"></script>
-    <script src="js/poser/sensivity.js"></script>
-    <script src="js/poser/upload.js"></script>
-    <script src="js/poser/upload2.js"></script>
+    <script src="js/sandbox/layer.js"></script>
+    <script src="js/sandbox/studiopose.js"></script>
+    <script src="js/sandbox/splitter.js"></script>
+    <script src="js/sandbox/background.js"></script>
+    <script src="js/sandbox/opacity.js"></script>
+    <script src="js/sandbox/selector.js"></script>
+    <script src="js/sandbox/key.js"></script>
+    <script src="js/sandbox/sensivity.js"></script>
+    <script src="js/sandbox/upload.js"></script>
+    <script src="js/sandbox/upload2.js"></script>
+    <script src="js/sandbox/group.js"></script>
+    <script src="js/sandbox/delete.js"></script>
     <!-- Skrip -->
 
 </body>
