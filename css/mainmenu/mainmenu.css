@@ -226,7 +226,7 @@ button:focus {
 
 .archanaberrydev img {
   position: absolute;
-  top: 30%;
+  top: 32%;
   left: -4%;
   transform: rotate(45deg);
   width: 30vmin;
@@ -243,7 +243,7 @@ button:focus {
     position: absolute;
     left: 50%;
     transform: translate(-50%, -50%);
-    top: 30%;
+    top: 26.5%;
 }
 
 .main-menu-bg {

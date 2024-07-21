@@ -1,5 +1,6 @@
 # Gacha Design Studio
 
+![Gacha Design Studio - Logo](archanaberry/gachadesignstudio.png)
 ![Gacha Design Studio](archanaberry/banner.png)
 
 # Tipe cabang (branch) repositori
