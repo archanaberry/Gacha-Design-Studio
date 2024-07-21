@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Popup on Back</title>
+    <script>
+        // Fungsi untuk menangani tombol kembali
+        function handleBackButton(event) {
+            event.preventDefault(); // Mencegah aksi default dari tombol kembali
+            if (confirm("Anda menekan kembali. Klik OK untuk keluar dari web.")) {
+                window.history.back(); // Kembali ke halaman sebelumnya jika user menekan OK
+            }
+        }
+
+        // Mendaftarkan event listener untuk tombol kembali
+        window.addEventListener("popstate", handleBackButton);
+        
+        // Menambahkan entri ke history agar tombol kembali bekerja
+        window.history.pushState(null, null, window.location.href);
+    </script>
+</head>
+<body>
+    <h1>Selamat datang di Halaman Web</h1>
+    <p>Tekan tombol kembali untuk melihat popup.</p>
+</body>
+</html>

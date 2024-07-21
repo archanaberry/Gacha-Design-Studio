@@ -1,27 +1,23 @@
+button, 
+button:active, 
+button:focus {
+  outline: none;
+};
+
 body {
     user-select: none; /* Mencegah pemilihan teks di luar input box */
 }
 
+img {
+    pointer-events: none;
+}
+
 /* Memblokir drag untuk semua elemen */
-        img, svg {
+img, svg {
             -webkit-user-drag: none;
             -moz-user-drag: none;
             -o-user-drag: none;
             user-drag: none;
-        }
-        
-button {
-            outline: none;
-        }
-        
-        button:focus {
-            outline: none;
-            box-shadow: none;
-        }
-        
-        button:active {
-            outline: none;
-            box-shadow: none;
         }
 
 /* Menghapus border dan background default dari tombol */
@@ -30,7 +26,14 @@ button {
   background: none;
   padding: 0;
   position: relative; /* agar bisa menempatkan teks secara relatif */
+  outline: none;
 }
+
+button:active, 
+button:focus {
+  outline: none;
+};
+
 /* Memuat font lokal */
 @font-face {
   font-family: "Comfortaa"; /* Nama font */
@@ -75,7 +78,7 @@ button {
 }
 
 .version-ft {
-  margin-left: 1rem;
+  margin-left: 0;
   font-size: 18px; /* besarkan ukuran font */
   color: black; /* ubah warna teks menjadi putih */
   font-family: "Comfortaa-Bold"; /* ganti font menjadi font lokal */

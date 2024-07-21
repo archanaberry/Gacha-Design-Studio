@@ -10,8 +10,10 @@
 <script src="js/mainmenu/mainmenu.js"></script>
 <script src="js/mainmenu/loading.js"></script>
 <script src="js/mainmenu/bgm.js"></script>
-<script src="js/menu/maintenanoce.js"></script>
+<script src="js/mainmenu/studioposeopen.js"></script>
 <script src="js/mainmenu/settings.js"></script>
+<script src="js/mainmenu/clickbutton.js"></script>
+<script src="js/mainmenu/volume.js"></script>
 </head>
 <body>
 
@@ -44,8 +46,8 @@
     </div>
 
     <img src="assets/ui/mainmenu.png" class="main-menu-bg" alt="Main Menu Background">
-    <p class="version-ft">Version 0.01_Alpha</p>
-
+        <div class="version-ft">Version 0.01_Alpha</div>
+        
     <div class="gachadesignstudio">
       <img src="assets/ui/gachadesignstudio.png" alt="Gacha Design Studio">
     </div>
@@ -61,7 +63,7 @@
           <img src="assets/ui/mainmenu/icon/icon4.svg" class="menuic1" alt="Setelan">
         </button>
         
-        <button class="button menu2" onclick="showMaintenance()">
+        <button class="button menu2" onclick="openStudio('Pilih studio untuk melanjutkan:\nPeringatan: Studio masih dalam tahap pengembangan mungkin belum sempurna dan stabil :v')">
           <img src="assets/ui/mainmenu/icon/icon0.svg" class="bg" alt="Ikon">
           <img src="assets/ui/mainmenu/icon/icon2.svg" class="menuic2" alt="Studio">
         </button>
@@ -94,6 +96,7 @@
 </div>
 
   <div id="maintenanceContainer"></div>
+  <div id="tapScreen"></div>
 
 </body>
 </html>

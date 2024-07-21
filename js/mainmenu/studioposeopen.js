@@ -1,5 +1,3 @@
-// maintenance.js
-
 document.addEventListener("DOMContentLoaded", function () {
     // Add CSS styles
     var styles = `
@@ -24,8 +22,8 @@ document.addEventListener("DOMContentLoaded", function () {
     .title {
         color: white;
         position: sticky;
-        font-family: "Comfortaa", sans-serif; /* ganti font menjadi font lokal */
-        -webkit-text-stroke: 1.5px #000; /* Stroke untuk outline */
+        font-family: "Comfortaa", sans-serif;
+        -webkit-text-stroke: 1.5px #000;
         white-space: pre-line;
     }
 
@@ -37,7 +35,7 @@ document.addEventListener("DOMContentLoaded", function () {
         max-height: 80%;
     }
 
-    .header {
+    .header2 {
         background-color: #5E6CC9;
         padding: 20px;
         justify-content: left;
@@ -55,10 +53,9 @@ document.addEventListener("DOMContentLoaded", function () {
         justify-content: space-between;
         background: none;
         position: absolute;
-        left: 100%;
-        transform: translateX(-160%);
-        border: none;
-        font-size: 5rem;
+        right: 10px;
+        top: 10px;
+        font-size: 1.5rem;
         cursor: pointer;
         color: white;
     }
@@ -71,7 +68,7 @@ document.addEventListener("DOMContentLoaded", function () {
         padding: 5%;
     }
  
-    .ok-button {
+    .studio-button {
         background-color: #5E6CC9;
         border: 3px solid #000;
         font-size: 1rem;
@@ -80,10 +77,9 @@ document.addEventListener("DOMContentLoaded", function () {
         border-radius: 10px;
         cursor: pointer;
         display: block;
-        margin: 0 auto;
-        font-family: "Comfortaa", sans-serif; /* ganti font menjadi font lokal */
-        -webkit-text-stroke: 1.5px #fff; /* Stroke untuk outline */
-        bottom: 20px;
+        margin: 20px auto;
+        font-family: "Comfortaa", sans-serif;
+        -webkit-text-stroke: 1.5px #fff;
     }
 
     #overlay {
@@ -97,7 +93,7 @@ document.addEventListener("DOMContentLoaded", function () {
         z-index: 999;
     }
 
-    #maintenancePopup {
+    #studioPopup {
         display: none;
         position: fixed;
         top: 50%;
@@ -105,7 +101,7 @@ document.addEventListener("DOMContentLoaded", function () {
         z-index: 1000;
     }
 
-    .resizer {
+    .resizer2 {
         width: 10px;
         height: 10px;
         position: absolute;
@@ -125,27 +121,26 @@ document.addEventListener("DOMContentLoaded", function () {
     overlay.id = "overlay";
     document.body.appendChild(overlay);
 
-    var maintenancePopup = `
-    <div id="maintenancePopup" class="container background shadow">
-        <div class="header" id="header">
+    var studioPopup = `
+    <div id="studioPopup" class="container background shadow">
+        <div class="header2" id="header2">
             <h2 class="title">Gacha Design Studio</h2>
-            <button class="close-button" onclick="closeMaintenancePopup()">&times;</button>
+            <button class="close-button" onclick="closeStudioPopup()">&times;</button>
         </div>
-        <div class="content message" id="maintenanceMessage"></div>
-        <div class="resizer" id="resizer"></div>
-        <button class="ok-button agreebutton" onclick="closeMaintenancePopup()">OK</button>
+        <div class="content message" id="studioMessage"></div>
+        <div class="resizer2" id="resizer2"></div>
+        <button class="studio-button" onclick="openPoser()">Buka studio pose</button>
+        <button class="studio-button" onclick="openSandbox()">Buka studio kotak pasir</button>
     </div>
     `;
 
-    document.body.insertAdjacentHTML('beforeend', maintenancePopup);
+    document.body.insertAdjacentHTML('beforeend', studioPopup);
 
     // Function definitions
-    window.showMaintenance = function(message) {
-        console.log('Pesan pemeliharaan:', message); // Console log for debugging
-
+    window.openStudio = function(message) {
         var overlay = document.getElementById('overlay');
-        var popup = document.getElementById('maintenancePopup');
-        var messageDiv = document.getElementById('maintenanceMessage');
+        var popup = document.getElementById('studioPopup');
+        var messageDiv = document.getElementById('studioMessage');
 
         messageDiv.textContent = message;
 
@@ -154,8 +149,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
         centerPopup(popup);
 
-        var header = document.getElementById("header");
-        var resizer = document.getElementById("resizer");
+        var header2 = document.getElementById("header2");
+        var resizer2 = document.getElementById("resizer2");
         var container = popup;
         var offsetX, offsetY;
         var isDragging = false;
@@ -253,15 +248,34 @@ document.addEventListener("DOMContentLoaded", function () {
             document.removeEventListener("touchend", stopResizeTouch);
         }
 
-        header.addEventListener("mousedown", startDrag);
-        header.addEventListener("touchstart", startDragTouch);
-        resizer.addEventListener("mousedown", startResize);
-        resizer.addEventListener("touchstart", startResizeTouch);
+        header2.addEventListener("mousedown", startDrag);
+        header2.addEventListener("touchstart", startDragTouch);
+        resizer2.addEventListener("mousedown", startResize);
+        resizer2.addEventListener("touchstart", startResizeTouch);
     }
 
-    window.closeMaintenancePopup = function() {
-        document.getElementById('maintenancePopup').style.display = 'none';
-        document.getElementById('overlay').style.display = 'none';
+    window.closeStudioPopup = function() {
+        fadeOut(document.getElementById('studioPopup'), 500, function() {
+            document.getElementById('studioPopup').style.display = 'none';
+            fadeOut(document.getElementById('overlay'), 500, function() {
+                document.getElementById('overlay').style.display = 'none';
+                document.body.removeChild(document.querySelector('mainmenu.html'));
+            });
+        });
+    }
+
+    function fadeOut(element, duration, callback) {
+        var op = 1;
+        var timer = setInterval(function () {
+            if (op <= 0.1){
+                clearInterval(timer);
+                element.style.display = 'none';
+                if (callback) callback();
+            }
+            element.style.opacity = op;
+            element.style.filter = 'alpha(opacity=' + op * 100 + ")";
+            op -= op * 0.1;
+        }, duration / 50);
     }
 
     function centerPopup(popup) {
@@ -270,3 +284,19 @@ document.addEventListener("DOMContentLoaded", function () {
         popup.style.height = 'auto';
     }
 });
+
+// Function to open Pose Studio
+function openPoser() {
+    closeStudioPopup();
+    setTimeout(function() {
+        window.location.href = 'studiopose.html';
+    }, 500); // Adjust the timeout as needed
+}
+
+// Function to open Sandbox Studio
+function openSandbox() {
+    closeStudioPopup();
+    setTimeout(function() {
+        window.location.href = 'studiosandbox.html';
+    }, 500); // Adjust the timeout as needed
+}

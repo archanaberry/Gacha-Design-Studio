@@ -204,6 +204,35 @@ document.addEventListener("DOMContentLoaded", function () {
         right: 0;
         cursor: se-resize;
     }
+    
+    .bgm-controls {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 20px;
+    }
+
+    .bgm-controls button {
+        background-color: #5E6CC9;
+        border: 1px;
+        border-radius:10px;
+        color: white;
+        padding: 10px;
+        font-size: 1rem;
+        cursor: pointer;
+    }
+
+    .bgm-controls button:hover {
+        background-color: #4a5ba7;
+    }
+
+    .bgm-controls #bgmTitle {
+        margin: 0 20px;
+        font-family: "Comfortaa", sans-serif;
+        font-size: 1.2rem;
+        text-align: center;
+        flex-grow: 1;
+    }
     `;
 
     var styleSheet = document.createElement("style");
@@ -252,10 +281,15 @@ document.addEventListener("DOMContentLoaded", function () {
                     <input type="range" id="uiVolumeSlider" class="custom-slider" min="0" max="100" value="50">
                     <span id="uiVolumePercentage" class="percentage">50%</span>
                 </div>
+                <div id="bgmControls" class="bgm-controls">
+        <button id="prevBGM">Previous</button>
+        <span id="bgmTitle">Loading...</span>
+        <button id="nextBGM">Next</button>
+    </div>
             </div>
         </div>
         <div class="resizer1" id="resizer1"></div>
-        <button class="ok-button" onclick="closeSettingsPopup()">OK</button>
+        <button class="ok-button closebutton" onclick="closeSettingsPopup()">OK</button>
     </div>
     `;
 
@@ -398,4 +432,31 @@ document.addEventListener("DOMContentLoaded", function () {
         var percentageSpan = slider.nextElementSibling;
         percentageSpan.textContent = percentage;
     }
+
+    // Add event listeners to volume sliders
+    document.getElementById("bgmVolumeSlider").addEventListener("input", updateBGMVolume);
+    document.getElementById("uiVolumeSlider").addEventListener("input", updateUIVolume);
+
+function updateBGMVolume() {
+    var bgmVolume = document.getElementById("bgmVolumeSlider").value / 100;
+    localStorage.setItem("bgmVolume", bgmVolume);
+    var event = new CustomEvent("volumeChange", { detail: { bgmVolume: bgmVolume } });
+    document.dispatchEvent(event);
+}
+
+function updateUIVolume() {
+    var uiVolume = document.getElementById("uiVolumeSlider").value / 100;
+    localStorage.setItem("uiVolume", uiVolume);
+    var event = new CustomEvent("volumeChange", { detail: { uiVolume: uiVolume } });
+    document.dispatchEvent(event);
+}
+
+    // Add event listeners for buttons
+    document.getElementById("prevBGM").addEventListener("click", function() {
+        document.dispatchEvent(new CustomEvent("changeBGM", { detail: { direction: 'prev' } }));
+    });
+
+    document.getElementById("nextBGM").addEventListener("click", function() {
+        document.dispatchEvent(new CustomEvent("changeBGM", { detail: { direction: 'next' } }));
+    });
 });

@@ -1,77 +1,126 @@
-document.addEventListener("DOMContentLoaded", function() {
-  // Daftar nama file lagu (tanpa ekstensi)
-  var bgmList = [
-    "menu0",
-    "menu1",
-    "menu2",
-    "menu3",
-    "menu4",
-    "menu5",
-    "menu6"
-  ];
+/****************************************************************/
+//                                                              //  
+//  -------------------Gacha Design Studio--------------------  //
+//  Created by: Archana Berry                                   //
+//  Assets credits: Lunime, OGL (Open Game License), MIT CC     //
+//  Version resource: v0.001_alpha                              //
+//  File: bgm.js                                                //
+//  Type: module[music]                                         //
+//  Desc: Background Mainmenu Music with Listing                //
+//                                                              //
+//  ----------------------------------------------------------  //
+//                                                              //
+//  ---- Do not use this as a gacha design game as        ----  //
+//  ---- template, or modifying it to make a other        ----  //
+//  ---- version, than this without Archana Berry's       ----  //
+//  ---- permission's, except to help with repairs or     ----  //
+//  ---- updates art assets and etc with contributing     ----  //
+//                                                              //
+//**************************************************************//
+// Please patient for release Gacha Design Studio in Playstore UwU
 
-  // Acak urutan lagu
-  shuffle(bgmList);
+// bgm.js
+
+var bgmList = [
+    ["menu0", "Gacha Life - Home Screen BGM"],
+    ["menu1", "Pocket Chibi - Lunime"],
+    ["menu2", "Gacha Club2"],
+    ["menu3", "Gacha Resort"],
+    ["menu4", "Gacha Star"],
+    ["menu5", "Gacha Club"],
+    ["menu6", "Gacha Life2"],
+    ["menu7", "「Kimi no Toriko (Summertime)」 - Music Box"]
+];
 
   var currentBGMIndex = 0;
-  var bgmAudio = new Audio("assets/audio/music/mainmenu/" + bgmList[currentBGMIndex] + ".mp3");
+  var bgmAudio = new Audio("assets/audio/music/mainmenu/" + bgmList[currentBGMIndex][0] + ".mp3");
+  bgmAudio.volume = localStorage.getItem("bgmVolume") || 0.5;
 
-  // Fungsi untuk memutar lagu berikutnya
-  function playNextBGM() {
-    currentBGMIndex = (currentBGMIndex + 1) % bgmList.length;
-    bgmAudio.src = "assets/audio/music/mainmenu/" + bgmList[currentBGMIndex] + ".mp3";
-    bgmAudio.play();
-  }
+    // Update BGM volume when settings change
+    document.addEventListener("volumeChange", function(event) {
+        if (event.detail.bgmVolume !== undefined) {
+            bgmAudio.volume = event.detail.bgmVolume;
+        }
+    });
 
-  // Event listener untuk memainkan lagu saat halaman diklik pertama kali
-  var firstClick = true;
-  document.body.addEventListener("click", function(event) {
-    if (firstClick) {
-      bgmAudio.play();
-      firstClick = false;
-    } else if (bgmAudio.paused) {
-      bgmAudio.play();
+function setupAudio() {
+    bgmAudio.src = "assets/audio/music/mainmenu/" + bgmList[currentBGMIndex][0] + ".mp3";
+    bgmAudio.loop = true;
+    bgmAudio.volume = localStorage.getItem("bgmVolume") || 0.5;
+}
+
+function playNextBGM() {
+    currentBGMIndex = (currentBGMIndex + 1 % bgmList.length) % bgmList.length;
+    setupAudio();
+    bgmAudio.play().catch(error => console.log("Playback error:", error));
+    updateBGMTitel();
+}
+
+function playPrevBGM() {
+    currentBGMIndex = (currentBGMIndex - 1 + bgmList.length) % bgmList.length;
+    setupAudio();
+    bgmAudio.play().catch(error => console.log("Playback error:", error));
+    updateBGMTitel();
+}
+
+function fetchMusicBGM() {
+    return bgmList[currentBGMIndex][1];
+}
+
+function updateBGMTitel() {
+    var titleElement = document.getElementById('bgmTitle');
+    if (titleElement) {
+        titleElement.textContent = fetchMusicBGM();
     }
-  });
+}
 
-  // Event listener untuk memainkan ulang lagu saat halaman di-refresh
-  window.addEventListener("beforeunload", function(event) {
-    shuffle(bgmList);
-    currentBGMIndex = 0;
-    bgmAudio.src = "assets/audio/music/mainmenu/" + bgmList[currentBGMIndex] + ".mp3";
-    bgmAudio.play();
-  });
-
-  // Event listener untuk memainkan lagu berikutnya saat lagu selesai
-  bgmAudio.addEventListener("ended", playNextBGM);
-
-  // Event listener untuk memantau audio lain yang sedang diputar
-  document.addEventListener("visibilitychange", function() {
-    if (document.visibilityState === 'visible' && bgmAudio.paused && !firstClick) {
-      bgmAudio.play();
-    }
-  });
-
-  // Mulai memutar lagu pertama
-  bgmAudio.loop = true;
-  bgmAudio.play();
-
-  // Fungsi untuk mengacak urutan array
-  function shuffle(array) {
+function shuffle(array) {
     var currentIndex = array.length, temporaryValue, randomIndex;
-
-    // Selama masih ada elemen untuk diacak
     while (0 !== currentIndex) {
-      // Ambil elemen tersisa
-      randomIndex = Math.floor(Math.random() * currentIndex);
-      currentIndex -= 1;
+        randomIndex = Math.floor(Math.random() * currentIndex);
+        currentIndex -= 1;
+        temporaryValue = array[currentIndex];
+        array[currentIndex] = array[randomIndex];
+        array[randomIndex] = temporaryValue;
+    }
+    return array;
+}
 
-      // Tukar dengan elemen saat ini
-      temporaryValue = array[currentIndex];
-      array[currentIndex] = array[randomIndex];
-      array[randomIndex] = temporaryValue;
+document.addEventListener("DOMContentLoaded", function() {
+    if (!localStorage.getItem("bgmList")) {
+        // Shuffle and save the list in localStorage if not already done
+        var shuffledList = shuffle([...bgmList]);
+        localStorage.setItem("bgmList", JSON.stringify(shuffledList));
     }
 
-    return array;
-  }
+    bgmList = JSON.parse(localStorage.getItem("bgmList"));
+    currentBGMIndex = 0; // Start from the beginning of the shuffled list
+    setupAudio();
+
+    document.body.addEventListener("click", function() {
+        bgmAudio.play().catch(error => console.log("Playback error:", error));
+    });
+
+    window.addEventListener("beforeunload", function() {
+        // Save the shuffled list to localStorage
+        localStorage.setItem("bgmList", JSON.stringify(bgmList));
+    });
+
+    bgmAudio.addEventListener("ended", playNextBGM);
+
+    document.addEventListener("visibilitychange", function() {
+        if (document.visibilityState === 'visible' && bgmAudio.paused) {
+            bgmAudio.play().catch(error => console.log("Playback error:", error));
+        }
+    });
+
+    document.addEventListener("changeBGM", function(event) {
+        if (event.detail.direction === 'next') {
+            playNextBGM();
+        } else if (event.detail.direction === 'prev') {
+            playPrevBGM();
+        }
+    });
+
+    updateBGMTitel(); // Initial title update
 });
