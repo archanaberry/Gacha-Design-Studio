@@ -118,6 +118,12 @@ PC/Laptop 1366x768 (Landscape mode)
 Diperbarui
 ![Gacha Life 2](archanaberry/screenshot1.png)
 
+* Mode Studio Sandbox (New Arrived)
+1. Tablet/PC 1200x2000 (Potrait mode)
+![Gacha Stduio](archanaberry/doc1.png)
+2. Tablet/PC 2000x1200 (landscape mode)
+![Gacha Studio](archanaberry/doc2.png)
+
 ## Bahasa pemrograman yang dipakai
 <img src="archanaberry/HTML.png" alt="HTML versi 5" width="192" height="108">
 <img src="archanaberry/JavaScript.png" alt="JavaScript Murni" width="503.6" height="140.8">
