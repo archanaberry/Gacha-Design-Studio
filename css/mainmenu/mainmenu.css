@@ -17,7 +17,7 @@ img, svg {
             -webkit-user-drag: none;
             -moz-user-drag: none;
             -o-user-drag: none;
-            user-drag: none;
+            -user-drag: none;
         }
 
 /* Menghapus border dan background default dari tombol */
