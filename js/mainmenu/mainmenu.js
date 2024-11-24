@@ -1,9 +1,8 @@
-// maintenance.js
-
-document.addEventListener("DOMContentLoaded", function () {
-    // Add CSS styles
-    var styles = `
-    .container {
+document.addEventListener("DOMContentLoaded", () => {
+  // CSS styles for the maintenance popup
+  const addStyles = () => {
+    const styles = `
+      .container {
         width: 50%;
         height: 50%;
         border: 0px solid #ccc;
@@ -11,67 +10,61 @@ document.addEventListener("DOMContentLoaded", function () {
         border-radius: 13px;
         cursor: move;
         overflow: hidden;
-        box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.75);
+        box-shadow: 0px 0px 10px rgba(0,0,0,0.75);
         background-color: white;
-    }
+      }
 
-    .background {
+      .background {
         background-image: url('bg.png');
         background-size: cover;
-        background-color: white;
-    }
+      }
 
-    .title {
+      .title {
         color: white;
         position: sticky;
-        font-family: "Comfortaa", sans-serif; /* ganti font menjadi font lokal */
-        -webkit-text-stroke: 1.5px #000; /* Stroke untuk outline */
+        font-family: "Comfortaa", sans-serif;
+        -webkit-text-stroke: 1.5px #000;
         white-space: pre-line;
-    }
+      }
 
-    .message {
+      .message {
         color: black;
         overflow-y: auto;
         user-select: text;
         min-height: 15%;
         max-height: 80%;
-    }
+      }
 
-    .header {
+      .header {
         background-color: #5E6CC9;
         padding: 20px;
-        justify-content: left;
-        top: 0;
         cursor: move;
         user-select: none;
         display: flex;
         align-items: center;
         border-bottom: 1px solid #ccc;
         width: 100%;
-    }
+      }
 
-    .close-button {
-        border: none;
-        justify-content: space-between;
+      .close-button {
         background: none;
         position: absolute;
         left: 100%;
         transform: translateX(-160%);
-        border: none;
         font-size: 5rem;
         cursor: pointer;
         color: white;
-    }
+      }
 
-    .shadow {
-        box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.75);
-    }
+      .shadow {
+        box-shadow: 0px 0px 10px rgba(0,0,0,0.75);
+      }
 
-    .content {
+      .content {
         padding: 5%;
-    }
- 
-    .ok-button {
+      }
+
+      .ok-button {
         background-color: #5E6CC9;
         border: 3px solid #000;
         font-size: 1rem;
@@ -81,12 +74,12 @@ document.addEventListener("DOMContentLoaded", function () {
         cursor: pointer;
         display: block;
         margin: 0 auto;
-        font-family: "Comfortaa", sans-serif; /* ganti font menjadi font lokal */
-        -webkit-text-stroke: 1.5px #fff; /* Stroke untuk outline */
+        font-family: "Comfortaa", sans-serif;
+        -webkit-text-stroke: 1.5px #fff;
         bottom: 20px;
-    }
+      }
 
-    #overlay {
+      #overlay {
         display: none;
         position: fixed;
         top: 0;
@@ -95,178 +88,147 @@ document.addEventListener("DOMContentLoaded", function () {
         height: 100%;
         background-color: rgba(0,0,0,0.5);
         z-index: 999;
-    }
+      }
 
-    #maintenancePopup {
+      #maintenancePopup {
         display: none;
         position: fixed;
         top: 50%;
         left: 50%;
         z-index: 1000;
-    }
+      }
 
-    .resizer {
+      .resizer {
         width: 10px;
         height: 10px;
         position: absolute;
         bottom: 0;
         right: 0;
         cursor: se-resize;
-    }
+      }
     `;
-
-    var styleSheet = document.createElement("style");
+    const styleSheet = document.createElement("style");
     styleSheet.type = "text/css";
     styleSheet.innerText = styles;
     document.head.appendChild(styleSheet);
+  };
 
-    // Add HTML elements
-    var overlay = document.createElement("div");
+  // HTML structure for maintenance popup
+  const addPopupHTML = () => {
+    const overlay = document.createElement("div");
     overlay.id = "overlay";
     document.body.appendChild(overlay);
 
-    var maintenancePopup = `
-    <div id="maintenancePopup" class="container background shadow">
+    const maintenancePopup = `
+      <div id="maintenancePopup" class="container background shadow">
         <div class="header" id="header">
-            <h2 class="title">Gacha Design Studio</h2>
-            <button class="close-button" onclick="closeMaintenancePopup()">&times;</button>
+          <h2 class="title">Gacha Design Studio</h2>
+          <button class="close-button" onclick="closeMaintenancePopup()">&times;</button>
         </div>
         <div class="content message" id="maintenanceMessage"></div>
         <div class="resizer" id="resizer"></div>
         <button class="ok-button agreebutton" onclick="closeMaintenancePopup()">OK</button>
-    </div>
+      </div>
     `;
-
     document.body.insertAdjacentHTML('beforeend', maintenancePopup);
+  };
 
-    // Function definitions
-    window.showMaintenance = function(message) {
-        console.log('Pesan pemeliharaan:', message); // Console log for debugging
+  // Center the popup in the screen
+  const centerPopup = (popup) => {
+    popup.style.left = '25%';
+    popup.style.top = '25%';
+    popup.style.height = 'auto';
+  };
 
-        var overlay = document.getElementById('overlay');
-        var popup = document.getElementById('maintenancePopup');
-        var messageDiv = document.getElementById('maintenanceMessage');
+  // Drag functionality
+  const enableDrag = (header, container) => {
+    let offsetX, offsetY, isDragging = false;
 
-        messageDiv.textContent = message;
+    const startDrag = (e) => {
+      e.preventDefault();
+      isDragging = true;
+      offsetX = e.clientX - container.offsetLeft;
+      offsetY = e.clientY - container.offsetTop;
+      document.addEventListener("mousemove", drag);
+      document.addEventListener("mouseup", stopDrag);
+    };
 
-        overlay.style.display = 'block';
-        popup.style.display = 'block';
+    const drag = (e) => {
+      e.preventDefault();
+      if (!isDragging) return;
+      container.style.left = `${e.clientX - offsetX}px`;
+      container.style.top = `${e.clientY - offsetY}px`;
+    };
 
-        centerPopup(popup);
+    const stopDrag = () => {
+      isDragging = false;
+      document.removeEventListener("mousemove", drag);
+      document.removeEventListener("mouseup", stopDrag);
+    };
 
-        var header = document.getElementById("header");
-        var resizer = document.getElementById("resizer");
-        var container = popup;
-        var offsetX, offsetY;
-        var isDragging = false;
-        var isResizing = false;
+    header.addEventListener("mousedown", startDrag);
+  };
 
-        function startDrag(e) {
-            e.preventDefault();
-            isDragging = true;
-            offsetX = e.clientX - container.offsetLeft;
-            offsetY = e.clientY - container.offsetTop;
-            document.addEventListener("mousemove", drag);
-            document.addEventListener("mouseup", stopDrag);
-        }
+  // Resize functionality
+  const enableResize = (resizer, container) => {
+    let offsetX, offsetY, isResizing = false;
 
-        function startDragTouch(e) {
-            e.preventDefault();
-            isDragging = true;
-            var touch = e.touches[0];
-            offsetX = touch.clientX - container.offsetLeft;
-            offsetY = touch.clientY - container.offsetTop;
-            document.addEventListener("touchmove", dragTouch);
-            document.addEventListener("touchend", stopDragTouch);
-        }
+    const startResize = (e) => {
+      e.preventDefault();
+      isResizing = true;
+      offsetX = e.clientX - container.offsetWidth;
+      offsetY = e.clientY - container.offsetHeight;
+      document.addEventListener("mousemove", resize);
+      document.addEventListener("mouseup", stopResize);
+    };
 
-        function drag(e) {
-            e.preventDefault();
-            if (!isDragging) return;
-            container.style.left = e.clientX - offsetX + "px";
-            container.style.top = e.clientY - offsetY + "px";
-        }
+    const resize = (e) => {
+      e.preventDefault();
+      if (!isResizing) return;
+      container.style.width = `${e.clientX - offsetX}px`;
+      container.style.height = `${e.clientY - offsetY}px`;
+    };
 
-        function dragTouch(e) {
-            e.preventDefault();
-            if (!isDragging) return;
-            var touch = e.touches[0];
-            container.style.left = touch.clientX - offsetX + "px";
-            container.style.top = touch.clientY - offsetY + "px";
-        }
+    const stopResize = () => {
+      isResizing = false;
+      document.removeEventListener("mousemove", resize);
+      document.removeEventListener("mouseup", stopResize);
+    };
 
-        function stopDrag() {
-            isDragging = false;
-            document.removeEventListener("mousemove", drag);
-            document.removeEventListener("mouseup", stopDrag);
-        }
+    resizer.addEventListener("mousedown", startResize);
+  };
 
-        function stopDragTouch() {
-            isDragging = false;
-            document.removeEventListener("touchmove", dragTouch);
-            document.removeEventListener("touchend", stopDragTouch);
-        }
+  // Show the maintenance popup
+  window.showMaintenance = (message) => {
+    console.log('Pesan pemeliharaan:', message); // Console log for debugging
 
-        function startResize(e) {
-            e.preventDefault();
-            isResizing = true;
-            offsetX = e.clientX - container.offsetWidth;
-            offsetY = e.clientY - container.offsetHeight;
-            document.addEventListener("mousemove", resize);
-            document.addEventListener("mouseup", stopResize);
-        }
+    const overlay = document.getElementById('overlay');
+    const popup = document.getElementById('maintenancePopup');
+    const messageDiv = document.getElementById('maintenanceMessage');
+    const header = document.getElementById("header");
+    const resizer = document.getElementById("resizer");
 
-        function startResizeTouch(e) {
-            e.preventDefault();
-            isResizing = true;
-            var touch = e.touches[0];
-            offsetX = touch.clientX - container.offsetWidth;
-            offsetY = touch.clientY - container.offsetHeight;
-            document.addEventListener("touchmove", resizeTouch);
-            document.addEventListener("touchend", stopResizeTouch);
-        }
+    messageDiv.textContent = message;
 
-        function resize(e) {
-            e.preventDefault();
-            if (!isResizing) return;
-            container.style.width = e.clientX - offsetX + "px";
-            container.style.height = e.clientY - offsetY + "px";
-        }
+    overlay.style.display = 'block';
+    popup.style.display = 'block';
+    centerPopup(popup);
 
-        function resizeTouch(e) {
-            e.preventDefault();
-            if (!isResizing) return;
-            var touch = e.touches[0];
-            container.style.width = touch.clientX - offsetX + "px";
-            container.style.height = touch.clientY - offsetY + "px";
-        }
+    enableDrag(header, popup);
+    enableResize(resizer, popup);
+  };
 
-        function stopResize() {
-            isResizing = false;
-            document.removeEventListener("mousemove", resize);
-            document.removeEventListener("mouseup", stopResize);
-        }
+  // Close the maintenance popup
+  window.closeMaintenancePopup = () => {
+    document.getElementById('maintenancePopup').style.display = 'none';
+    document.getElementById('overlay').style.display = 'none';
+  };
 
-        function stopResizeTouch() {
-            isResizing = false;
-            document.removeEventListener("touchmove", resizeTouch);
-            document.removeEventListener("touchend", stopResizeTouch);
-        }
+  // Initialize
+  const initialize = () => {
+    addStyles();
+    addPopupHTML();
+  };
 
-        header.addEventListener("mousedown", startDrag);
-        header.addEventListener("touchstart", startDragTouch);
-        resizer.addEventListener("mousedown", startResize);
-        resizer.addEventListener("touchstart", startResizeTouch);
-    }
-
-    window.closeMaintenancePopup = function() {
-        document.getElementById('maintenancePopup').style.display = 'none';
-        document.getElementById('overlay').style.display = 'none';
-    }
-
-    function centerPopup(popup) {
-        popup.style.left = '25%';
-        popup.style.top = '25%';
-        popup.style.height = 'auto';
-    }
+  initialize();
 });
