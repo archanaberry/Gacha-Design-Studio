@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title id="title">Studio Character - Gacha Design Studio</title>
     <link rel="icon" type="image/png" href="assets/icon.png">
-    <link rel="stylesheet" type="text/css" href="css/poser/studiopose.css">
 </head>
 <body>
 
@@ -40,24 +39,24 @@
         <input type="range" id="opacitySlider2" class="opacitySlider" min="0" max="100" value="100" oninput="setOpacity('panel2')">
         <input type="text" id="opacityInput2" class="opacityInput" readonly>
 
-        <label for="layerName">Lapisan:</label>
+        <label for="layerName">Layer:</label>
         <input type="text" id="layerName" oninput="handleLayerName(this.value)">
         <label for="xCoord">Posisi X:</label>
         <input type="text" id="xCoord" oninput="handleXCoord(this.value)">
         <label for="yCoord">Posisi Y:</label>
         <input type="text" id="yCoord" oninput="handleYCoord(this.value)">
         <label for="width">Lebar:</label>
-        <input type="text" id="width" placeholder="Lebar">
+        <input type="number" id="width" placeholder="Lebar" oninput="updateLayerSize('width', this.value)">
         <label for="height">Tinggi:</label>
-        <input type="text" id="height" placeholder="Tinggi">
-        <label for="zoom">Zoom:</label>
-        <input type="text" id="zoom" oninput="handleZoom(this.value)">
+        <input type="number" id="height" placeholder="Tinggi" oninput="updateLayerSize('height', this.value)">        
+        <label for="scale">Skala:</label>
+        <input type="text" id="scale" oninput="handleScale(this.value)">
         <label for="flipHorizontal">Flip Horizontal:</label>
         <input type="checkbox" id="flipHorizontal" onchange="handleFlipHorizontal(this.checked)">
-        <label for="flipVertical">Flip Vertikal:</label>
+        <label for="flipVertical">Flip Vertical:</label>
         <input type="checkbox" id="flipVertical" onchange="handleFlipVertical(this.checked)">
         <br>
-        <label for="rotationControl">Rotasi:</label>
+        <label for="rotationControl">Rotate:</label>
         <input type="range" id="rotationControl" min="0" max="360" value="0" oninput="handleRotation(this.value)">
         <div id="rotationIndicator">0</div>
         <button onclick="moveLayerUp()">Naikkan</button>
@@ -66,9 +65,9 @@
         <input type="text" id="svgFileName" placeholder="Nama file SVG">
         <button onclick="exportAsHTML()">Ekspor sebagai HTML</button>
         <input type="text" id="htmlFileName" placeholder="Nama file HTML">
-
+        
         <br>
-        <button id="toggleSelectorBtn" onclick="toggleSelector()">Nyalakan Seleksi</button>
+        <button id="toggleSelectorBtn">Nyalakan Seleksi</button>
         <button id="groupBtn" onclick="groupSelectedLayers()">Grupkan</button>
         <button id="ungroupBtn" onclick="ungroupSelectedLayers()">Pisahkan</button>
         <button id="deleteBtn" onclick="deleteSelectedLayer()">Hapus Lapisan</button>
@@ -77,12 +76,6 @@
         <button onclick="document.getElementById('svgUpload').click()">Tambahkan SVG</button>
         <input type="file" id="imageUpload" accept="image/*" style="display:none" onchange="addImage(event)">
         <button onclick="document.getElementById('imageUpload').click()">Tambahkan Sisipan</button>
-
-        <input type="file" id="svgUpload" accept=".svg" multiple style="display:none" onchange="addSVG(event)">
-        <button onclick="document.getElementById('svgUpload').click()">Tambahkan SVG</button>
-        <input type="file" id="imageUpload" accept="image/*" style="display:none" onchange="addImage(event)">
-        <button onclick="document.getElementById('imageUpload').click()">Tambahkan Sisipan</button>
-
         
     </div>
 
@@ -90,6 +83,7 @@
     <div id="splitter"></div>
 
     <!-- Skrip -->
+    <script src="js/mainmenu/studiopose.js"></script>
     <script src="js/poser/layer.js"></script>
     <script src="js/poser/studiopose.js"></script>
     <script src="js/poser/splitter.js"></script>
@@ -99,7 +93,6 @@
     <script src="js/poser/key.js"></script>
     <script src="js/poser/sensivity.js"></script>
     <script src="js/poser/upload.js"></script>
-    <script src="js/poser/upload2.js"></script>
     <!-- Skrip -->
 
 </body>

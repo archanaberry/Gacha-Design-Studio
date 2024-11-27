@@ -1,8 +1,40 @@
-// settings.js
+/****************************************************************/
+//                                                              //
+//  -------------------Gacha Design Studio--------------------  //
+//  Created by: Archana Berry                                   //
+//  Assets credits: Lunime, OGL (Open Game License), MIT CC     //
+//  Version resource: v0.001_alpha                              //
+//  File: settings.js                                           //
+//  Type: module[settings]                                      //
+//  Desc: Setting ui window in mainmenu                         //
+//                                                              //
+//  ----------------------------------------------------------  //
+//                                                              //
+//  ---- Do not use this as a gacha design game as        ----  //
+//  ---- template, or modifying it to make a other        ----  //
+//  ---- version, than this without Archana Berry's       ----  //
+//  ---- permission's, except to help with repairs or     ----  //
+//  ---- updates art assets and etc with contributing     ----  //
+//                                                              //
+//**************************************************************//
+// Please patient for release Gacha Design Studio in Playstore UwU
 
+// settings.js
 document.addEventListener("DOMContentLoaded", function () {
     // Add CSS styles
     var styles = `
+/* Memuat font lokal */
+@font-face {
+  font-family: "Comfortaa"; /* Nama font */
+  src: url("../../assets/font/Comfortaa-Regular.ttf") format("truetype"); /* Lokasi font */
+}
+
+/* Memuat font lokal */
+@font-face {
+  font-family: "Comfortaa-Bold"; /* Nama font */
+  src: url("../../assets/font/Comfortaa-Bold.ttf") format("truetype"); /* Lokasi font */
+}
+    
     .container {
         width: 50%;
         height: 50%;
@@ -185,7 +217,7 @@ document.addEventListener("DOMContentLoaded", function () {
         width: 100%;
         height: 100%;
         background-color: rgba(0,0,0,0.5);
-        z-index: 999;
+        z-index: 1000;
     }
 
     #settingsPopup {

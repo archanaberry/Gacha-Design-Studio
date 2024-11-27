@@ -1,3 +1,25 @@
+/****************************************************************/
+//                                                              //
+//  -------------------Gacha Design Studio--------------------  //
+//  Created by: Archana Berry                                   //
+//  Assets credits: Lunime, OGL (Open Game License), MIT CC     //
+//  Version resource: v0.001_alpha                              //
+//  File: clickbutton.js                                        //
+//  Type: module[audio]                                         //
+//  Desc: Clicking sound while click or touching web or button  //
+//                                                              //
+//  ----------------------------------------------------------  //
+//                                                              //
+//  ---- Do not use this as a gacha design game as        ----  //
+//  ---- template, or modifying it to make a other        ----  //
+//  ---- version, than this without Archana Berry's       ----  //
+//  ---- permission's, except to help with repairs or     ----  //
+//  ---- updates art assets and etc with contributing     ----  //
+//                                                              //
+//**************************************************************//
+// Please patient for release Gacha Design Studio in Playstore UwU
+
+// clickbutton.js
 // Variabel direktori untuk suara klik
 var buttonSFXDirectory = "assets/audio/sfx/button/";
 

@@ -1,48 +1,181 @@
+//  -------------------Gacha Design Studio--------------------  //
+//  Created by: Archana Berry                                   //
+//  Assets credits: Lunime, OGL (Open Game License), MIT CC     //
+//  Version resource: v0.001_alpha                              //
+//  File: studiopose.js                                         //
+//  Type: module[design]                                        //
+//  Desc: Main handling studio module                           //
+//                                                              //
+//  ----------------------------------------------------------  //
+//                                                              //
+//  ---- Do not use this as a gacha design game as        ----  //
+//  ---- template, or modifying it to make a other        ----  //
+//  ---- version, than this without Archana Berry's       ----  //
+//  ---- permission's, except to help with repairs or     ----  //
+//  ---- updates art assets and etc with contributing     ----  //
+//                                                              //
+//**************************************************************//
+// Please patient for release Gacha Design Studio in Playstore UwU
+
+// studiopose.js
+
 
 /** @type {Layer} Elemen yang sedang dipilih */
 let selected = null;
 
+// Fungsi untuk membuat instance Layer dari objek JSON
+function createLayerFromObject(layerObj) {
+    const layers = [];
+    const { layerName, src = [], options = {}, childLayers = [] } = layerObj;
+
+    // Buat instance Layer
+    const layer = new Layer(layerName, src, options);
+
+    // Jika ada childLayers, buat juga instance-nya
+    if (childLayers.length > 0) {
+        layer.childLayers = childLayers.map(createLayerFromObject);
+    }
+
+    return layer;
+}
+
 const layers = [
     // lapisan //
     // Tangan kanan
-    new Layer('Lengan atas kanan', 'assets/arm1.svg', null, null, null, null, null, null, null, null, 'assets/arm2.svg', {flipX: true}),
-    new Layer('Lengan bawah kanan', 'assets/hand1.svg', null, null, null, null, null, null, null, null, 'assets/hand2.svg', {flipX: true}),
-    new Layer('Tangan kanan', 'assets/finger3.svg', null, null, null, null, null, null, null, null, 'assets/finger4.svg', {flipX: true}),
+    {
+      "layerName": "Lengan atas kanan",
+      "src": [
+        "assets/arm1.svg",
+        "assets/arm2.svg"
+      ],
+      "options": {
+        "flipX": true
+      }
+    },
+    {
+      "layerName": "Lengan bawah kanan",
+      "src": [
+        "assets/hand1.svg",
+        "assets/hand2.svg"
+      ],
+      "options": {
+        "flipX": true
+      }
+    },
+    {
+      "layerName": "Tangan kanan",
+      "src": [
+        "assets/finger3.svg",
+        "assets/finger4.svg"
+      ],
+      "options": {
+        "flipX": true
+      }
+    },
+  
     // Kaki kanan
-    new Layer('Paha atas kanan', 'assets/leg1.svg', null, null, null, null, null, null, null, null, 'assets/leg2.svg', {flipX: true}),
-    new Layer('Kaki kanan', 'assets/foot1.svg', null, null, null, null, null, null, null, null, 'assets/foot2.svg', {flipX: true}),
-    // Kepala dan badan
-    new Layer('Badan', 'assets/body1.svg', null, null, null, null, null, null, null, null, 'assets/body2.svg'),
-    new Layer('Kepala', 'assets/head1.svg', null, null, null, null, null, null, null, null, 'assets/head2.svg'),
+    {
+      "layerName": "Paha atas kanan",
+      "src": [
+        "assets/leg1.svg",
+        "assets/leg2.svg"
+      ],
+      "options": {
+        "flipX": true
+      }
+    },
+    {
+      "layerName": "Kaki kanan",
+      "src": [
+        "assets/foot1.svg",
+        "assets/foot2.svg"
+      ],
+      "options": {
+        "flipX": true
+      }
+    },
+  
+    // Kepala
+    {
+      "layerName": "Badan",
+      "src": [
+        "assets/body1.svg",
+        "assets/body2.svg"
+      ],
+      "options": {}
+    },
+  
+    // Badan
+    {
+      "layerName": "Kepala",
+      "src": [
+        "assets/head1.svg",
+        "assets/head2.svg"
+      ],
+      "options": {}
+    },
+  
     // Tangan kiri
-    new Layer('Lengan atas kiri', 'assets/arm1.svg', null, null, null, null, null, null, null, null, 'assets/arm2.svg'),
-    new Layer('Lengan bawah kiri', 'assets/hand1.svg', null, null, null, null, null, null, null, null, 'assets/hand2.svg'),
-    new Layer('Tangan kiri', 'assets/finger1.svg', null, null, null, null, null, null, null, null, 'assets/finger2.svg'),
+    {
+      "layerName": "Lengan atas kiri",
+      "src": [
+        "assets/arm1.svg",
+        "assets/arm2.svg"
+      ],
+      "options": {}
+    },
+    {
+      "layerName": "Lengan bawah kiri",
+      "src": [
+        "assets/hand1.svg",
+        "assets/hand2.svg"
+      ],
+      "options": {}
+    },
+    {
+      "layerName": "Tangan kiri",
+      "src": [
+        "assets/finger1.svg",
+        "assets/finger2.svg"
+      ],
+      "options": {}
+    },
+  
     // Kaki kiri
-    new Layer('Paha atas kiri', 'assets/leg1.svg', null, null, null, null, null, null, null, null, 'assets/leg2.svg'),
-    new Layer('Kaki kiri', 'assets/foot1.svg', null, null, null, null, null, null, null, null, 'assets/foot2.svg'),
+    {
+      "layerName": "Paha atas kiri",
+      "src": [
+        "assets/leg1.svg",
+        "assets/leg2.svg"
+      ],
+      "options": {}
+    },
+    {
+      "layerName": "Kaki kiri",
+      "src": [
+        "assets/foot1.svg",
+        "assets/foot2.svg"
+      ],
+      "options": {}
+    }
     // lapisan //
-];
+  ].map(createLayerFromObject);
 
-/** 
- * Mendefinisikan koordinat awal ketika halaman dimuat 
- */
+// Mendefinisikan koordinat awal ketika halaman dimuat
 let initialX = 0;
 let initialY = 0;
 
-/** 
- * Mendapatkan elemen input untuk menampilkan dan mengubah koordinat 
- */
+// Mendapatkan elemen input untuk menampilkan dan mengubah koordinat
 const xCoordInput = document.getElementById('xCoord');
 const yCoordInput = document.getElementById('yCoord');
 const heightInput = document.getElementById('height');
 const widthInput = document.getElementById('width');
-const zoomInput = document.getElementById('zoom');
-const layerNameInput = document.getElementById('layerName');
+const scaleInput = document.getElementById('scale');
 const rotationControl = document.getElementById('rotationControl');
 const flipHorizontal = document.getElementById('flipHorizontal');
 const flipVertical = document.getElementById('flipVertical');
 const rotationIndicator = document.getElementById('rotationIndicator');
+const layerNameInput = document.getElementById('layerName');
 const splitter = document.getElementById('splitter');
 const panel1 = document.getElementById('panel1');
 const panel2 = document.getElementById('panel2');
@@ -111,7 +244,7 @@ document.addEventListener('keydown', function(e) {
     if(!selected) return;
 
     // Mengatur sensitivitas perpindahan
-//    let sensitivity = 1;
+    let sensitivity = 1;
 
     // Menangani perpindahan menggunakan keyboard
     switch(e.key) {
@@ -134,20 +267,32 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
-
 document.addEventListener('DOMContentLoaded', function() {
     // Pasang layer ke container ketika halaman selesai dimuat
     const container = document.querySelector('.container');
-    for(const layer of layers) {
+    for (const layer of layers) {
         layer.attach(container, onlayerdragstart);
     }
 
-    // Hapus seleksi ketika user mengklik elemen yang bukan layer
+    // Hapus seleksi ketika user mengklik elemen yang bukan layer, splitter, atau panel tertentu
     document.addEventListener('click', function(e) {
-        if(e.target.tagName !== 'HTML') {
-            return;
+        // Periksa apakah elemen yang diklik adalah splitter atau panel2
+        if (e.target === splitter || e.target === panel2 || panel2.contains(e.target)) {
+            return; // Jangan deselect layer jika klik di area splitter atau panel2
         }
-        deselectLayer();
+
+        // Jika klik bukan pada layer, splitter, atau panel2, maka deselect
+        if (!e.target.closest('.layer')) {
+            deselectLayer();
+        }
+    });
+
+    // Tambahkan event listener untuk mencegah pointer-events pada panel2 ketika diseret penuh
+    panel2.addEventListener('mousemove', function(e) {
+        // Pastikan pointer-events tetap aktif saat panel2 penuh
+        if (panel2.style.height === '100%') {
+            panel2.style.pointerEvents = 'auto';
+        }
     });
 });
 
@@ -166,10 +311,17 @@ function selectLayer(layer) {
     widthInput.value = selected.element.clientWidth;
     heightInput.value = selected.element.clientHeight;
     layerNameInput.value = selected.name;
+    scaleInput.value = selected.scale;
     rotationControl.value = selected.rotation;
     flipHorizontal.checked = selected.isFlipX;
     flipVertical.checked = selected.isFlipY;
     rotationIndicator.innerText = selected.rotation;
+}
+
+function handleLayerName(value) {
+    if (selected) {
+        selected.name = value; // Mengubah nama layer
+    }
 }
 
 // Panggil fungsi ini saat objek tidak dipilih lagi
@@ -177,10 +329,6 @@ function deselectLayer() {
     if(!selected) return;
     selected.selected = false;
     selected = null;
-}
-
-function handleLayerName(value) {
-    selected.name = value;
 }
 
 function updateCoordInput() {
@@ -204,9 +352,10 @@ function handleRotation(value) {
     rotationIndicator.innerText = value;
 }
 
-function handleZoom(value) {
+function handleScale(value) {
     if(!selected) return;
-    selected.scale = value;
+    selected.scale = parseFloat(value);
+    scaleInput.innerText = value;
 }
 
 function handleFlipHorizontal(value) {
@@ -219,6 +368,41 @@ function handleFlipVertical(value) {
     selected.flipY = value;
 }
 
+// Fungsi untuk mengatur ukuran layer (width atau height)
+// Fungsi untuk mengatur ukuran layer (width atau height)
+function updateLayerSize(dimension, value) {
+    if (!selected) {
+        console.warn("Tidak ada layer yang dipilih.");
+        return;
+    }
+
+    value = parseFloat(value);
+    
+    // Pastikan value yang diberikan adalah angka valid
+    if (isNaN(value)) {
+        console.error("Nilai yang dimasukkan bukan angka.");
+        return;
+    }
+
+    // Mengatur lebar atau tinggi dari layer yang dipilih
+    if (dimension === 'width') {
+        selected.width = value;
+    } else if (dimension === 'height') {
+        selected.height = value;
+    } else {
+        console.error("Dimensi tidak valid. Harus 'width' atau 'height'.");
+        return;
+    }
+
+    // Pastikan `selected` adalah objek layer yang valid dengan properti `src`
+    if (selected && selected.src && Array.isArray(selected.src)) {
+        // Memanggil fungsi renderLayer untuk memperbarui tampilan
+        renderLayer(selected);
+    } else {
+        console.error("Layer yang dipilih tidak memiliki properti `src` yang valid.");
+    }
+}
+
 function moveLayerUp() {
     if (!selected) return;
     const currentIndex = layers.indexOf(selected);
@@ -226,7 +410,7 @@ function moveLayerUp() {
         const temp = layers[currentIndex];
         layers[currentIndex] = layers[currentIndex + 1];
         layers[currentIndex + 1] = temp;
-        renderLayers();
+        renderLayer();
     }
 }
 
@@ -237,116 +421,42 @@ function moveLayerDown() {
         const temp = layers[currentIndex];
         layers[currentIndex] = layers[currentIndex - 1];
         layers[currentIndex - 1] = temp;
-        renderLayers();
+        renderLayer();
     }
 }
 
-function renderLayers() {
-    const container = document.querySelector('.container');
-    container.innerHTML = '';
-    for (const layer of layers) {
-        layer.attach(container, onlayerdragstart);
-    }
-}
+function renderLayer(layer) {
+    const container = document.getElementById('container'); // Container tempat layer ditampilkan
 
-function handleCharacterName() {
-    var newTitle = document.getElementById('characterName').value;
-    const gachaStudio = "Studio Sandbox - ";
-    document.getElementById('title').innerText = gachaStudio + newTitle;
-}
+    // Hapus elemen layer sebelumnya untuk mencegah duplikasi
+    const existingElements = document.querySelectorAll(`[data-layer-name="${layer.layerName}"]`);
+    existingElements.forEach(el => el.remove());
 
-// test //
-function addSVG(event) {
-    const file = event.target.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const layer = new Layer(file.name, e.target.result, null, {x: 0, y: 0});
-            layers.push(layer);
-            layer.attach(document.querySelector('.container'), onlayerdragstart);
-        };
-        reader.readAsDataURL(file);
-    }
-}
+    // Pastikan src ada dan merupakan array
+    if (Array.isArray(layer.src)) {
+        // Render ulang semua elemen dalam src
+        layer.src.forEach((src, index) => {
+            const imgElement = document.createElement('img');
+            imgElement.src = src;
+            imgElement.dataset.layerName = layer.layerName; // Tandai elemen ini sebagai bagian dari layer
+            imgElement.id = `layer-${layer.layerName}-${index}`; // ID unik untuk setiap elemen
 
-function addImage(event) {
-    const file = event.target.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const layer = new Layer(file.name, e.target.result, null, {x: 0, y: 0});
-            layers.push(layer);
-            layer.attach(document.querySelector('.container'), onlayerdragstart);
-        };
-        reader.readAsDataURL(file);
-    }
-}
+            // Terapkan properti layer ke elemen gambar
+            imgElement.style.position = 'absolute';
+            imgElement.style.left = `${layer.x}px`;
+            imgElement.style.top = `${layer.y}px`;
+            imgElement.style.width = `${layer.width}px`;
+            imgElement.style.height = `${layer.height}px`;
+            imgElement.style.transform = `
+                rotate(${layer.rotation}deg)
+                scale(${layer.scaleX}, ${layer.scaleY})
+            `;
+            imgElement.style.transformOrigin = 'center center';
 
-// Fungsi untuk menangani drag and drop
-function handleDrop(e) {
-    e.preventDefault();
-    const files = e.dataTransfer.files;
-    for (const file of files) {
-        const reader = new FileReader();
-        reader.onload = function(event) {
-            const layer = new Layer(file.name, event.target.result, null, {x: 0, y: 0});
-            layers.push(layer);
-            layer.attach(document.querySelector('.container'), onlayerdragstart);
-        };
-        reader.readAsDataURL(file);
-    }
-}
-
-function handleDragOver(e) {
-    e.preventDefault();
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-    // Existing code to attach layers
-    //...
-    // Add drag and drop event listeners
-    const container = document.querySelector('.container');
-    container.addEventListener('dragover', handleDragOver);
-    container.addEventListener('drop', handleDrop);
-});
-
-function groupLayers() {
-    const groupName = prompt('Nama grup:');
-    if (groupName) {
-        layers.forEach(layer => {
-            if (layer.selected) {
-                layer.group = groupName;
-            }
+            // Tambahkan elemen gambar ke container
+            container.appendChild(imgElement);
         });
-    }
-}
-
-function ungroupLayers() {
-    layers.forEach(layer => {
-        if (layer.selected) {
-            layer.group = null;
-        }
-    });
-}
-
-function deleteLayer() {
-    const selectedLayers = layers.filter(layer => layer.selected);
-    selectedLayers.forEach(layer => {
-        layer.element.remove();
-        const index = layers.indexOf(layer);
-        if (index > -1) {
-            layers.splice(index, 1);
-        }
-    });
-}
-
-function changeLayerColor(color) {
-    const groupName = prompt('Nama grup:');
-    if (groupName) {
-        layers.forEach(layer => {
-            if (layer.group === groupName) {
-                layer.setColor(color);
-            }
-        });
+    } else {
+        console.error("Layer tidak memiliki array `src` yang valid.");
     }
 }

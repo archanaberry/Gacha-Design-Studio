@@ -1,6 +1,40 @@
+/****************************************************************/
+//                                                              //
+//  -------------------Gacha Design Studio--------------------  //
+//  Created by: Archana Berry                                   //
+//  Assets credits: Lunime, OGL (Open Game License), MIT CC     //
+//  Version resource: v0.001_alpha                              //
+//  File: studioposeopen.js                                     //
+//  Type: module[music]                                         //
+//  Desc: Select menu's studio                                  //
+//                                                              //
+//  ----------------------------------------------------------  //
+//                                                              //
+//  ---- Do not use this as a gacha design game as        ----  //
+//  ---- template, or modifying it to make a other        ----  //
+//  ---- version, than this without Archana Berry's       ----  //
+//  ---- permission's, except to help with repairs or     ----  //
+//  ---- updates art assets and etc with contributing     ----  //
+//                                                              //
+//**************************************************************//
+// Please patient for release Gacha Design Studio in Playstore UwU
+
+// studioposeopen.js
 document.addEventListener("DOMContentLoaded", function () {
     // Add CSS styles
     var styles = `
+/* Memuat font lokal */
+@font-face {
+  font-family: "Comfortaa"; /* Nama font */
+  src: url("../../assets/font/Comfortaa-Regular.ttf") format("truetype"); /* Lokasi font */
+}
+
+/* Memuat font lokal */
+@font-face {
+  font-family: "Comfortaa-Bold"; /* Nama font */
+  src: url("../../assets/font/Comfortaa-Bold.ttf") format("truetype"); /* Lokasi font */
+}
+    
     .container {
         width: 50%;
         height: 50%;
