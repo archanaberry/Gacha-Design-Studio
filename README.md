@@ -9,7 +9,7 @@
 
 # Ikon aplikasi web nya
 
-![Gacha Desing Studio](archanaberry/icon.png)
+![Gacha Desing Studio](archanaberry/icon1.png)
 
 Gacha Design Studio adalah sebuah game fanmade (buatan dari para penggemar) yang mengambil inspirasi dari Gacha Life 2 yang dikembangkan oleh Lunime. Game ini memungkinkan pemain untuk merancang karakter, memilih pakaian, dan menciptakan desain yang unik.
 
@@ -47,42 +47,145 @@ Setelah berhasil download secara otomatis kebuka game nya di file `mainmenu.html
 ```
 ---
 JavaScript
-File: js/poser/main.js
+File: js/poser/studiopose.js /or/ studiosandbox.js
 ---
 
 const layers = [
-    
     // lapisan //
     // Tangan kanan
-    new Layer('Lengan atas kanan', 'assets/arm1.svg', 'assets/arm2.svg', {flipX: true}),
-    new Layer('Lengan bawah kanan', 'assets/hand1.svg', 'assets/hand2.svg', {flipX: true}),
-    new Layer('Tangan kanan', 'assets/finger3.svg', 'assets/finger4.svg', {flipX: true}),
-
+    {
+      "layerName": "Lengan atas kanan",
+      "src": [
+        "assets/arm1.svg",
+        "assets/arm2.svg"
+      ],
+      "options": {
+        "flipX": true
+      }
+    },
+    {
+      "layerName": "Lengan bawah kanan",
+      "src": [
+        "assets/hand1.svg",
+        "assets/hand2.svg"
+      ],
+      "options": {
+        "flipX": true
+      }
+    },
+    {
+      "layerName": "Tangan kanan",
+      "src": [
+        "assets/finger3.svg",
+        "assets/finger4.svg"
+      ],
+      "options": {
+        "flipX": true
+      }
+    },
+  
     // Kaki kanan
-    new Layer('Paha atas kanan', 'assets/leg1.svg', 'assets/leg2.svg', {flipX: true}),
-    new Layer('Kaki kanan', 'assets/foot1.svg', 'assets/foot2.svg', {flipX: true}),
-
+    {
+      "layerName": "Paha atas kanan",
+      "src": [
+        "assets/leg1.svg",
+        "assets/leg2.svg"
+      ],
+      "options": {
+        "flipX": true
+      }
+    },
+    {
+      "layerName": "Kaki kanan",
+      "src": [
+        "assets/foot1.svg",
+        "assets/foot2.svg"
+      ],
+      "options": {
+        "flipX": true
+      }
+    },
+  
     // Kepala
-    new Layer('Badan', 'assets/body1.svg', 'assets/body2.svg'),
-
+    {
+      "layerName": "Badan",
+      "src": [
+        "assets/body1.svg",
+        "assets/body2.svg"
+      ],
+      "options": {}
+    },
+  
     // Badan
-    new Layer('Kepala', 'assets/head1.svg', 'assets/head2.svg'),
-
+    {
+      "layerName": "Kepala",
+      "src": [
+        "assets/head1.svg",
+        "assets/head2.svg"
+      ],
+      "options": {}
+    },
+  
     // Tangan kiri
-    new Layer('Lengan atas kiri', 'assets/arm1.svg', 'assets/arm2.svg'),
-    new Layer('Lengan bawah kiri', 'assets/hand1.svg', 'assets/hand2.svg'),
-    new Layer('Tangan kiri', 'assets/finger1.svg', 'assets/finger2.svg'),
-
+    {
+      "layerName": "Lengan atas kiri",
+      "src": [
+        "assets/arm1.svg",
+        "assets/arm2.svg"
+      ],
+      "options": {}
+    },
+    {
+      "layerName": "Lengan bawah kiri",
+      "src": [
+        "assets/hand1.svg",
+        "assets/hand2.svg"
+      ],
+      "options": {}
+    },
+    {
+      "layerName": "Tangan kiri",
+      "src": [
+        "assets/finger1.svg",
+        "assets/finger2.svg"
+      ],
+      "options": {}
+    },
+  
     // Kaki kiri
-    new Layer('Paha atas kiri', 'assets/leg1.svg', 'assets/leg2.svg'),
-    new Layer('Kaki kiri', 'assets/foot1.svg', 'assets/foot2.svg'),
-    // Lapisan //
-
-// tambahkan dengan format //
-// new Layer('Nama anggota tubuh', 'assets/anggotaBadanOutline.svg', 'tambahan...', 'assets/anggotaBadan.svg'),
+    {
+      "layerName": "Paha atas kiri",
+      "src": [
+        "assets/leg1.svg",
+        "assets/leg2.svg"
+      ],
+      "options": {}
+    },
+    {
+      "layerName": "Kaki kiri",
+      "src": [
+        "assets/foot1.svg",
+        "assets/foot2.svg"
+      ],
+      "options": {}
+    }
+    // lapisan //
+].map(createLayerFromObject);
 // Jangan lupa diganti dan disesuaikan
 // seperti ini ygy //
 
+/*
+contoh membuat layer:
+{
+    "layername": "<Namain layer nya>",
+    "src": [
+        "assest/contoh/badan.svg",
+        "assets/contoh/paha.svg"
+        "assets/seterusnya/gambar.svg"
+    ],
+    "options": {<isikan misal mau flip atau rotate atau lainnya>}
+} (,) // berikan koma jika masih lanjut
+*/
 ];
 ```
 
