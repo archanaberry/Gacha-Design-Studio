@@ -30,6 +30,27 @@ Gacha Design Studio adalah sebuah game fanmade (buatan dari para penggemar) yang
 | Studio Pose       | Buatlah pose dengan mudah dengan gaya karakter yang anda inginkan dan animasi pose (untuk animasi ditunggu) |
 | Bisa dimainkan secara offline | Kamu bebas memainkan game ini disaat tanpa ada kuota internet dengan sepuas puas nya UwU |
 
+## Progres Aset Sisipan
+Berikut adalah tabel README yang menjelaskan bagian "Kustomisasi," termasuk deskripsi singkat, bagian-bagian terkait, dan status ketersediaan fitur.  
+
+| **Bagian**     | **Deskripsi Singkat**                                  | **Bagian-Bagian**                         | **Ketersediaan Fitur** |
+|-----------------|-------------------------------------------------------|-------------------------------------------|-------------------------|
+| **Prasetel**    | Pilihan untuk memuat atau menyimpan desain karakter.  | Simpan, Muat, Reset, Hapus                | ✅                      |
+| **Badan**       | Pengaturan bentuk tubuh karakter.                     | Tinggi, Bentuk, Warna Kulit               | ✅                      |
+| **Rambut**      | Kustomisasi gaya rambut karakter.                     | Gaya, Warna, Highlight, Aksesoris         | ✅                      |
+| **Wajah**       | Kustomisasi fitur wajah karakter.                     | Mata, Mulut, Alis, Warna                  | ✅                      |
+| **Kepala**      | Pengaturan aksesori dan ornamen kepala.               | Topi, Pita, Mahkota                       | ✅                      |
+| **Atasan**      | Pilihan pakaian bagian atas.                          | Baju, Jaket, Rompi                        | ✅                      |
+| **Bawahan**     | Pilihan pakaian bagian bawah.                         | Celana, Rok, Celana Pendek                | ✅                      |
+| **Lebih (Extra)**| Aksesori tambahan untuk gaya karakter.               | Sayap, Ekstra Dekorasi, Warna             | ❌                      |
+| **Profil**      | Pengaturan informasi dasar tentang karakter.          | Nama, Deskripsi, Usia, Hobi               | ❌                      |
+
+### Penjelasan Status
+- **✅**: Fitur sudah dibuat dan berfungsi dengan baik.  
+- **❌**: Fitur belum dibuat atau belum berfungsi sesuai rencana.  
+
+Apakah ada bagian yang perlu ditambahkan atau diperjelas?
+
 ## Link
 
 ![Gacha Life 2](archanaberry/gachaassets.png)
