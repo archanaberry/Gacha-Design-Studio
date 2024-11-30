@@ -39,7 +39,7 @@ Berikut adalah tabel README yang menjelaskan bagian "Kustomisasi," termasuk desk
 | **Badan**       | Pengaturan bentuk tubuh karakter.                     | Tinggi, Bentuk, Warna Kulit               | ✅                      |
 | **Rambut**      | Kustomisasi gaya rambut karakter.                     | Gaya, Warna, Highlight, Aksesoris         | ❌                      |
 | **Wajah**       | Kustomisasi fitur wajah karakter.                     | Mata, Mulut, Alis, Warna                  | ✅                      |
-| **Kepala**      | Pengaturan aksesori dan ornamen kepala.               | Topi, Pita, Mahkota                       | ❌                      |
+| **Kepala**      | Pengaturan aksesori dan ornamen kepala.               | Topi, Pita, Mahkota                       | ✅                      |
 | **Atasan**      | Pilihan pakaian bagian atas.                          | Baju, Jaket, Rompi                        | ❌                      |
 | **Bawahan**     | Pilihan pakaian bagian bawah.                         | Celana, Rok, Celana Pendek                | ❌                      |
 | **Lebih (Extra)**| Aksesori tambahan untuk gaya karakter.               | Sayap, Ekstra Dekorasi, Warna             | ❌                      |
