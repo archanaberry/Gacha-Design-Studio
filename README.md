@@ -35,13 +35,13 @@ Berikut adalah tabel README yang menjelaskan bagian "Kustomisasi," termasuk desk
 
 | **Bagian**     | **Deskripsi Singkat**                                  | **Bagian-Bagian**                         | **Ketersediaan Fitur** |
 |-----------------|-------------------------------------------------------|-------------------------------------------|-------------------------|
-| **Prasetel**    | Pilihan untuk memuat atau menyimpan desain karakter.  | Simpan, Muat, Reset, Hapus                | ✅                      |
+| **Prasetel**    | Pilihan untuk memuat atau menyimpan desain karakter.  | Simpan, Muat, Reset, Hapus                | ❌                      |
 | **Badan**       | Pengaturan bentuk tubuh karakter.                     | Tinggi, Bentuk, Warna Kulit               | ✅                      |
-| **Rambut**      | Kustomisasi gaya rambut karakter.                     | Gaya, Warna, Highlight, Aksesoris         | ✅                      |
+| **Rambut**      | Kustomisasi gaya rambut karakter.                     | Gaya, Warna, Highlight, Aksesoris         | ❌                      |
 | **Wajah**       | Kustomisasi fitur wajah karakter.                     | Mata, Mulut, Alis, Warna                  | ✅                      |
-| **Kepala**      | Pengaturan aksesori dan ornamen kepala.               | Topi, Pita, Mahkota                       | ✅                      |
-| **Atasan**      | Pilihan pakaian bagian atas.                          | Baju, Jaket, Rompi                        | ✅                      |
-| **Bawahan**     | Pilihan pakaian bagian bawah.                         | Celana, Rok, Celana Pendek                | ✅                      |
+| **Kepala**      | Pengaturan aksesori dan ornamen kepala.               | Topi, Pita, Mahkota                       | ❌                      |
+| **Atasan**      | Pilihan pakaian bagian atas.                          | Baju, Jaket, Rompi                        | ❌                      |
+| **Bawahan**     | Pilihan pakaian bagian bawah.                         | Celana, Rok, Celana Pendek                | ❌                      |
 | **Lebih (Extra)**| Aksesori tambahan untuk gaya karakter.               | Sayap, Ekstra Dekorasi, Warna             | ❌                      |
 | **Profil**      | Pengaturan informasi dasar tentang karakter.          | Nama, Deskripsi, Usia, Hobi               | ❌                      |
 
