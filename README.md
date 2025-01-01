@@ -1,7 +1,7 @@
 # Gacha Design Studio
 
 ![Gacha Design Studio - Logo](archanaberry/gachadesignstudio.png)
-`![Gacha Design Studio](archanaberry/banner.png)`
+<!--`![Gacha Design Studio](archanaberry/banner.png)-->
 
 # Tipe cabang (branch) repositori
 * DL untuk edisi didownload agar bisa dimainkan resource game nya pakai game browser GachaDesignStudio.apk (com.lunime.githubcollab.archanaberry.gachadesignstudio)
