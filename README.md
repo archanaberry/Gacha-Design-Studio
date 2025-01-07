@@ -229,6 +229,8 @@ contoh membuat layer:
 | Belum ada BGM | Fitur untuk menyegarkan suasana dengan musik yang aesthetic agar tidak monoton (hanya saja harus pakai aplikasi apk dikhususkan!) | ✅ |
 | Design UI/UX masih berantakan | Untuk menambah ke estetika game ini agar menarik pengunjung :3 | ❌ |
 | Loading Main Menu | Berfungsi untuk meload semua source game web ini | ✅ |
+| Resource web terkompilasi .dgc (Data Gacha resource Compiled) | Berfungsi untuk mengompres dan mengoptimalkan webview engine seperti .swf (Adobe Flash) | ❌ |
+| TransVar (Translator Variable) dukungan library bahasa berbasis javascript | Multibahasa bisa dilakukan dengan otomatis (mengambil konfigurasi sistem) atau disetel sesuai pengguna | ❌ |
 | Sudah ditambah ikon thumbnail karakter | Ikon karakter agar mudah dicari dan menambah estetika profile karakter gacha mu :> | ❌ |
 
 ## Tangkapan Layar
