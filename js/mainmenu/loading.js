@@ -90,7 +90,38 @@ document.addEventListener("DOMContentLoaded", function() {
     }, 3000); // Durasi splash-loading1
   }
 
-  showSplashScreens();
+  // daftar resource penting untuk mainmenu (favicon, gambar utama, ikon, audio, script)
+  const resources = [
+    'assets/ui/mainmenu/iconapp.png',
+    'assets/ui/mainmenu/mainmenu.png',
+    'assets/ui/mainmenu/gachadesignstudio.png',
+    'assets/ui/mainmenu/developers.svg',
+    'assets/ui/mainmenu/icon/loading.svg',
+    'assets/ui/mainmenu/icon/icon12.svg',
+    'assets/audio/mainmenu/menu0.mp3',
+    'js/mainmenu/mainmenu.js',
+    'js/mainmenu/bgm.js',
+    'js/mainmenu/clickbutton.js',
+    'js/mainmenu/volume.js',
+    'js/mainmenu/main.js'
+  ];
+
+  // simpan daftar untuk retry
+  window.__FDS_LAST_RESOURCES = resources;
+
+  if (window.FrameLoading && typeof window.FrameLoading.checkResources === 'function') {
+    // Periksa resource terlebih dahulu, jika semua ada lanjutkan normal, jika tidak FrameLoading menampilkan fallback
+    window.FrameLoading.checkResources(resources).then(ok => {
+      if (ok) showSplashScreens();
+      // jika tidak ok, FrameLoading sudah menampilkan toast dan fallback
+    }).catch(err => {
+      // Jika checker error, lanjutkan saja agar UX tidak terhenti
+      console.warn('FrameLoading check error:', err);
+      showSplashScreens();
+    });
+  } else {
+    showSplashScreens();
+  }
 
   // Buat style elemen untuk animasi
   const style = document.createElement('style');

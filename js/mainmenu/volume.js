@@ -22,29 +22,37 @@
 // volume.js
 
 var SoundManager = (function() {
-    var bgmVolume = 0.5; // default value
     var bgmAudio = null;
 
-    function setBGMVolume(volume) {
-        bgmVolume = volume;
-        if (bgmAudio) {
-            bgmAudio.volume = bgmVolume;
-        }
-        console.log('BGM Volume set to:', bgmVolume);
+    function _ensureSettings() {
+        window.AudioSettings = window.AudioSettings || {
+            masterVolume: parseFloat(localStorage.getItem('masterVolume')) || 0.5,
+            bgmVolume: parseFloat(localStorage.getItem('bgmVolume')) || 0.5,
+            sfxVolume: parseFloat(localStorage.getItem('sfxVolume')) || 0.5,
+            uiVolume: parseFloat(localStorage.getItem('uiVolume')) || 0.5,
+            bgmEnabled: (localStorage.getItem('bgmEnabled') === 'true')
+        };
+    }
+
+    function setMasterVolume(v) {
+        _ensureSettings();
+        window.AudioSettings.masterVolume = v;
+        localStorage.setItem('masterVolume', v);
+        document.dispatchEvent(new CustomEvent('audioSettingsChanged', { detail: Object.assign({}, window.AudioSettings) }));
     }
 
     function playBGM(src) {
-        if (bgmAudio) {
-            bgmAudio.pause();
-        }
+        _ensureSettings();
+        if (bgmAudio) { try { bgmAudio.pause(); } catch(e){} }
         bgmAudio = new Audio(src);
-        bgmAudio.volume = bgmVolume;
+        var vol = (window.AudioSettings.masterVolume || 0.5) * (window.AudioSettings.bgmVolume || 0.5);
+        bgmAudio.volume = vol;
         bgmAudio.loop = true;
-        bgmAudio.play();
+        bgmAudio.play().catch(() => {});
     }
 
     return {
-        setBGMVolume: setBGMVolume,
+        setMasterVolume: setMasterVolume,
         playBGM: playBGM
     };
 })();

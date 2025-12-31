@@ -48,7 +48,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     .background {
-        background-image: url('bg.png');
+        background-image: url('assets/ui/mainmenu/background.png');
         background-size: cover;
         background-color: white;
     }

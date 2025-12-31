@@ -25,10 +25,19 @@
 var buttonSFXDirectory = "assets/audio/button/";
 
 // Fungsi untuk memutar audio
-function playSound(file) {
-    var UIAudio = new Audio(file);
-    UIAudio.volume = localStorage.getItem("uiVolume") || 0.5;
-    UIAudio.play();
+function playSound(file, type = 'ui') {
+    // type: 'ui' or 'sfx'
+    var audio = new Audio(file);
+    var settings = window.AudioSettings || {
+        masterVolume: parseFloat(localStorage.getItem('masterVolume')) || 0.5,
+        uiVolume: parseFloat(localStorage.getItem('uiVolume')) || 0.5,
+        sfxVolume: parseFloat(localStorage.getItem('sfxVolume')) || 0.5
+    };
+    var volFactor = settings.masterVolume || 0.5;
+    var channel = (type === 'sfx') ? (settings.sfxVolume || 0.5) : (settings.uiVolume || 0.5);
+    audio.volume = Math.max(0, Math.min(1, volFactor * channel));
+    // play is triggered by user interaction for clicks so browsers allow it
+    audio.play().catch(() => {});
 }
 
 // Update UI volume when settings change
@@ -61,16 +70,16 @@ function getSoundFile(sfxName) {
 function addButtonClickListeners() {
     // Menambahkan event listener pada tombol dengan kelas tertentu
     document.querySelectorAll('.closebutton').forEach(button => {
-        button.addEventListener('click', () => playSound(getSoundFile('click5')));
+        button.addEventListener('click', () => playSound(getSoundFile('click5'), 'ui'));
     });
     document.querySelectorAll('.confirmbutton').forEach(button => {
-        button.addEventListener('click', () => playSound(getSoundFile('click4')));
+        button.addEventListener('click', () => playSound(getSoundFile('click4'), 'ui'));
     });
     document.querySelectorAll('.disagreebutton').forEach(button => {
-        button.addEventListener('click', () => playSound(getSoundFile('click2')));
+        button.addEventListener('click', () => playSound(getSoundFile('click2'), 'ui'));
     });
     document.querySelectorAll('.agreebutton').forEach(button => {
-        button.addEventListener('click', () => playSound(getSoundFile('click3')));
+        button.addEventListener('click', () => playSound(getSoundFile('click3'), 'ui'));
     });
 
     // Menambahkan event listener pada tombol-tombol umum
@@ -79,15 +88,21 @@ function addButtonClickListeners() {
             !button.classList.contains('confirmbutton') && 
             !button.classList.contains('disagreebutton') && 
             !button.classList.contains('agreebutton')) {
-            button.addEventListener('click', () => playSound(getSoundFile('click1')));
+            button.addEventListener('click', () => playSound(getSoundFile('click1'), 'ui'));
         }
     });
 }
 
 // Menambahkan event listener pada klik di luar tombol
+// play click sound also on general screen clicks (non-button) to give user gesture
 document.addEventListener('click', (event) => {
     if (!event.target.closest('button')) {
-        playSound(getSoundFile('click0'));
+        playSound(getSoundFile('click0'), 'ui');
+    }
+    // Also trigger global audio unlock for autoplay policies
+    if (!window.__FDS_USER_AUDIO_UNLOCKED) {
+        window.__FDS_USER_AUDIO_UNLOCKED = true;
+        document.dispatchEvent(new Event('userInteraction'));
     }
 });
 
