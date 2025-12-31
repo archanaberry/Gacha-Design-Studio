@@ -21,7 +21,8 @@
 
 // clickbutton.js
 // Variabel direktori untuk suara klik
-var buttonSFXDirectory = "assets/audio/sfx/button/";
+// Perubahan: path asli berada di `assets/audio/button/`
+var buttonSFXDirectory = "assets/audio/button/";
 
 // Fungsi untuk memutar audio
 function playSound(file) {

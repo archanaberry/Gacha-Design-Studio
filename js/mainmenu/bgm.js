@@ -39,7 +39,8 @@ bgmAudio.loop = true;
 
 // Fungsi untuk mengatur audio dan menampilkan judul lagu
 function setupAudio() {
-    bgmAudio.src = "assets/audio/music/mainmenu/" + bgmList[currentBGMIndex][0] + ".mp3";
+    // Audio files are located under `assets/audio/mainmenu/`
+    bgmAudio.src = "assets/audio/mainmenu/" + bgmList[currentBGMIndex][0] + ".mp3";
     bgmAudio.volume = parseFloat(localStorage.getItem("bgmVolume")) || 0.5;
     updateBGMTitel();
 }

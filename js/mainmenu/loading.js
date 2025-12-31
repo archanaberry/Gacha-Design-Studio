@@ -118,15 +118,15 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     .splash-loading.splash-loading1 {
-      background: url('assets/ui/background/splash1.png') center center/cover no-repeat;
+      background: url('assets/ui/mainmenu/splash1.png') center center/cover no-repeat;
     }
 
     .splash-loading.splash-loading2 {
-      background: url('assets/ui/background/splash2.png') center center/cover no-repeat;
+      background: url('assets/ui/mainmenu/splash2.png') center center/cover no-repeat;
     }
 
     .loading {
-      background: url('assets/ui/background/mainmenu.png');
+      background: url('assets/ui/mainmenu/tittle_mainmenu.png');
       background-size: cover;
       display: flex;
     }
