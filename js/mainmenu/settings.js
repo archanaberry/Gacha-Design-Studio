@@ -114,8 +114,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     .slider-container {
-        display: flex;
-        flex-direction: column;
+        display: absolute;
         align-items: center;
         margin-bottom: 20px;
     }

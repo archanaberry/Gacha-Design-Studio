@@ -183,7 +183,7 @@ button:focus-visible {
 .imporoc span,
 .eksporoc span,
 .changebg span {
-  font-size: 3vmin;
+  font-size: 2.5vmin;
   position: absolute;
   white-space: nowrap;
   bottom: 37%;
@@ -197,7 +197,7 @@ button:focus-visible {
   left: 38%;
 }
 .changebg span {
-  left: 65%;
+  left: 40%;
 }
 
 
