@@ -22,6 +22,10 @@
   <!-- Menu Content -->
   <div>
     <div class="container-top">
+      <button class="button changebg" onclick="openBgPicker()">
+        <img src="assets/ui/mainmenu/icon/impoc.svg" alt="Ganti Background">
+        <span>Ganti BG</span>
+      </button>
       <button class="button imporoc" onclick="showMaintenance('Dalam status pengembangan...');">
         <img src="assets/ui/mainmenu/icon/impoc.svg" alt="Impor karakter">
         <span>Impor</span>
@@ -30,9 +34,10 @@
         <img src="assets/ui/mainmenu/icon/expoc.svg" alt="Ekspor karakter">
         <span>Ekspor</span>
       </button>
+      <input type="file" id="bgFileInput" accept="image/*" style="display:none" />
     </div>
 
-    <img src="assets/ui/mainmenu/mainmenu.png" class="main-menu-bg" alt="Main Menu Background">
+    <img src="assets/ui/mainmenu/mainmenu.png" class="main-menu-bg" id="mainMenuBg" alt="Main Menu Background">
         <div class="version-ft">Version 0.01_Alpha</div>
         
     <div class="gachadesignstudio">

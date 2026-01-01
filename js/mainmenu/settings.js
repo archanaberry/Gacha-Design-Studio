@@ -183,33 +183,71 @@ document.addEventListener("DOMContentLoaded", function () {
         -webkit-appearance: none;
         appearance: none;
         width: 100%;
-        height: 10px;
-        background: linear-gradient(90deg,#ddd,#bbb);
+        height: 24px;
+        background: none;
         outline: none;
-        opacity: 0.9;
-        border-radius: 6px;
+        border: none;
+        margin: 0;
+        padding: 0;
+        position: relative;
         transition: opacity .15s ease-in-out;
     }
 
     .custom-slider::-webkit-slider-thumb {
         -webkit-appearance: none;
         appearance: none;
-        width: 18px;
-        height: 18px;
-        background: #fff;
-        border: 2px solid #888;
-        border-radius: 50%;
+        width: 32px;
+        height: 32px;
+        background: url('/assets/ui/menu/thumb.svg') no-repeat center/contain;
+        border: none;
+        border-radius: 0;
         cursor: pointer;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        box-shadow: none;
     }
 
     .custom-slider::-moz-range-thumb {
-        width: 18px;
-        height: 18px;
-        background: #fff;
-        border: 2px solid #888;
-        border-radius: 50%;
+        width: 32px;
+        height: 32px;
+        background: url('/assets/ui/menu/thumb.svg') no-repeat center/contain;
+        border: none;
+        border-radius: 0;
         cursor: pointer;
+        box-shadow: none;
+    }
+    .custom-slider::-webkit-slider-runnable-track {
+        height: 24px;
+        background: url('/assets/ui/menu/track.svg') no-repeat center/100% 100%;
+        border-radius: 0;
+        border: none;
+    }
+    .custom-slider::-moz-range-track {
+        height: 24px;
+        background: url('/assets/ui/menu/track.svg') no-repeat center/100% 100%;
+        border-radius: 0;
+        border: none;
+    }
+    .custom-slider::-ms-fill-lower,
+    .custom-slider::-ms-fill-upper {
+        background: url('/assets/ui/menu/track.svg') no-repeat center/100% 100%;
+        border: none;
+    }
+    .custom-slider:focus {
+        outline: none;
+    }
+    .custom-slider::-ms-thumb {
+        width: 32px;
+        height: 32px;
+        background: url('/assets/ui/menu/thumb.svg') no-repeat center/contain;
+        border: none;
+        border-radius: 0;
+        cursor: pointer;
+        box-shadow: none;
+    }
+    .custom-slider::-ms-tooltip {
+        display: none;
+    }
+    .custom-slider {
+        background: none !important;
     }
 
     #overlay {

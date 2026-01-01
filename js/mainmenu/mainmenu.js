@@ -1,3 +1,8 @@
+// Fungsi global agar tidak ReferenceError
+window.openBgPicker = function() {
+    var bgFileInput = document.getElementById('bgFileInput');
+    if (bgFileInput) bgFileInput.click();
+};
 /****************************************************************/
 //                                                              //
 //  -------------------Gacha Design Studio--------------------  //
@@ -54,6 +59,11 @@ document.addEventListener("DOMContentLoaded", function () {
         background-color: white;
     }
 
+// Fungsi global agar tidak ReferenceError
+window.openBgPicker = function() {
+    var bgFileInput = document.getElementById('bgFileInput');
+    if (bgFileInput) bgFileInput.click();
+};
     .title {
         color: white;
         position: sticky;
@@ -301,5 +311,22 @@ document.addEventListener("DOMContentLoaded", function () {
         popup.style.left = '25%';
         popup.style.top = '25%';
         popup.style.height = 'auto';
+    }
+
+    // Handler untuk mengganti background main menu
+    var bgFileInput = document.getElementById('bgFileInput');
+    if (bgFileInput) {
+        bgFileInput.addEventListener('change', function (e) {
+            var file = e.target.files[0];
+            if (!file) return;
+            var reader = new FileReader();
+            reader.onload = function (evt) {
+                var mainMenuBg = document.getElementById('mainMenuBg');
+                if (mainMenuBg) {
+                    mainMenuBg.src = evt.target.result;
+                }
+            };
+            reader.readAsDataURL(file);
+        });
     }
 });

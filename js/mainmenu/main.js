@@ -94,10 +94,12 @@ button:focus-visible {
 }
 
 /* Customize Import and Export Character buttons */
+
 .imporoc,
-.eksporoc {
-  color: white; /* Change text color to white */
-  font-family: "Comfortaa", sans-serif; /* Change font to local font */
+.eksporoc,
+.changebg {
+  color: white;
+  font-family: "Comfortaa", sans-serif;
   transition: all 0.3s;
 }
 
@@ -166,34 +168,42 @@ button:focus-visible {
 
 .imporoc {
   margin-right: 1rem;
+  }
+  .changebg {
+    margin-right: 1rem;
 }
 
 .imporoc img,
-.eksporoc img {
+.eksporoc img,
+.changebg img {
   width: 23.25vmin;
 }
 
+
 .imporoc span,
-.eksporoc span {
+.eksporoc span,
+.changebg span {
   font-size: 3vmin;
-  position: absolute; /* To position text absolutely */
-  white-space: nowrap; /* Prevent text wrapping */
+  position: absolute;
+  white-space: nowrap;
   bottom: 37%;
 }
+
 
 .eksporoc span {
   left: 9.5%;
 }
-
 .imporoc span {
   left: 38%;
 }
-
-.imporoc:active {
-  transform: scale(0.95);
+.changebg span {
+  left: 65%;
 }
 
-.eksporoc:active {
+
+.imporoc:active,
+.eksporoc:active,
+.changebg:active {
   transform: scale(0.95);
 }
 
@@ -201,7 +211,10 @@ button:focus-visible {
   margin-right: 5px;
 }
 
-.imporoc:after {
+
+.imporoc:after,
+.eksporoc:after,
+.changebg:after {
   position: relative;
   width: 100%;
   height: 100%;
@@ -212,19 +225,10 @@ button:focus-visible {
   transform: translate(-50%, -50%) scale(0);
 }
 
-.eksporoc:after {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  top: 50%;
-  left: 50%;
-  transition: all 0.3s;
-  z-index: -1;
-  transform: translate(-50%, -50%) scale(0);
-}
 
 .imporoc:hover:after,
-.eksporoc:hover:after {
+.eksporoc:hover:after,
+.changebg:hover:after {
   transform: translate(-50%, -50%) scale(3);
 }
 
