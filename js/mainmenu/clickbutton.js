@@ -27,28 +27,31 @@ var buttonSFXDirectory = "assets/audio/button/";
 // Fungsi untuk memutar audio
 function playSound(file, type = 'ui') {
     // type: 'ui' or 'sfx'
-    var audio = new Audio(file);
     var settings = window.AudioSettings || {
         masterVolume: parseFloat(localStorage.getItem('masterVolume')) || 0.5,
         uiVolume: parseFloat(localStorage.getItem('uiVolume')) || 0.5,
         sfxVolume: parseFloat(localStorage.getItem('sfxVolume')) || 0.5
     };
-    var volFactor = settings.masterVolume || 0.5;
-    var channel = (type === 'sfx') ? (settings.sfxVolume || 0.5) : (settings.uiVolume || 0.5);
-    audio.volume = Math.max(0, Math.min(1, volFactor * channel));
-    // play is triggered by user interaction for clicks so browsers allow it
+    var volFactor = settings.masterVolume;
+    var channel = (type === 'sfx') ? settings.sfxVolume : settings.uiVolume;
+    // Pastikan 0% benar-benar mute, tidak fallback ke default
+    if (typeof volFactor !== 'number' || isNaN(volFactor)) volFactor = 0.5;
+    if (typeof channel !== 'number' || isNaN(channel)) channel = 0.5;
+    var effectiveVol = Math.max(0, Math.min(1, volFactor * channel));
+    if (volFactor <= 0 || channel <= 0 || effectiveVol <= 0) {
+        // Jangan play jika master atau channel 0
+        return;
+    }
+    var audio = new Audio(file);
+    audio.volume = effectiveVol;
     audio.play().catch(() => {});
 }
 
 // Update UI volume when settings change
 document.addEventListener("DOMContentLoaded", function() {
-    document.addEventListener("volumeChange", function(event) {
-        if (event.detail.uiVolume !== undefined) {
-            document.querySelectorAll('audio').forEach(audio => {
-                audio.volume = event.detail.uiVolume;
-            });
-        }
-    });
+    // Listen to global audio settings changes if needed in future.
+    // We intentionally do NOT override all <audio> elements here.
+    // Click playback reads from `window.AudioSettings` at play time.
 });
 
 // Daftar suara klik
@@ -99,11 +102,13 @@ document.addEventListener('click', (event) => {
     if (!event.target.closest('button')) {
         playSound(getSoundFile('click0'), 'ui');
     }
-    // Also trigger global audio unlock for autoplay policies
-    if (!window.__FDS_USER_AUDIO_UNLOCKED) {
-        window.__FDS_USER_AUDIO_UNLOCKED = true;
-        document.dispatchEvent(new Event('userInteraction'));
-    }
+});
+
+// Play tap-screen click specifically when bgm manager signals the tap-screen was tapped.
+document.addEventListener('tapScreenTapped', function(){
+    try {
+        playSound(getSoundFile('click0'), 'ui');
+    } catch (e) {}
 });
 
 // Menjalankan fungsi untuk menambahkan event listener setelah DOM sepenuhnya dimuat

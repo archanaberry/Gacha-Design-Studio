@@ -37,7 +37,35 @@ var SoundManager = (function() {
     function setMasterVolume(v) {
         _ensureSettings();
         window.AudioSettings.masterVolume = v;
-        localStorage.setItem('masterVolume', v);
+        localStorage.setItem('masterVolume', String(v));
+        document.dispatchEvent(new CustomEvent('audioSettingsChanged', { detail: Object.assign({}, window.AudioSettings) }));
+    }
+
+    function setBGMVolume(v) {
+        _ensureSettings();
+        window.AudioSettings.bgmVolume = v;
+        localStorage.setItem('bgmVolume', String(v));
+        document.dispatchEvent(new CustomEvent('audioSettingsChanged', { detail: Object.assign({}, window.AudioSettings) }));
+    }
+
+    function setUIVolume(v) {
+        _ensureSettings();
+        window.AudioSettings.uiVolume = v;
+        localStorage.setItem('uiVolume', String(v));
+        document.dispatchEvent(new CustomEvent('audioSettingsChanged', { detail: Object.assign({}, window.AudioSettings) }));
+    }
+
+    function setSFXVolume(v) {
+        _ensureSettings();
+        window.AudioSettings.sfxVolume = v;
+        localStorage.setItem('sfxVolume', String(v));
+        document.dispatchEvent(new CustomEvent('audioSettingsChanged', { detail: Object.assign({}, window.AudioSettings) }));
+    }
+
+    function setBGMEnabled(enabled) {
+        _ensureSettings();
+        window.AudioSettings.bgmEnabled = !!enabled;
+        localStorage.setItem('bgmEnabled', window.AudioSettings.bgmEnabled ? 'true' : 'false');
         document.dispatchEvent(new CustomEvent('audioSettingsChanged', { detail: Object.assign({}, window.AudioSettings) }));
     }
 
@@ -48,11 +76,37 @@ var SoundManager = (function() {
         var vol = (window.AudioSettings.masterVolume || 0.5) * (window.AudioSettings.bgmVolume || 0.5);
         bgmAudio.volume = vol;
         bgmAudio.loop = true;
-        bgmAudio.play().catch(() => {});
+        // Note: do not auto-play here — playback should be controlled by the BGM manager
+        // (bgm.js) which will call play/pause based on user interaction and settings.
+    }
+
+    // Expose a way to get current settings
+    function getSettings() {
+        _ensureSettings();
+        return Object.assign({}, window.AudioSettings);
     }
 
     return {
         setMasterVolume: setMasterVolume,
+        setBGMVolume: setBGMVolume,
+        setUIVolume: setUIVolume,
+        setSFXVolume: setSFXVolume,
+        setBGMEnabled: setBGMEnabled,
         playBGM: playBGM
+        ,getSettings: getSettings
     };
 })();
+
+// On load, ensure settings exist and broadcast initial values
+document.addEventListener('DOMContentLoaded', function(){
+    (function(){
+        window.AudioSettings = window.AudioSettings || {
+            masterVolume: parseFloat(localStorage.getItem('masterVolume')) || 0.5,
+            bgmVolume: parseFloat(localStorage.getItem('bgmVolume')) || 0.5,
+            sfxVolume: parseFloat(localStorage.getItem('sfxVolume')) || 0.5,
+            uiVolume: parseFloat(localStorage.getItem('uiVolume')) || 0.5,
+            bgmEnabled: (localStorage.getItem('bgmEnabled') === 'true')
+        };
+        document.dispatchEvent(new CustomEvent('audioSettingsChanged', { detail: Object.assign({}, window.AudioSettings) }));
+    })();
+});

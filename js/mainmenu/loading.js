@@ -323,10 +323,17 @@ document.addEventListener("DOMContentLoaded", function() {
       }, 1000); // Tampilkan "Tap the screen" setelah loading-svg menghilang
     }, 3000); // Tampilkan loading screen selama 3 detik
     // Tampilkan "Tap the screen" dan hilangkan loading-svg img dengan fade-out setelah 3 detik
-    document.addEventListener("click", function() {
+    document.addEventListener("click", function unlockBGMOnTapScreen(e) {
       var tapScreen = document.getElementById("tapScreen");
       if (tapScreen && tapScreen.style.display === "block") {
         console.log("Tap screen clicked");
+        // Unlock BGM playback for user gesture
+        window.__FDS_USER_AUDIO_UNLOCKED = true;
+        if (window.applyAudioSettings) {
+          try { window.applyAudioSettings(); } catch (err) { console.warn("applyAudioSettings error", err); }
+        } else if (window.bgmAudio && window.bgmAudio.play) {
+          try { window.bgmAudio.play(); } catch (err) { console.warn("bgmAudio.play error", err); }
+        }
         showLayer2();
         var loading = document.getElementById("loading");
         if (loading) {
@@ -336,6 +343,8 @@ document.addEventListener("DOMContentLoaded", function() {
 //            document.body.removeChild(loading);
           });
         }
+        // Remove this event listener after first tap
+        document.removeEventListener("click", unlockBGMOnTapScreen);
       }
     });
   }
