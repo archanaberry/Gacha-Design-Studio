@@ -320,17 +320,100 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 // Function to open Pose Studio
+// Minimal overlay router so studios load in-page (fallback to redirect if not supported)
+(function () {
+    if (window.StudioOverlay) return; // already present
+
+    var overlayRoot = document.createElement('div');
+    overlayRoot.className = 'studio-overlay-root';
+    overlayRoot.style.display = 'none';
+    overlayRoot.style.position = 'fixed';
+    overlayRoot.style.inset = '0';
+    overlayRoot.style.zIndex = '2147483646';
+    overlayRoot.style.background = 'rgba(11,11,11,0.95)';
+    overlayRoot.style.color = '#fff';
+    overlayRoot.style.overflow = 'auto';
+
+    overlayRoot.innerHTML = '<div class="studio-overlay">'
+        + '<div class="panel panel1" id="studio-panel1"></div>'
+        + '<div class="panel panel2" id="studio-panel2"></div>'
+        + '<div id="studio-splitter" style="height:2px;background:rgba(255,255,255,0.03);margin:8px 0"></div>'
+        + '<div class="footer">Mode sekarang: <span id="studio-mode-label">none</span></div>'
+        + '</div>';
+
+    document.body.appendChild(overlayRoot);
+
+    var frames = {};
+    function registerFrame(name, initFn) {
+        if (!name || typeof initFn !== 'function') return;
+        frames[name] = initFn;
+    }
+
+    function setModeLabel(m) { var el = document.getElementById('studio-mode-label'); if (el) el.textContent = m || 'none'; }
+
+    function showOverlay(mode, push) {
+        if (!mode) return;
+        overlayRoot.style.display = '';
+        setModeLabel(mode);
+        var p1 = document.getElementById('studio-panel1');
+        var p2 = document.getElementById('studio-panel2');
+        if (p1) p1.innerHTML = '';
+        if (p2) p2.innerHTML = '';
+        if (frames[mode]) {
+            try { frames[mode](p1, p2); } catch (e) { console.error('frame init error', e); }
+        } else {
+            if (p1) p1.textContent = mode + ' loaded';
+        }
+        if (push !== false) history.pushState({ mode: mode }, '', '?mode=' + encodeURIComponent(mode));
+    }
+
+    function hideOverlay(push) {
+        overlayRoot.style.display = 'none';
+        setModeLabel(null);
+        if (push !== false) history.pushState({}, '', location.pathname);
+    }
+
+    window.registerStudioFrame = registerFrame;
+    window.StudioOverlay = {
+        show: function (mode) { showOverlay(mode, true); },
+        hide: function () { hideOverlay(true); },
+        isShown: function () { return overlayRoot.style.display !== 'none'; },
+        currentMode: function () { var s = history.state; return s && s.mode ? s.mode : null; }
+    };
+
+    // popstate
+    window.addEventListener('popstate', function (ev) {
+        var s = ev.state;
+        if (s && s.mode) showOverlay(s.mode, false);
+        else hideOverlay(false);
+    });
+
+    // register any pending frame functions
+    if (window.__pendingStudioPose) { registerFrame('studiopose', window.__pendingStudioPose); delete window.__pendingStudioPose; }
+    if (window.__pendingStudioSandbox) { registerFrame('studiosandbox', window.__pendingStudioSandbox); delete window.__pendingStudioSandbox; }
+
+})();
+
+// Function to open Pose Studio
 function openPoser() {
-    closeStudioPopup();
-    setTimeout(function() {
-        window.location.href = 'studiopose.html';
-    }, 500); // Adjust the timeout as needed
+        closeStudioPopup();
+        setTimeout(function() {
+                if (window.StudioOverlay && typeof window.StudioOverlay.show === 'function') {
+                        window.StudioOverlay.show('studiopose');
+                } else {
+                        window.location.href = 'studiopose.html';
+                }
+        }, 250); // shorter timeout when injecting
 }
 
 // Function to open Sandbox Studio
 function openSandbox() {
-    closeStudioPopup();
-    setTimeout(function() {
-        window.location.href = 'studiosandbox.html';
-    }, 500); // Adjust the timeout as needed
+        closeStudioPopup();
+        setTimeout(function() {
+                if (window.StudioOverlay && typeof window.StudioOverlay.show === 'function') {
+                        window.StudioOverlay.show('studiosandbox');
+                } else {
+                        window.location.href = 'studiosandbox.html';
+                }
+        }, 250);
 }
