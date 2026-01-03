@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Studio Pose Frame - Test Page</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .status {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 15px;
+            background: #f0f0f0;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .status-item.loading {
+            color: #ff9800;
+        }
+
+        .status-item.ready {
+            color: #4caf50;
+            background: #e8f5e9;
+        }
+
+        .status-item.error {
+            color: #f44336;
+            background: #ffebee;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 20px;
+        }
+
+        #studio-container {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            min-height: 600px;
+        }
+
+        .sidebar {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow-y: auto;
+            max-height: calc(100vh - 200px);
+        }
+
+        .sidebar h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .test-button {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: background 0.2s;
+        }
+
+        .test-button:hover {
+            background: #5568d3;
+        }
+
+        .test-button:active {
+            background: #4657b8;
+        }
+
+        .test-button.danger {
+            background: #f44336;
+        }
+
+        .test-button.danger:hover {
+            background: #da190b;
+        }
+
+        .test-button.info {
+            background: #2196f3;
+        }
+
+        .test-button.info:hover {
+            background: #0b7dda;
+        }
+
+        .section {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .section:last-child {
+            border-bottom: none;
+        }
+
+        .console-output {
+            background: #1e1e1e;
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-bottom: 15px;
+            min-height: 100px;
+        }
+
+        .console-output p {
+            margin: 2px 0;
+            line-height: 1.4;
+        }
+
+        .console-output .error {
+            color: #ff6b6b;
+        }
+
+        .console-output .warning {
+            color: #ffd93d;
+        }
+
+        .console-output .success {
+            color: #6bcf7f;
+        }
+
+        .console-output .info {
+            color: #4ecdc4;
+        }
+
+        footer {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            text-align: center;
+            color: #666;
+            font-size: 13px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                max-height: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎨 Gacha Design Studio - Frame Test</h1>
+            <p>Testing page untuk Studio Pose Frame</p>
+            <div class="status">
+                <div class="status-item loading" id="status-loading">
+                    ⏳ Loading...
+                </div>
+                <div class="status-item" id="status-functions">
+                    ⚪ Checking functions...
+                </div>
+                <div class="status-item" id="status-layers">
+                    ⚪ Checking layers...
+                </div>
+                <div class="status-item" id="status-dom">
+                    ⚪ Checking DOM...
+                </div>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <div id="studio-container"></div>
+
+            <div class="sidebar">
+                <div class="section">
+                    <h3>📊 Health Check</h3>
+                    <button class="test-button info" onclick="runHealthCheck()">Full Health Check</button>
+                    <button class="test-button info" onclick="checkFunctions()">Check Functions</button>
+                    <button class="test-button info" onclick="checkDOM()">Check DOM</button>
+                    <button class="test-button info" onclick="checkLayers()">Check Layers</button>
+                </div>
+
+                <div class="section">
+                    <h3>🧪 Test Controls</h3>
+                    <button class="test-button" onclick="testSensitivity()">Test Sensitivity</button>
+                    <button class="test-button" onclick="testMovement()">Test Movement</button>
+                    <button class="test-button" onclick="resetControls()">Reset Controls</button>
+                </div>
+
+                <div class="section">
+                    <h3>🎯 Info</h3>
+                    <button class="test-button info" onclick="getSelectedInfo()">Selected Layer</button>
+                    <button class="test-button info" onclick="getPanelSizes()">Panel Sizes</button>
+                    <button class="test-button info" onclick="listAllFunctions()">List Functions</button>
+                </div>
+
+                <div class="section">
+                    <h3>⚙️ Actions</h3>
+                    <button class="test-button" onclick="window.location.reload()">Reload Page</button>
+                    <button class="test-button danger" onclick="clearConsole()">Clear Console</button>
+                </div>
+
+                <div class="section">
+                    <h3>📖 Console Output</h3>
+                    <div class="console-output" id="console-output"></div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>Studio Pose Frame v1.0 | Ready for testing ✓</p>
+            <p style="font-size: 12px; margin-top: 10px;">Open Browser DevTools Console (F12) untuk melihat detailed logs</p>
+        </footer>
+    </div>
+
+    <!-- Script Loader -->
+    <script src="js/frame/studiopose.js"></script>
+    <script src="js/debug/studiopose-debug.js"></script>
+
+    <script>
+        // ============================================
+        // Console Interceptor
+        // ============================================
+        const consoleOutput = document.getElementById('console-output');
+        const originalLog = console.log;
+        const originalWarn = console.warn;
+        const originalError = console.error;
+
+        function addConsoleOutput(message, type = 'info') {
+            const p = document.createElement('p');
+            p.className = type;
+            p.textContent = message;
+            consoleOutput.appendChild(p);
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+            
+            // Keep last 100 lines
+            while (consoleOutput.children.length > 100) {
+                consoleOutput.removeChild(consoleOutput.firstChild);
+            }
+        }
+
+        console.log = function(...args) {
+            const message = args.join(' ');
+            addConsoleOutput(message, 'info');
+            originalLog.apply(console, args);
+        };
+
+        console.warn = function(...args) {
+            const message = args.join(' ');
+            addConsoleOutput(message, 'warning');
+            originalWarn.apply(console, args);
+        };
+
+        console.error = function(...args) {
+            const message = args.join(' ');
+            addConsoleOutput(message, 'error');
+            originalError.apply(console, args);
+        };
+
+        // ============================================
+        // Init Studio
+        // ============================================
+        window.addEventListener('load', function() {
+            console.log('=== PAGE LOADED - INITIALIZING STUDIO ===');
+            
+            const container = document.getElementById('studio-container');
+            if (window.__pendingStudioPose) {
+                window.__pendingStudioPose(container);
+                updateStatus();
+            } else {
+                console.error('⚠ Studio Pose Frame not loaded!');
+            }
+        });
+
+        // ============================================
+        // Status Updates
+        // ============================================
+        function updateStatus() {
+            // Update functions status
+            const hasFunctions = typeof window.handleSensitivity !== 'undefined';
+            const fnStatus = document.getElementById('status-functions');
+            if (hasFunctions) {
+                fnStatus.className = 'status-item ready';
+                fnStatus.textContent = '✓ Functions Loaded';
+            } else {
+                fnStatus.className = 'status-item error';
+                fnStatus.textContent = '✗ Functions Missing';
+            }
+
+            // Update layers status
+            const hasLayers = window.layers && window.layers.length > 0;
+            const layerStatus = document.getElementById('status-layers');
+            if (hasLayers) {
+                layerStatus.className = 'status-item ready';
+                layerStatus.textContent = `✓ ${window.layers.length} Layers`;
+            } else {
+                layerStatus.className = 'status-item error';
+                layerStatus.textContent = '✗ No Layers';
+            }
+
+            // Update DOM status
+            const hasDOM = document.getElementById('panel1') !== null;
+            const domStatus = document.getElementById('status-dom');
+            if (hasDOM) {
+                domStatus.className = 'status-item ready';
+                domStatus.textContent = '✓ DOM Ready';
+            } else {
+                domStatus.className = 'status-item error';
+                domStatus.textContent = '✗ DOM Missing';
+            }
+
+            // Remove loading status
+            const loading = document.getElementById('status-loading');
+            if (loading) {
+                loading.style.display = 'none';
+            }
+        }
+
+        // ============================================
+        // Test Functions
+        // ============================================
+        function runHealthCheck() {
+            console.log('\n╔════════════════════════════════════════╗');
+            console.log('║  FULL HEALTH CHECK                     ║');
+            console.log('╚════════════════════════════════════════╝\n');
+            if (window.__studioDebugUtils && window.__studioDebugUtils.studioHealthCheck) {
+                window.__studioDebugUtils.studioHealthCheck();
+            }
+            updateStatus();
+        }
+
+        function checkFunctions() {
+            if (window.__studioDebugUtils && window.__studioDebugUtils.checkStudioFunctions) {
+                window.__studioDebugUtils.checkStudioFunctions();
+            }
+        }
+
+        function checkDOM() {
+            if (window.__studioDebugUtils && window.__studioDebugUtils.checkDOM) {
+                window.__studioDebugUtils.checkDOM();
+            }
+        }
+
+        function checkLayers() {
+            if (window.__studioDebugUtils && window.__studioDebugUtils.checkLayers) {
+                window.__studioDebugUtils.checkLayers();
+            }
+        }
+
+        function testSensitivity() {
+            console.log('→ Testing sensitivity...');
+            if (window.__studioDebugUtils && window.__studioDebugUtils.testSensitivity) {
+                window.__studioDebugUtils.testSensitivity();
+            }
+        }
+
+        async function testMovement() {
+            console.log('→ Testing movement...');
+            if (window.__studioDebugUtils && window.__studioDebugUtils.testMovement) {
+                await window.__studioDebugUtils.testMovement();
+            }
+        }
+
+        function resetControls() {
+            console.log('→ Resetting controls...');
+            if (window.__studioDebugUtils && window.__studioDebugUtils.resetControls) {
+                window.__studioDebugUtils.resetControls();
+            }
+        }
+
+        function getSelectedInfo() {
+            console.log('→ Getting selected layer info...');
+            if (window.__studioDebugUtils && window.__studioDebugUtils.getSelectedInfo) {
+                window.__studioDebugUtils.getSelectedInfo();
+            }
+        }
+
+        function getPanelSizes() {
+            console.log('→ Getting panel sizes...');
+            if (window.__studioDebugUtils && window.__studioDebugUtils.getPanelSizes) {
+                window.__studioDebugUtils.getPanelSizes();
+            }
+        }
+
+        function listAllFunctions() {
+            console.log('\n=== AVAILABLE FUNCTIONS ===\n');
+            const funcs = [
+                'startMove', 'stopMove', 'handleSensitivity',
+                'handleXCoord', 'handleYCoord', 'handleRotation',
+                'handleScale', 'handleFlipHorizontal', 'handleFlipVertical',
+                'moveLayerUp', 'moveLayerDown', 'deleteSelectedLayer',
+                'setBackground', 'setOpacity', 'addImage',
+                'exportAsSVG', 'exportAsHTML'
+            ];
+            
+            funcs.forEach(fn => {
+                const exists = typeof window[fn] !== 'undefined';
+                const status = exists ? '✓' : '✗';
+                console.log(`${status} window.${fn}()`);
+            });
+        }
+
+        function clearConsole() {
+            document.getElementById('console-output').innerHTML = '';
+            console.log('Console cleared');
+        }
+
+        // Initial status check
+        setTimeout(updateStatus, 1000);
+    </script>
+</body>
+</html>

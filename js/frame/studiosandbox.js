@@ -1,39 +1,39 @@
 // js/frame/studiosandbox.js
-// Sandbox studio frame. More free-form creative controls.
+// Injects the studiosandbox HTML via JS (CSP-safe)
 (function () {
   function init(p1, p2) {
-    if (!p1) return;
-    var h = document.createElement('h2');
-    h.textContent = 'Studio Sandbox (Free Creativity)';
-    p1.appendChild(h);
+    if (!p1 || !p2) return;
 
-    var area = document.createElement('div');
-    area.style.minHeight = '200px';
-    area.style.border = '1px dashed rgba(255,255,255,0.06)';
-    area.style.padding = '12px';
-    area.textContent = 'Canvas / sandbox area — drag-and-drop assets here (stub)';
-    p1.appendChild(area);
+    p1.innerHTML = `
+      <div class="sandbox-preview" style="min-height:220px; border:1px dashed rgba(255,255,255,0.06); padding:12px; display:flex;align-items:center;justify-content:center;">
+        <div id="sandboxCanvas">Sandbox Preview Area</div>
+      </div>
+    `;
 
-    if (p2) {
-      var tools = document.createElement('div');
-      var title = document.createElement('h3'); title.textContent = 'Sandbox Tools';
-      tools.appendChild(title);
+    p2.innerHTML = `
+      <div class="sandbox-controls">
+        <label for="sandboxFile">Tambahkan gambar:</label>
+        <input type="file" id="sandboxFile" accept="image/*">
+        <button id="clearSandbox">Bersihkan</button>
+        <button id="addRandom">Tambah Random</button>
+      </div>
+    `;
 
-      var addImg = document.createElement('input'); addImg.type = 'file'; addImg.accept = 'image/*';
-      var btn = document.createElement('button'); btn.textContent = 'Tambah Gambar';
-      btn.addEventListener('click', function () { addImg.click(); });
-      addImg.addEventListener('change', function (e) {
-        if (e.target.files && e.target.files[0]) {
-          var url = URL.createObjectURL(e.target.files[0]);
-          var img = document.createElement('img'); img.src = url; img.style.maxWidth = '120px'; img.style.margin = '6px';
-          area.appendChild(img);
-          setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
-        }
-      });
+    var file = p2.querySelector('#sandboxFile');
+    var canvas = p1.querySelector('#sandboxCanvas');
+    if (file) file.addEventListener('change', function (e) {
+      if (e.target.files && e.target.files[0]) {
+        var img = document.createElement('img');
+        img.src = URL.createObjectURL(e.target.files[0]);
+        img.style.maxWidth = '140px';
+        img.style.margin = '6px';
+        canvas.appendChild(img);
+        setTimeout(function () { try { URL.revokeObjectURL(img.src); } catch (e) {} }, 60000);
+      }
+    });
 
-      tools.appendChild(btn);
-      p2.appendChild(tools);
-    }
+    var clearBtn = p2.querySelector('#clearSandbox'); if (clearBtn) clearBtn.addEventListener('click', function () { if (canvas) canvas.innerHTML = 'Sandbox Preview Area'; });
+    var randBtn = p2.querySelector('#addRandom'); if (randBtn) randBtn.addEventListener('click', function () { var d = document.createElement('div'); d.textContent = 'Random Item'; d.style.padding='6px'; d.style.border='1px solid #666'; canvas.appendChild(d); });
   }
 
   if (window && typeof window.registerStudioFrame === 'function') {
@@ -41,4 +41,5 @@
   } else {
     window.__pendingStudioSandbox = init;
   }
+
 })();
