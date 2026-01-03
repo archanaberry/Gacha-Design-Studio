@@ -72,6 +72,46 @@
   // Fungsi callback dari studiopose.js
   window.onlayerdragstart = window.onlayerdragstart || function() { console.warn('onlayerdragstart not yet loaded'); };
 
+  // ========== HELPER FUNCTION - ASSET UPLOAD KE PANEL1 ==========
+  window.handleAssetUploadToPanel = function(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const panel1 = document.getElementById('panel1');
+      if (!panel1) {
+        console.warn('Panel1 not found');
+        return;
+      }
+      
+      // Buat element untuk asset
+      let elem;
+      if (file.type.includes('image')) {
+        elem = document.createElement('img');
+        elem.src = e.target.result;
+      } else if (file.type === 'image/svg+xml' || file.name.endsWith('.svg')) {
+        elem = document.createElement('object');
+        elem.data = e.target.result;
+        elem.type = 'image/svg+xml';
+      } else {
+        console.warn('File type not supported');
+        return;
+      }
+      
+      elem.style.position = 'absolute';
+      elem.style.left = '0px';
+      elem.style.top = '0px';
+      elem.style.maxWidth = '200px';
+      elem.style.maxHeight = '200px';
+      elem.style.cursor = 'move';
+      
+      panel1.appendChild(elem);
+      console.log('✓ Asset added to panel1:', file.name);
+    };
+    reader.readAsDataURL(file);
+  };
+
   // ========== DAFTAR SCRIPT YANG AKAN DIMUAT ==========
   const scriptsToLoad = [
     'js/studiocharacter/layer.js',
@@ -81,7 +121,7 @@
     'js/studiocharacter/opacity.js',
     'js/studiocharacter/selector.js',
     'js/studiocharacter/key.js',
-    'js/studiocharacter/sensivity.js',
+    //'js/studiocharacter/sensivity.js',
     'js/studiocharacter/upload.js',
     'js/studiocharacter/export.js'
   ];
@@ -147,192 +187,126 @@
 
 <input type="file" id="svgUpload" accept=".svg" style="display:none" onchange="addSVG(event)">
 <button onclick="document.getElementById('svgUpload').click()">Tambahkan SVG</button>
-<input type="file" id="imageUpload" accept="image/*" style="display:none" onchange="addImage(event)">
-<button onclick="document.getElementById('imageUpload').click()">Tambahkan Sisipan</button>
   `;
 
-  // ========== CSS STYLING (Match dengan studiopose.html) ==========
+  // ========== CSS STYLING (Isolated, No Border, No Overflow to Non-Overlay) ==========
   const styleEl = document.createElement('style');
   styleEl.innerHTML = `
-/* Gaya untuk garis splitter */
-#splitter {
-    position: absolute;
-    width: 100%;
-    height: 10px; /* Atur tinggi garis splitter */
-    background-color: blue;
-    cursor: ns-resize; /* Ubah kursor saat di atas garis splitter */
-}
+/* ===== STUDIOPOSE FRAME STYLES ONLY - ISOLATED ===== */
 
-body, html {
-    margin: 0;
-    padding: 0;
-    height: 100%;
-    overflow: hidden;
+* {
+    border-radius: 0 !important;
 }
 
 .studiopose-frame {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    height: 100%;
-    font-family: Arial, sans-serif;
-    overflow: hidden;
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    height: 100% !important;
+    font-family: Arial, sans-serif !important;
+    overflow: hidden !important;
+    position: fixed !important;
+    inset: 0 !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    background: white !important;
+    z-index: 9999 !important;
 }
 
 .studiopose-frame .container {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    height: 100%;
-    flex: 1;
-    position: relative;
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    height: 100% !important;
+    flex: 1 !important;
+    position: relative !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
 }
 
-.panel1, .panel2 {
-    margin: 0;
-    background: none;
-    background-size: cover;
-    height: 100%;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    position: relative;
-}
-
+/* Panel1 - Canvas (NO BORDER, FULL SIZE) */
 .studiopose-frame #panel1 {
-    flex: 1;
-    background: #f5f5f5;
-    border: 1px solid #ddd;
-    overflow: auto;
-    position: relative;
+    flex: 1 !important;
+    background: white !important;
+    overflow: auto !important;
+    position: relative !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    cursor: default !important;
+    border: none !important;
+    border-radius: 0 !important;
 }
 
-.studiopose-frame #panel2 {
-    flex: 1;
-    background: white;
-    border-top: 1px solid #ddd;
-    overflow-y: auto;
-    overflow-x: hidden;
-}
-
-.panel2 {
-    position: absolute;
-    bottom: 0px;
-    left: 0px;
-    right: 0px;
-}
-
-#imageUpload1, #imageUpload2 {
-    margin-bottom: 10px;
-}
-
-#imageUpload1,
-#imageUpload2 {
-    margin-bottom: 20px;
-}
-
-.input-container {
-    width: 100%;
-    height: calc(100% - 5px); /* Atur tinggi panel dengan CSS Grid */
-    overflow: auto;
-}
-
-/* Menonaktifkan pemilihan teks pada semua elemen kecuali input */
-body *:not(input) {
-    user-select: none;
-}
-
-/* Gaya tambahan untuk input */
-input {
-    /* Pastikan untuk memungkinkan pemilihan teks di dalam input */
-    user-select: text;
-}
-
-.layer {
+/* Panel1 layer styling */
+.studiopose-frame #panel1 .layer {
     position: absolute;
     left: 0px;
     top: 0px;
     z-index: 0;
+    cursor: move;
+    border-radius: 0 !important;
 }
 
-.layer > :not(:first-child) {
+.studiopose-frame #panel1 .layer.selected {
+    outline: 2px solid blue;
+    outline-offset: 0;
+}
+
+.studiopose-frame #panel1 .layer > :not(:first-child) {
     position: absolute;
     top: 0;
     left: 0;
 }
 
-.layer.selected {
-    outline: 1px solid blue;
-}
-
-#rotationControl {
-    width: 200px;
-}
-
-#rotationIndicator {
-    text-align: center;
-    margin-top: 5px;
-}
-
-/* Gaya untuk Selector */
-.selection-box {
+/* Selection box for multi-select */
+.studiopose-frame .selection-box {
     position: absolute;
     z-index: 999;
-    border: 1px solid #007bff;
-    background-color: rgba(0, 123, 255, 0.3);
+    border: 2px dashed blue;
+    background: rgba(173, 216, 230, 0.5);
+    pointer-events: none;
+    border-radius: 0 !important;
 }
 
-/* Input boxes */
-#xCoord {
-    width: 200px;
-    height: 50px;
-    border-radius: 10px;
-    border: 5px solid green;
-    background-color: lightgreen;
-    font-size: 22px;
+/* Panel2 - Controls (NO BORDER, FULL SIZE) */
+.studiopose-frame #panel2 {
+    flex: 1 !important;
+    background: white !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    position: relative !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
 }
 
-#yCoord {
-    width: 200px;
-    height: 50px;
-    border-radius: 10px;
-    border: 5px solid blue;
-    background-color: lightblue;
-    font-size: 22px;
+/* Splitter - TETAP SEPERTI ORIGINAL */
+.studiopose-frame #splitter {
+    height: 10px;
+    width: 100%;
+    background-color: blue;
+    cursor: ns-resize;
+    flex-shrink: 0;
+    margin: 0;
+    padding: 0;
+    border: none;
+    user-select: none;
 }
 
-/* Common style for other input boxes */
-input[type="text"]:not(#xCoord):not(#yCoord) {
-    width: 200px;
-    height: 50px;
-    border-radius: 10px;
-    border: 5px solid black;
-    font-size: 22px;
-}
-
-/* Button styles */
-.button {
-    border: 5px solid black;
-    border-radius: 10px;
-    font-size: 22px;
-    cursor: pointer;
-    width: 200px;
-    height: 50px;
-    background-color: lightcoral;
-}
-
-.button:hover {
-    background-color: coral;
-}
-
-.button:active {
-    background-color: red;
-}
-
-#studio-loading {
-    position: absolute;
+/* Loading indicator */
+.studiopose-frame #studio-loading {
+    position: fixed;
     inset: 0;
-    background: white;
+    background: rgba(255, 255, 255, 0.95);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -341,11 +315,92 @@ input[type="text"]:not(#xCoord):not(#yCoord) {
     color: #5E6CC9;
     z-index: 99999;
     gap: 20px;
+    border: none;
 }
 
-#studio-loading small {
+.studiopose-frame #studio-loading small {
     font-size: 14px;
     color: #666;
+}
+
+/* ===== PANEL2 SPECIFIC STYLES - INPUT BOXES ===== */
+.studiopose-frame #panel2 label {
+    display: block;
+    margin-top: 5px;
+    margin-bottom: 3px;
+    font-weight: normal;
+    font-size: 14px;
+}
+
+.studiopose-frame #panel2 #xCoord {
+    width: 200px;
+    height: 50px;
+    border-radius: 10px;
+    border: 5px solid green;
+    background-color: lightgreen;
+    font-size: 22px;
+}
+
+.studiopose-frame #panel2 #yCoord {
+    width: 200px;
+    height: 50px;
+    border-radius: 10px;
+    border: 5px solid blue;
+    background-color: lightblue;
+    font-size: 22px;
+}
+
+.studiopose-frame #panel2 input[type="text"]:not(#xCoord):not(#yCoord) {
+    width: 200px;
+    height: 50px;
+    border-radius: 10px;
+    border: 5px solid black;
+    font-size: 22px;
+}
+
+.studiopose-frame #panel2 input[type="range"] {
+    width: 100px;
+}
+
+.studiopose-frame #panel2 .button {
+    font-size: 22px;
+    cursor: pointer;
+    width: 200px;
+    height: 50px;
+    background-color: lightcoral;
+    margin: 5px 0;
+}
+
+.studiopose-frame #panel2 .button:hover {
+    background-color: coral;
+}
+
+.studiopose-frame #panel2 .button:active {
+    background-color: red;
+}
+
+.studiopose-frame #panel2 #rotationControl {
+    width: 200px;
+}
+
+.studiopose-frame #panel2 #rotationIndicator {
+    text-align: center;
+    margin-top: 5px;
+}
+
+/* File inputs */
+.studiopose-frame #panel2 input[type="file"] {
+    margin-bottom: 10px;
+}
+
+/* Disable text selection in panel1, allow in panel2 */
+.studiopose-frame #panel1 {
+    user-select: none;
+}
+
+.studiopose-frame #panel2 input,
+.studiopose-frame #panel2 textarea {
+    user-select: text;
 }
   `;
   document.head.appendChild(styleEl);
@@ -459,6 +514,48 @@ input[type="text"]:not(#xCoord):not(#yCoord) {
         } catch (err) {
           console.warn('⚠ Gagal init Splitter:', err);
         }
+      }
+
+      // ========== SETUP ASSET UPLOAD LISTENERS ==========
+      try {
+        const imageUploadInput = document.getElementById('imageUpload1');
+        if (imageUploadInput) {
+          imageUploadInput.addEventListener('change', (e) => {
+            const files = e.target.files;
+            if (files && files.length > 0) {
+              const file = files[0];
+              const reader = new FileReader();
+              
+              reader.onload = function(event) {
+                const dataURL = event.target.result;
+                const img = document.createElement('img');
+                img.src = dataURL;
+                img.style.position = 'absolute';
+                img.style.cursor = 'move';
+                img.style.maxWidth = '500px';
+                img.style.maxHeight = '500px';
+                img.style.top = '50px';
+                img.style.left = '50px';
+                img.classList.add('layer');
+                
+                const panel1 = document.getElementById('panel1');
+                if (panel1) {
+                  panel1.appendChild(img);
+                  console.log('✓ Asset uploaded to panel1:', file.name);
+                }
+              };
+              
+              reader.onerror = function() {
+                console.error('❌ Error reading file:', file.name);
+              };
+              
+              reader.readAsDataURL(file);
+            }
+          });
+          console.log('✓ Asset upload listener initialized');
+        }
+      } catch (err) {
+        console.warn('⚠ Gagal setup asset upload:', err);
       }
 
       // Hapus loading indicator

@@ -325,7 +325,7 @@ document.addEventListener("DOMContentLoaded", function () {
     overlayRoot.style.inset = '0';
     overlayRoot.style.zIndex = '2147483646';
     overlayRoot.style.background = 'none'; // transparan total (frame akan set background sendiri)
-    overlayRoot.style.overflow = 'hidden'; // biar frame control sendiri
+    //overlayRoot.style.overflow = 'hidden'; // biar frame control sendiri
     overlayRoot.style.fontFamily = 'Comfortaa, sans-serif';
 
     if (document.body) {
