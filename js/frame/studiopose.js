@@ -194,8 +194,8 @@
   styleEl.innerHTML = `
 /* ===== STUDIOPOSE FRAME STYLES ONLY - ISOLATED ===== */
 
-* {
-    border-radius: 0 !important;
+.studiopose-frame * {
+  border-radius: 0 !important;
 }
 
 .studiopose-frame {
@@ -215,7 +215,7 @@
     padding: 0 !important;
     border: none !important;
     border-radius: 0 !important;
-    background: white !important;
+    background: transparent !important;
     z-index: 9999 !important;
 }
 
@@ -407,6 +407,8 @@
 
   // ========== FUNGSI INIT ==========
   function init(container) {
+    // track scripts we appended so we can remove them on cleanup
+    var _addedScripts = [];
     // Tambah class untuk isolasi styling
     container.classList.add('studiopose-frame');
 
@@ -443,6 +445,8 @@
         script.async = false; // Sequential loading
         script.onload = () => {
           console.log(`✓ Loaded: ${src}`);
+          // remember scripts we injected (only those we appended now)
+          _addedScripts.push(script);
           resolve();
         };
         script.onerror = () => {
@@ -563,6 +567,19 @@
         loading.remove();
       }
       console.log('✓✓✓ Gacha Design Studio siap! ✓✓✓');
+      // cleanup handler when overlay is hidden
+      const _cleanup = function() {
+        try {
+          // remove dynamically added script tags
+          _addedScripts.forEach(s => { try { s.remove(); } catch (e) {} });
+        } catch (e) {}
+        // remove any residual container content
+        try { container.innerHTML = ''; } catch (e) {}
+        // remove this listener after run
+        try { window.removeEventListener('studiooverlay:hide', _cleanup); } catch (e) {}
+        console.log('✓ Studio Pose Frame cleanup completed');
+      };
+      window.addEventListener('studiooverlay:hide', _cleanup);
     }).catch(err => {
       console.error('Fatal error:', err);
       if (loading) {

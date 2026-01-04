@@ -89,7 +89,7 @@ document.addEventListener("DOMContentLoaded", function () {
     box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.75);
 }
 .content {
-    padding: 5%;
+    padding: 16px;
 }
 .studio-button {
     background-color: #5E6CC9;
@@ -156,7 +156,7 @@ document.addEventListener("DOMContentLoaded", function () {
         openWindow({
             title: 'Gacha Design Studio',
             content: studioContent,
-            footer: '<button class="footer-btn wh-ok-btn" onclick="window.closeWindow(window.currentStudioWindowId)">Close</button>',
+            footer: '<div style="width:100%;display:flex;justify-content:center;"><button class="footer-btn wh-ok-btn" onclick="window.closeWindow(window.currentStudioWindowId)">Close</button></div>',
             width: '50%',
             height: 'auto',
             lockUnderlay: false,
@@ -206,6 +206,8 @@ document.addEventListener("DOMContentLoaded", function () {
         if (!mode) return;
 
         overlayRoot.style.display = 'block';
+        // make overlay accept pointer events while a frame is shown
+        overlayRoot.style.pointerEvents = 'auto';
         overlayRoot.innerHTML = ''; // kosong total — frame bebas isi apa saja
 
         if (frames[mode]) {
@@ -226,10 +228,15 @@ document.addEventListener("DOMContentLoaded", function () {
             newUrl.searchParams.set('mode', mode);
             history.pushState({ mode: mode }, '', newUrl.toString());
         }
+        // notify frames that overlay is shown
+        try { window.dispatchEvent(new CustomEvent('studiooverlay:show', { detail: { mode: mode } })); } catch (e) {}
     }
 
     function hideOverlay(push) {
+
         overlayRoot.style.display = 'none';
+        // disable pointer capture so page becomes clickable again
+        overlayRoot.style.pointerEvents = 'none';
         overlayRoot.innerHTML = ''; // bersihkan saat tutup
 
         if (push !== false) {
@@ -237,6 +244,8 @@ document.addEventListener("DOMContentLoaded", function () {
             newUrl.searchParams.delete('mode');
             history.pushState({}, '', newUrl.toString());
         }
+        // notify frames that overlay is hidden so they can cleanup
+        try { window.dispatchEvent(new CustomEvent('studiooverlay:hide')); } catch (e) {}
     }
 
     window.registerStudioFrame = registerFrame;

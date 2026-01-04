@@ -39,7 +39,9 @@ document.addEventListener("DOMContentLoaded", function () {
         width: 50%;
         height: 50%;
         border: 0px solid #ccc;
-        position: absolute;
+        display: flex;
+        flex-direction: column;
+        allign-items: flex-start;
         border-radius: 13px;
         cursor: move;
         overflow: hidden;
@@ -92,7 +94,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     .content {
-        padding: 5%;
+        padding: 16px;
     }
 
     .setting-section {
@@ -109,13 +111,16 @@ document.addEventListener("DOMContentLoaded", function () {
 
     .switch {
         display: flex;
-        align-items: center;
+        flex-direction: column; /* susun vertikal */
+        align-items: flex-start; /* label/toggle rata kiri */
+        gap: 3px;
         margin-bottom: 10px;
     }
 
     .slider-container {
-        display: absolute;
-        align-items: center;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
         margin-bottom: 20px;
     }
 
@@ -135,7 +140,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
     .toggle-switch {
         position: relative;
-        display: inline-block;
+        display: block;
+        margin-top: 4px;
         width: 60px;
         height: 34px;
     }
@@ -181,7 +187,7 @@ document.addEventListener("DOMContentLoaded", function () {
     .custom-slider {
         -webkit-appearance: none;
         appearance: none;
-        width: 100%;
+        width: 200px;
         height: 24px;
         background: none;
         outline: none;
@@ -195,13 +201,15 @@ document.addEventListener("DOMContentLoaded", function () {
     .custom-slider::-webkit-slider-thumb {
         -webkit-appearance: none;
         appearance: none;
-        width: 32px;
-        height: 32px;
+        width: 42px;
+        height: 42px;
         background: url('/assets/ui/menu/thumb.svg') no-repeat center/contain;
         border: none;
         border-radius: 0;
         cursor: pointer;
         box-shadow: none;
+        /* Geser thumb vertikal */
+        transform: translateY(-8px); /* naik 20px */
     }
 
     .custom-slider::-moz-range-thumb {
@@ -314,6 +322,25 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // We don't need the old overlay/popup HTML anymore - windowhandler.js creates its own
 
+    // Initialize audio settings from localStorage and expose global
+    window.AudioSettings = {
+        masterVolume: parseFloat(localStorage.getItem('masterVolume')) || 0.5,
+        bgmVolume: parseFloat(localStorage.getItem('bgmVolume')) || 0.5,
+        sfxVolume: parseFloat(localStorage.getItem('sfxVolume')) || 0.5,
+        uiVolume: parseFloat(localStorage.getItem('uiVolume')) || 0.5,
+        bgmEnabled: (localStorage.getItem('bgmEnabled') === null) ? true : (localStorage.getItem('bgmEnabled') === 'true')
+    };
+
+    // helper to broadcast audio settings to other modules
+    function broadcastAudioSettings() {
+        localStorage.setItem('masterVolume', window.AudioSettings.masterVolume);
+        localStorage.setItem('bgmVolume', window.AudioSettings.bgmVolume);
+        localStorage.setItem('sfxVolume', window.AudioSettings.sfxVolume);
+        localStorage.setItem('uiVolume', window.AudioSettings.uiVolume);
+        localStorage.setItem('bgmEnabled', window.AudioSettings.bgmEnabled);
+        document.dispatchEvent(new CustomEvent('audioSettingsChanged', { detail: Object.assign({}, window.AudioSettings) }));
+    }
+
     function centerPopup(popup) {
         popup.style.left = '25%';
         popup.style.top = '25%';
@@ -330,6 +357,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         // Create HTML content for settings
         var settingsContent = `
+            <div class="content">
             <div class="setting-section">
                 <div class="setting-title">Audio</div>
                 <div class="switch">
@@ -365,13 +393,14 @@ document.addEventListener("DOMContentLoaded", function () {
                     <button id="nextBGM">Next</button>
                 </div>
             </div>
+            </div>
         `;
 
         // Create settings window using windowhandler API
         openWindow({
             title: 'Gacha Design Studio - Settings',
             content: settingsContent,
-            footer: '<button class="footer-btn wh-ok-btn" onclick="window.closeWindow(window.currentSettingsWindowId)">OK</button>',
+            footer: '<div style="width:100%;display:flex;justify-content:center;"><button class="footer-btn wh-ok-btn" onclick="window.closeWindow(window.currentSettingsWindowId)">OK</button></div>',
             width: '50%',
             height: 'auto',
             lockUnderlay: false,
