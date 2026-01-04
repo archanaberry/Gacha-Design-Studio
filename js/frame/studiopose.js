@@ -93,16 +93,16 @@
     <div id="splitter"></div>
 
     <!-- Skrip -->
-    <script src="js/mainmenu/studiosandbox.js"></script>
-    <script src="js/studiosanbox/layer.js"></script>
-    <script src="js/studiosanbox/studiosandbox.js"></script>
-    <script src="js/studiosanbox/splitter.js"></script>
-    <script src="js/studiosanbox/background.js"></script>
-    <script src="js/studiosanbox/opacity.js"></script>
-    <script src="js/studiosanbox/selector.js"></script>
-    <script src="js/studiosanbox/key.js"></script>
-    <script src="js/studiosanbox/sensivity.js"></script>
-    <script src="js/studiosanbox/upload.js"></script>
+    <script src="js/mainmenu/studiopose.js"></script>
+    <script src="js/studiocharacter/layer.js"></script>
+    <script src="js/studiocharacter/studiopose.js"></script>
+    <script src="js/studiocharacter/splitter.js"></script>
+    <script src="js/studiocharacter/background.js"></script>
+    <script src="js/studiocharacter/opacity.js"></script>
+    <script src="js/studiocharacter/selector.js"></script>
+    <script src="js/studiocharacter/key.js"></script>
+    <script src="js/studiocharacter/sensivity.js"></script>
+    <script src="js/studiocharacter/upload.js"></script>
     <!-- Skrip -->
 
 </body>
