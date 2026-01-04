@@ -89,7 +89,7 @@ document.addEventListener("DOMContentLoaded", function () {
     box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.75);
 }
 .content {
-    padding: 5%;
+    padding: 16px;
 }
 .studio-button {
     background-color: #5E6CC9;
@@ -136,181 +136,42 @@ document.addEventListener("DOMContentLoaded", function () {
     styleSheet.innerText = styles;
     document.head.appendChild(styleSheet);
 
-    // HTML popup menu studio tetap sama
-    var overlay = document.createElement("div");
-    overlay.id = "overlay";
-    document.body.appendChild(overlay);
+    // We don't need the old overlay/popup HTML anymore - windowhandler.js creates its own
 
-    var studioPopup = `
-    <div id="studioPopup" class="container background shadow">
-        <div class="header2" id="header2">
-            <h2 class="title">Gacha Design Studio</h2>
-            <button class="close-button" onclick="closeStudioPopup()">&times;</button>
-        </div>
-        <div class="content message" id="studioMessage"></div>
-        <div class="resizer2" id="resizer2"></div>
-        <button class="studio-button" onclick="openPoser()">Buka studio pose</button>
-        <button class="studio-button" onclick="openSandbox()">Buka studio kotak pasir</button>
-    </div>
-    `;
-
-    document.body.insertAdjacentHTML('beforeend', studioPopup);
-
-    // Fungsi popup tetap sama (drag, resize, fade, dll.)
+    // Fungsi popup menggunakan windowhandler.js API
     window.openStudio = function(message) {
-        var overlay = document.getElementById('overlay');
-        var popup = document.getElementById('studioPopup');
-        var messageDiv = document.getElementById('studioMessage');
-
-        if (message) {
-            messageDiv.textContent = message;
+        // Check if windowhandler is available
+        if (typeof window.openWindow !== 'function') {
+            console.error('windowhandler.js API not loaded');
+            return;
         }
 
-        overlay.style.display = 'block';
-        popup.style.display = 'block';
+        var studioContent = `
+            <div class="content message" id="studioMessage">${message || ''}</div>
+            <button class="studio-button" onclick="openPoser()">Buka studio pose</button>
+            <button class="studio-button" onclick="openSandbox()">Buka studio kotak pasir</button>
+        `;
 
-        centerPopup(popup);
+        // Create studio window using windowhandler API
+        openWindow({
+            title: 'Gacha Design Studio',
+            content: studioContent,
+            footer: '<div style="width:100%;display:flex;justify-content:center;"><button class="footer-btn wh-ok-btn" onclick="window.closeWindow(window.currentStudioWindowId)">Close</button></div>',
+            width: '50%',
+            height: 'auto',
+            lockUnderlay: false,
+            overlayOpacity: 0.4
+        });
 
-        var header2 = document.getElementById("header2");
-        var resizer2 = document.getElementById("resizer2");
-        var container = popup;
-        var offsetX, offsetY;
-        var isDragging = false;
-        var isResizing = false;
-
-        function startDrag(e) {
-            e.preventDefault();
-            isDragging = true;
-            offsetX = e.clientX - container.offsetLeft;
-            offsetY = e.clientY - container.offsetTop;
-            document.addEventListener("mousemove", drag);
-            document.addEventListener("mouseup", stopDrag);
-        }
-
-        function startDragTouch(e) {
-            e.preventDefault();
-            isDragging = true;
-            var touch = e.touches[0];
-            offsetX = touch.clientX - container.offsetLeft;
-            offsetY = touch.clientY - container.offsetTop;
-            document.addEventListener("touchmove", dragTouch);
-            document.addEventListener("touchend", stopDragTouch);
-        }
-
-        function drag(e) {
-            e.preventDefault();
-            if (!isDragging) return;
-            container.style.left = e.clientX - offsetX + "px";
-            container.style.top = e.clientY - offsetY + "px";
-        }
-
-        function dragTouch(e) {
-            e.preventDefault();
-            if (!isDragging) return;
-            var touch = e.touches[0];
-            container.style.left = touch.clientX - offsetX + "px";
-            container.style.top = touch.clientY - offsetY + "px";
-        }
-
-        function stopDrag() {
-            isDragging = false;
-            document.removeEventListener("mousemove", drag);
-            document.removeEventListener("mouseup", stopDrag);
-        }
-
-        function stopDragTouch() {
-            isDragging = false;
-            document.removeEventListener("touchmove", dragTouch);
-            document.removeEventListener("touchend", stopDragTouch);
-        }
-
-        function startResize(e) {
-            e.preventDefault();
-            isResizing = true;
-            offsetX = e.clientX - container.offsetWidth;
-            offsetY = e.clientY - container.offsetHeight;
-            document.addEventListener("mousemove", resize);
-            document.addEventListener("mouseup", stopResize);
-        }
-
-        function startResizeTouch(e) {
-            e.preventDefault();
-            isResizing = true;
-            var touch = e.touches[0];
-            offsetX = touch.clientX - container.offsetWidth;
-            offsetY = touch.clientY - container.offsetHeight;
-            document.addEventListener("touchmove", resizeTouch);
-            document.addEventListener("touchend", stopResizeTouch);
-        }
-
-        function resize(e) {
-            e.preventDefault();
-            if (!isResizing) return;
-            container.style.width = e.clientX - offsetX + "px";
-            container.style.height = e.clientY - offsetY + "px";
-        }
-
-        function resizeTouch(e) {
-            e.preventDefault();
-            if (!isResizing) return;
-            var touch = e.touches[0];
-            container.style.width = touch.clientX - offsetX + "px";
-            container.style.height = touch.clientY - offsetY + "px";
-        }
-
-        function stopResize() {
-            isResizing = false;
-            document.removeEventListener("mousemove", resize);
-            document.removeEventListener("mouseup", stopResize);
-        }
-
-        function stopResizeTouch() {
-            isResizing = false;
-            document.removeEventListener("touchmove", resizeTouch);
-            document.removeEventListener("touchend", stopResizeTouch);
-        }
-
-        header2.addEventListener("mousedown", startDrag);
-        header2.addEventListener("touchstart", startDragTouch);
-        resizer2.addEventListener("mousedown", startResize);
-        resizer2.addEventListener("touchstart", startResizeTouch);
+        // Get the window ID from the manager
+        var windowIds = window.windowManager.getWindowIds();
+        window.currentStudioWindowId = windowIds[windowIds.length - 1];
     }
 
     window.closeStudioPopup = function () {
-        var popup = document.getElementById('studioPopup');
-        var overlay = document.getElementById('overlay');
-
-        if (!popup || !overlay) return;
-
-        fadeOut(popup, 300, function () {
-            popup.style.display = 'none';
-            popup.style.opacity = '';
-
-            fadeOut(overlay, 200, function () {
-                overlay.style.display = 'none';
-                overlay.style.opacity = '';
-            });
-        });
-    };
-
-    function fadeOut(element, duration, callback) {
-        var op = 1;
-        var timer = setInterval(function () {
-            if (op <= 0.1){
-                clearInterval(timer);
-                element.style.display = 'none';
-                if (callback) callback();
-            }
-            element.style.opacity = op;
-            element.style.filter = 'alpha(opacity=' + op * 100 + ")";
-            op -= op * 0.1;
-        }, duration / 50);
-    }
-
-    function centerPopup(popup) {
-        popup.style.left = '25%';
-        popup.style.top = '25%';
-        popup.style.height = 'auto';
+        if (window.currentStudioWindowId && typeof window.closeWindow === 'function') {
+            window.closeWindow(window.currentStudioWindowId);
+        }
     }
 });
 
@@ -345,6 +206,8 @@ document.addEventListener("DOMContentLoaded", function () {
         if (!mode) return;
 
         overlayRoot.style.display = 'block';
+        // make overlay accept pointer events while a frame is shown
+        overlayRoot.style.pointerEvents = 'auto';
         overlayRoot.innerHTML = ''; // kosong total — frame bebas isi apa saja
 
         if (frames[mode]) {
@@ -365,10 +228,15 @@ document.addEventListener("DOMContentLoaded", function () {
             newUrl.searchParams.set('mode', mode);
             history.pushState({ mode: mode }, '', newUrl.toString());
         }
+        // notify frames that overlay is shown
+        try { window.dispatchEvent(new CustomEvent('studiooverlay:show', { detail: { mode: mode } })); } catch (e) {}
     }
 
     function hideOverlay(push) {
+
         overlayRoot.style.display = 'none';
+        // disable pointer capture so page becomes clickable again
+        overlayRoot.style.pointerEvents = 'none';
         overlayRoot.innerHTML = ''; // bersihkan saat tutup
 
         if (push !== false) {
@@ -376,6 +244,8 @@ document.addEventListener("DOMContentLoaded", function () {
             newUrl.searchParams.delete('mode');
             history.pushState({}, '', newUrl.toString());
         }
+        // notify frames that overlay is hidden so they can cleanup
+        try { window.dispatchEvent(new CustomEvent('studiooverlay:hide')); } catch (e) {}
     }
 
     window.registerStudioFrame = registerFrame;

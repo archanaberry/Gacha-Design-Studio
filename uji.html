@@ -1,0 +1,1845 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gacha Window Handler - Uji Lengkap</title>
+    <style>
+        /* ===========================================
+           STYLING HALAMAN UJI (BUKAN STYLING WINDOW)
+           =========================================== */
+        :root {
+            --primary: #5E6CC9;
+            --secondary: #7B68EE;
+            --accent: #FF7E5F;
+            --success: #4CAF50;
+            --warning: #FF9800;
+            --danger: #F44336;
+            --dark: #2D3748;
+            --light: #F7FAFC;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        /* HEADER */
+        .header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 40px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23ffffff' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E");
+            opacity: 0.3;
+        }
+
+        .header h1 {
+            font-size: 3.5rem;
+            margin-bottom: 10px;
+            text-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            font-weight: 800;
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            max-width: 800px;
+            margin: 0 auto 30px;
+        }
+
+        .header-stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        .stat-box {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 20px;
+            border-radius: 15px;
+            min-width: 180px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        /* MAIN CONTENT */
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            padding: 40px;
+        }
+
+        @media (max-width: 1100px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* CONTROL PANEL */
+        .control-panel {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .control-panel h2 {
+            color: var(--primary);
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 3px solid var(--primary);
+            font-size: 1.8rem;
+        }
+
+        /* BUTTON GRIDS */
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .btn {
+            padding: 16px 20px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            text-align: center;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:active {
+            transform: translateY(-1px);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            box-shadow: 0 6px 15px rgba(94, 108, 201, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, var(--accent), #FF9A8B);
+            color: white;
+            box-shadow: 0 6px 15px rgba(255, 126, 95, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--success), #66BB6A);
+            color: white;
+            box-shadow: 0 6px 15px rgba(76, 175, 80, 0.4);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, var(--danger), #EF5350);
+            color: white;
+            box-shadow: 0 6px 15px rgba(244, 67, 54, 0.4);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, var(--warning), #FFB74D);
+            color: white;
+            box-shadow: 0 6px 15px rgba(255, 152, 0, 0.4);
+        }
+
+        .btn-dark {
+            background: linear-gradient(135deg, var(--dark), #4A5568);
+            color: white;
+            box-shadow: 0 6px 15px rgba(45, 55, 72, 0.4);
+        }
+
+        /* TOGGLE CONTROLS */
+        .toggle-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .toggle-item {
+            background: var(--light);
+            padding: 20px;
+            border-radius: 12px;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .toggle-item:hover {
+            border-color: var(--primary);
+            background: white;
+        }
+
+        .toggle-item.active {
+            border-color: var(--primary);
+            background: rgba(94, 108, 201, 0.1);
+        }
+
+        .toggle-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .toggle-icon {
+            font-size: 1.5rem;
+        }
+
+        .toggle-title {
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .toggle-desc {
+            font-size: 0.9rem;
+            color: #666;
+            line-height: 1.5;
+        }
+
+        .checkbox {
+            width: 20px;
+            height: 20px;
+            accent-color: var(--primary);
+        }
+
+        /* STATUS PANEL */
+        .status-panel {
+            background: var(--dark);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            margin-top: 20px;
+            font-family: 'Monaco', 'Menlo', monospace;
+        }
+
+        .status-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .status-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .status-content {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 8px;
+            min-height: 100px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-size: 0.9rem;
+            line-height: 1.8;
+        }
+
+        .window-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            margin-bottom: 5px;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .window-id {
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .window-title {
+            color: #ccc;
+        }
+
+        /* DEMO PANEL */
+        .demo-panel {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .demo-section {
+            margin-bottom: 30px;
+        }
+
+        .demo-section h3 {
+            color: var(--primary);
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #eee;
+            font-size: 1.4rem;
+        }
+
+        /* CODE EXAMPLES */
+        .code-example {
+            background: #2D3748;
+            color: #E2E8F0;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            overflow-x: auto;
+        }
+
+        .code-keyword {
+            color: #F687B3;
+        }
+
+        .code-function {
+            color: #68D391;
+        }
+
+        .code-string {
+            color: #F6AD55;
+        }
+
+        .code-comment {
+            color: #A0AEC0;
+            font-style: italic;
+        }
+
+        /* FEATURE LIST */
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .feature-list li {
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .feature-list li:last-child {
+            border-bottom: none;
+        }
+
+        .feature-icon {
+            color: var(--primary);
+            font-size: 1.2rem;
+        }
+
+        /* FOOTER */
+        .footer {
+            background: var(--dark);
+            color: white;
+            padding: 30px 40px;
+            text-align: center;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .footer-link {
+            color: #ccc;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .footer-link:hover {
+            color: white;
+            text-decoration: underline;
+        }
+
+        .footer-text {
+            color: #999;
+            font-size: 0.9rem;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 768px) {
+            .header {
+                padding: 30px 20px;
+            }
+
+            .header h1 {
+                font-size: 2.5rem;
+            }
+
+            .header-stats {
+                flex-direction: column;
+                align-items: center;
+                gap: 15px;
+            }
+
+            .stat-box {
+                width: 100%;
+                max-width: 300px;
+            }
+
+            .main-content {
+                padding: 20px;
+                gap: 20px;
+            }
+
+            .button-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .toggle-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ANIMATIONS */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        /* CUSTOM SCROLLBAR */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, var(--secondary), var(--primary));
+        }
+    </style>
+</head>
+<body>
+    <div class="container fade-in">
+        <!-- HEADER -->
+        <div class="header">
+            <h1>🎪 Gacha Window Handler</h1>
+            <p>Sistem Overlay Popup yang Lengkap dengan Multi-Window Support, Drag & Resize, dan Fitur Lengkap Lainnya</p>
+            
+            <div class="header-stats">
+                <div class="stat-box">
+                    <span class="stat-number" id="windowCount">0</span>
+                    <span class="stat-label">Windows Aktif</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-number" id="apiCount">24</span>
+                    <span class="stat-label">API Methods</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-number" id="memoryCount">0KB</span>
+                    <span class="stat-label">Memory Used</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-number">∞</span>
+                    <span class="stat-label">Window Capacity</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- MAIN CONTENT -->
+        <div class="main-content">
+            <!-- LEFT PANEL: CONTROLS -->
+            <div class="control-panel">
+                <h2>🎮 Kontrol Demo</h2>
+                
+                <div class="button-grid">
+                    <button class="btn btn-primary" onclick="demoBasicWindow()">
+                        <span>🪟</span> Basic Window
+                    </button>
+                    
+                    <button class="btn btn-primary" onclick="demoAlertWindow()">
+                        <span>⚡</span> Alert Window
+                    </button>
+                    
+                    <button class="btn btn-secondary" onclick="demoMultipleWindows()">
+                        <span>🔥</span> Multiple Windows (5)
+                    </button>
+                    
+                    <button class="btn btn-secondary" onclick="demoRandomWindows()">
+                        <span>🎲</span> Random Windows
+                    </button>
+                    
+                    <button class="btn btn-success" onclick="demoCustomWindow()">
+                        <span>🎨</span> Custom Window
+                    </button>
+                    
+                    <button class="btn btn-success" onclick="demoModalWindow()">
+                        <span>🔒</span> Modal Window
+                    </button>
+                    
+                    <button class="btn btn-warning" onclick="demoDarkWindow()">
+                        <span>🌙</span> Dark Theme
+                    </button>
+                    
+                    <button class="btn btn-warning" onclick="demoCustomHeader()">
+                        <span>🏗️</span> Custom Header
+                    </button>
+                    
+                    <button class="btn btn-danger" onclick="closeAllDemoWindows()">
+                        <span>❌</span> Close All
+                    </button>
+                    
+                    <button class="btn btn-dark" onclick="demoSequence()">
+                        <span>🧪</span> Demo Sequence
+                    </button>
+                    
+                    <button class="btn btn-dark" onclick="demoInteractive()">
+                        <span>🎯</span> Interactive Demo
+                    </button>
+                </div>
+
+                <h3 style="margin-top: 30px; margin-bottom: 15px;">⚙️ Pengaturan Window</h3>
+                
+                <div class="toggle-grid">
+                    <div class="toggle-item" onclick="toggleSetting('closeOutside')">
+                        <div class="toggle-header">
+                            <input type="checkbox" id="closeOutside" class="checkbox" checked>
+                            <span class="toggle-icon">🚫</span>
+                            <span class="toggle-title">Close on Outside Click</span>
+                        </div>
+                        <p class="toggle-desc">Ketutup jika klik diluar window (jendela teratas akan tertutup)</p>
+                    </div>
+                    
+                    <div class="toggle-item" onclick="toggleSetting('lockUnderlay')">
+                        <div class="toggle-header">
+                            <input type="checkbox" id="lockUnderlay" class="checkbox" checked>
+                            <span class="toggle-icon">🔒</span>
+                            <span class="toggle-title">Lock Underlay</span>
+                        </div>
+                        <p class="toggle-desc">Blok interaksi dengan elemen di belakang window</p>
+                    </div>
+                    
+                    <div class="toggle-item" onclick="toggleSetting('savePosition')">
+                        <div class="toggle-header">
+                            <input type="checkbox" id="savePosition" class="checkbox">
+                            <span class="toggle-icon">💾</span>
+                            <span class="toggle-title">Save Position</span>
+                        </div>
+                        <p class="toggle-desc">Simpan posisi & ukuran window ke localStorage</p>
+                    </div>
+                    
+                    <div class="toggle-item" onclick="toggleSetting('enableAnimations')">
+                        <div class="toggle-header">
+                            <input type="checkbox" id="enableAnimations" class="checkbox" checked>
+                            <span class="toggle-icon">✨</span>
+                            <span class="toggle-title">Enable Animations</span>
+                        </div>
+                        <p class="toggle-desc">Aktifkan animasi buka/tutup window</p>
+                    </div>
+                </div>
+
+                <!-- STATUS PANEL -->
+                <div class="status-panel">
+                    <div class="status-header">
+                        <div class="status-title">📊 Status Windows</div>
+                        <div style="font-size: 0.8rem; color: #ccc;">
+                            Auto-refresh: 2s
+                        </div>
+                    </div>
+                    <div class="status-content" id="windowStatus">
+                        Tidak ada window yang terbuka.
+                        Klik tombol di atas untuk membuka window.
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT PANEL: DEMO & EXAMPLES -->
+            <div class="demo-panel">
+                <h2>📚 Contoh & Dokumentasi</h2>
+                
+                <div class="demo-section">
+                    <h3>🎯 Quick Start</h3>
+                    <div class="code-example">
+<span class="code-comment">// Buka window dasar</span><br>
+<span class="code-keyword">const</span> <span class="code-function">winId</span> = <span class="code-function">openWindow</span>({<br>
+&nbsp;&nbsp;<span class="code-string">title</span>: <span class="code-string">'Gacha Design Studio'</span>,<br>
+&nbsp;&nbsp;<span class="code-string">content</span>: <span class="code-string">'&lt;p&gt;Halo! (ketutup jika klik diluar window)&lt;/p&gt;'</span>,<br>
+&nbsp;&nbsp;<span class="code-string">footer</span>: <span class="code-string">'&lt;button class="footer-btn"&gt;OK&lt;/button&gt;'</span><br>
+});<br><br>
+<span class="code-comment">// Alert cepat</span><br>
+<span class="code-function">openWindowAlert</span>(<span class="code-string">'Pesan penting!'</span>, <span class="code-string">'⚠️ Peringatan'</span>);<br><br>
+<span class="code-comment">// Tutup semua window</span><br>
+<span class="code-function">closeAllWindows</span>();
+                    </div>
+                </div>
+
+                <div class="demo-section">
+                    <h3>🔧 API Examples</h3>
+                    <div class="code-example">
+<span class="code-comment">// Modifikasi window yang sudah terbuka</span><br>
+<span class="code-function">windowTitle</span>(<span class="code-string">winId</span>, <span class="code-string">'Judul Baru'</span>);<br>
+<span class="code-function">continueWindowTitle</span>(<span class="code-string">winId</span>, <span class="code-string">' - Subtitle'</span>);<br>
+<span class="code-function">contentWindow</span>(<span class="code-string">winId</span>, <span class="code-string">'&lt;h3&gt;Konten Baru&lt;/h3&gt;'</span>);<br>
+<span class="code-function">footerWindow</span>(<span class="code-string">winId</span>, <span class="code-string">'&lt;button class="footer-btn"&gt;Save&lt;/button&gt;'</span>);<br>
+<span class="code-function">lockWindow</span>(<span class="code-string">winId</span>, <span class="code-keyword">true</span>);<br>
+<span class="code-function">downWindowContrast</span>(<span class="code-string">winId</span>, <span class="code-keyword">0.7</span>);<br>
+<span class="code-function">stayWindowFocus</span>(<span class="code-string">winId</span>, <span class="code-keyword">true</span>);<br>
+<span class="code-function">setTheme</span>(<span class="code-string">winId</span>, <span class="code-string">'dark'</span>);
+                    </div>
+                </div>
+
+                <div class="demo-section">
+                    <h3>✨ Fitur Utama</h3>
+                    <ul class="feature-list">
+                        <li>
+                            <span class="feature-icon">🔢</span>
+                            <div>
+                                <strong>Random ID Generation</strong><br>
+                                Setiap window mendapat ID unik dengan token bertumbuh
+                            </div>
+                        </li>
+                        <li>
+                            <span class="feature-icon">🪟</span>
+                            <div>
+                                <strong>Multiple Window Support</strong><br>
+                                Buka banyak window tanpa batas, masing-masing independen
+                            </div>
+                        </li>
+                        <li>
+                            <span class="feature-icon">🎯</span>
+                            <div>
+                                <strong>Close-on-Outside</strong><br>
+                                Klik di luar window untuk menutup (dapat di-toggle)
+                            </div>
+                        </li>
+                        <li>
+                            <span class="feature-icon">🧲</span>
+                            <div>
+                                <strong>Drag & Resize</strong><br>
+                                Drag header untuk pindah, resize di pojok kanan bawah
+                            </div>
+                        </li>
+                        <li>
+                            <span class="feature-icon">🎨</span>
+                            <div>
+                                <strong>Full Customization</strong><br>
+                                Header, content, footer dapat dikustomisasi sepenuhnya
+                            </div>
+                        </li>
+                        <li>
+                            <span class="feature-icon">💾</span>
+                            <div>
+                                <strong>LocalStorage Support</strong><br>
+                                Simpan posisi & ukuran window otomatis
+                            </div>
+                        </li>
+                        <li>
+                            <span class="feature-icon">📱</span>
+                            <div>
+                                <strong>Touch & Mobile Support</strong><br>
+                                Responsif dan mendukung interaksi touch
+                            </div>
+                        </li>
+                        <li>
+                            <span class="feature-icon">⚡</span>
+                            <div>
+                                <strong>Event System</strong><br>
+                                Callback untuk onOpen, onClose, onBeforeClose
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="demo-section">
+                    <h3>🎮 Interactive Demo</h3>
+                    <div style="display: flex; gap: 10px; margin-top: 20px;">
+                        <button class="btn btn-primary" onclick="testFeature('maximize')">
+                            Maximize Window
+                        </button>
+                        <button class="btn btn-secondary" onclick="testFeature('minimize')">
+                            Minimize Window
+                        </button>
+                        <button class="btn btn-success" onclick="testFeature('bringToFront')">
+                            Bring to Front
+                        </button>
+                        <button class="btn btn-warning" onclick="testFeature('changeTheme')">
+                            Toggle Theme
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FOOTER -->
+        <div class="footer">
+            <div class="footer-links">
+                <a href="#" class="footer-link" onclick="showDocumentation()">📚 Dokumentasi</a>
+                <a href="#" class="footer-link" onclick="showApiReference()">🔧 API Reference</a>
+                <a href="#" class="footer-link" onclick="showExamples()">💡 Contoh Lain</a>
+                <a href="#" class="footer-link" onclick="resetDemo()">🔄 Reset Demo</a>
+                <a href="#" class="footer-link" onclick="clearStorage()">🗑️ Clear Storage</a>
+            </div>
+            <p class="footer-text">
+                Gacha Window Handler v2.0.0 | Sistem overlay popup yang lengkap dengan semua fitur yang diminta.
+                Support untuk multiple windows, drag & resize, close-on-outside, dan kustomisasi penuh.
+            </p>
+        </div>
+    </div>
+
+    <!-- WINDOWHANDLER SCRIPT -->
+    <script src="windowhandler.js"></script>
+
+    <!-- DEMO SCRIPT -->
+    <script>
+        // ===========================================
+        // VARIABEL GLOBAL DEMO
+        // ===========================================
+        let demoWindows = [];
+        let demoWindowIds = [];
+        let testSequence = null;
+        let lastWindowId = null;
+
+        // ===========================================
+        // FUNGSI UTILITAS
+        // ===========================================
+        function updateStatus() {
+            const count = windowManager.getWindowCount();
+            const ids = windowManager.getWindowIds();
+            
+            document.getElementById('windowCount').textContent = count;
+            
+            // Update memory usage (estimated)
+            const memory = Math.round((JSON.stringify(windowManager.windowPositions).length + 
+                                      JSON.stringify(Array.from(windowManager.windows.entries())).length) / 1024);
+            document.getElementById('memoryCount').textContent = memory + 'KB';
+            
+            // Update status panel
+            const statusEl = document.getElementById('windowStatus');
+            if (count === 0) {
+                statusEl.innerHTML = '<div style="color:#ccc;text-align:center;padding:20px;">Tidak ada window yang terbuka.<br>Klik tombol di atas untuk membuka window.</div>';
+            } else {
+                let html = '';
+                ids.forEach(id => {
+                    const win = windowManager.windows.get(id);
+                    if (win) {
+                        const isMaximized = win.state?.isMaximized ? ' (Maximized)' : '';
+                        const isDragging = win.state?.isDragging ? ' 🧲' : '';
+                        const isResizing = win.state?.isResizing ? ' 📐' : '';
+                        
+                        html += `
+                            <div class="window-item">
+                                <div>
+                                    <span class="window-id">${id.substring(0, 12)}...</span>
+                                    <span class="window-title">- ${win.config.title}</span>
+                                </div>
+                                <div style="font-size:0.8rem;color:#aaa;">
+                                    ${isMaximized}${isDragging}${isResizing}
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+                statusEl.innerHTML = html;
+            }
+        }
+
+        function showToast(message, type = 'info') {
+            // Use windowHandler's toast system
+            const colors = {
+                info: '#5E6CC9',
+                success: '#4CAF50',
+                warning: '#FF9800',
+                error: '#F44336'
+            };
+            
+            const style = document.createElement('style');
+            style.textContent = `
+                .custom-toast {
+                    background: ${colors[type]} !important;
+                    border-left: 4px solid white !important;
+                }
+            `;
+            document.head.appendChild(style);
+            
+            // Create custom toast
+            const toast = document.createElement('div');
+            toast.className = 'wh-toast custom-toast';
+            toast.textContent = message;
+            toast.style.zIndex = '100000';
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                
+                setTimeout(() => {
+                    toast.remove();
+                    style.remove();
+                }, 300);
+            }, 3000);
+        }
+
+        function getRandomColor() {
+            const colors = ['#5E6CC9', '#7B68EE', '#FF7E5F', '#4CAF50', '#FF9800', '#9C27B0'];
+            return colors[Math.floor(Math.random() * colors.length)];
+        }
+
+        // ===========================================
+        // TOGGLE SETTINGS
+        // ===========================================
+        function toggleSetting(setting) {
+            const checkbox = document.getElementById(setting);
+            checkbox.checked = !checkbox.checked;
+            
+            switch(setting) {
+                case 'closeOutside':
+                    closeWindowOutside(checkbox.checked);
+                    showToast(`Close-on-outside ${checkbox.checked ? 'diaktifkan' : 'dinonaktifkan'}`);
+                    break;
+                    
+                case 'lockUnderlay':
+                    // This affects new windows only
+                    showToast(`Lock underlay akan diterapkan pada window baru`);
+                    break;
+                    
+                case 'savePosition':
+                    if (checkbox.checked) {
+                        showToast('Posisi window akan disimpan ke localStorage');
+                    } else {
+                        clearWindowPositions();
+                        showToast('Posisi window dihapus dari localStorage');
+                    }
+                    break;
+                    
+                case 'enableAnimations':
+                    // This is handled by CSS
+                    showToast(`Animasi ${checkbox.checked ? 'diaktifkan' : 'dinonaktifkan'}`);
+                    break;
+            }
+        }
+
+        // ===========================================
+        // DEMO FUNCTIONS
+        // ===========================================
+        function demoBasicWindow() {
+            const id = openWindow({
+                title: 'Gacha Design Studio - Basic Window',
+                content: `
+                    <div style="text-align: center; padding: 20px;">
+                        <h2 style="color: #5E6CC9; margin-bottom: 20px;">🎯 Window Dasar</h2>
+                        <p>Ini adalah contoh window dasar dengan semua fitur standar:</p>
+                        <ul style="text-align: left; margin: 20px auto; max-width: 400px;">
+                            <li>🎨 Styling lengkap dengan font Comfortaa</li>
+                            <li>🧲 Drag header untuk memindahkan</li>
+                            <li>📐 Resize dari pojok kanan bawah</li>
+                            <li>🚫 Klik overlay untuk menutup (jika aktif)</li>
+                            <li>⚡ Animasi buka/tutup yang smooth</li>
+                        </ul>
+                        <p style="color: #666; font-size: 0.9em; margin-top: 30px;">
+                            <strong>Catatan:</strong> Window ini akan tertutup jika klik di luar (close-on-outside)
+                        </p>
+                    </div>
+                `,
+                footer: '<button class="footer-btn">Mengerti</button>',
+                width: '500px',
+                lockUnderlay: document.getElementById('lockUnderlay').checked,
+                overlayOpacity: 0.45,
+                onOpen: (id, config) => {
+                    console.log('Window opened:', id);
+                },
+                onClose: (id, config) => {
+                    console.log('Window closed:', id);
+                }
+            });
+            
+            lastWindowId = id;
+            demoWindowIds.push(id);
+            updateStatus();
+            showToast('Window dasar berhasil dibuka', 'success');
+        }
+
+        function demoAlertWindow() {
+            openWindowAlert(
+                '<div style="text-align:center;padding:20px;">' +
+                '<h3 style="color:#F44336;margin-bottom:15px;">⚠️ Peringatan Penting!</h3>' +
+                '<p>Ini adalah contoh window alert.</p>' +
+                '<p>Window ini bersifat modal dan akan menutup secara otomatis saat klik OK atau klik di luar window.</p>' +
+                '</div>',
+                '🚨 Alert System'
+            );
+            
+            updateStatus();
+            showToast('Alert window berhasil dibuka', 'warning');
+        }
+
+        function demoMultipleWindows() {
+            showToast('Membuka 5 window sekaligus...', 'info');
+            
+            const positions = [
+                { top: '15%', left: '15%' },
+                { top: '20%', left: '35%' },
+                { top: '25%', left: '55%' },
+                { top: '30%', left: '75%' },
+                { top: '10%', left: '60%' }
+            ];
+            
+            const colors = ['#5E6CC9', '#7B68EE', '#FF7E5F', '#4CAF50', '#9C27B0'];
+            const emojis = ['🪟', '🔥', '✨', '🎯', '🚀'];
+            
+            positions.forEach((pos, i) => {
+                setTimeout(() => {
+                    const id = openWindow({
+                        title: `${emojis[i]} Window ${i + 1}`,
+                        content: `
+                            <div style="background: linear-gradient(135deg, ${colors[i]}, ${colors[(i + 1) % colors.length]}); 
+                                     padding: 30px; border-radius: 12px; color: white; text-align: center;">
+                                <h2>Window #${i + 1}</h2>
+                                <p>Posisi: ${pos.top}, ${pos.left}</p>
+                                <p style="font-size: 3rem; margin: 20px 0;">${emojis[i]}</p>
+                                <p>Drag untuk pindah, resize untuk ubah ukuran!</p>
+                            </div>
+                        `,
+                        footer: `<button class="footer-btn" style="background:${colors[i]}">Close ${i + 1}</button>`,
+                        position: pos,
+                        width: '350px',
+                        overlayOpacity: 0.3 + (i * 0.1)
+                    });
+                    
+                    demoWindowIds.push(id);
+                    if (i === positions.length - 1) lastWindowId = id;
+                }, i * 300);
+            });
+            
+            setTimeout(() => {
+                updateStatus();
+                showToast('5 window berhasil dibuka', 'success');
+            }, positions.length * 300 + 500);
+        }
+
+        function demoRandomWindows() {
+            const count = Math.floor(Math.random() * 5) + 2;
+            showToast(`Membuka ${count} window random...`, 'info');
+            
+            for (let i = 0; i < count; i++) {
+                setTimeout(() => {
+                    const width = Math.floor(Math.random() * 300) + 300;
+                    const height = Math.floor(Math.random() * 200) + 250;
+                    const top = Math.floor(Math.random() * 60) + 10;
+                    const left = Math.floor(Math.random() * 60) + 10;
+                    
+                    const id = openWindow({
+                        title: `🎲 Random ${i + 1}`,
+                        content: `
+                            <div style="text-align: center;">
+                                <h3 style="color:${getRandomColor()}">Window Random #${i + 1}</h3>
+                                <p>Dibuat: ${new Date().toLocaleTimeString()}</p>
+                                <p>Ukuran: ${width}px × ${height}px</p>
+                                <p>Posisi: ${top}% top, ${left}% left</p>
+                                <div style="margin: 20px 0; font-size: 2rem;">
+                                    ${['🎯', '✨', '🔥', '🌟', '💎', '🎨'][Math.floor(Math.random() * 6)]}
+                                </div>
+                            </div>
+                        `,
+                        footer: `<button class="footer-btn" style="background:${getRandomColor()}">Close</button>`,
+                        position: { top: `${top}%`, left: `${left}%` },
+                        width: `${width}px`,
+                        height: `${height}px`,
+                        overlayOpacity: Math.random() * 0.5 + 0.2
+                    });
+                    
+                    demoWindowIds.push(id);
+                    lastWindowId = id;
+                }, i * 200);
+            }
+            
+            setTimeout(updateStatus, count * 200 + 300);
+        }
+
+        function demoCustomWindow() {
+            const id = openWindow({
+                title: '🎨 Custom Design Studio',
+                content: `
+                    <div style="max-width: 600px; margin: 0 auto;">
+                        <div style="background: linear-gradient(135deg, #667eea, #764ba2); 
+                                 padding: 30px; border-radius: 16px; color: white; margin-bottom: 20px;">
+                            <h2 style="margin: 0;">Custom Window Design</h2>
+                            <p style="opacity: 0.9;">Ini adalah contoh window dengan custom styling lengkap</p>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 30px 0;">
+                            <div style="background: #f8f9fa; padding: 20px; border-radius: 12px;">
+                                <h4 style="color: #5E6CC9;">🎯 Feature 1</h4>
+                                <p>Drag & Drop support dengan animasi smooth</p>
+                            </div>
+                            <div style="background: #f8f9fa; padding: 20px; border-radius: 12px;">
+                                <h4 style="color: #FF7E5F;">✨ Feature 2</h4>
+                                <p>Resize dengan visual feedback yang jelas</p>
+                            </div>
+                            <div style="background: #f8f9fa; padding: 20px; border-radius: 12px;">
+                                <h4 style="color: #4CAF50;">🚀 Feature 3</h4>
+                                <p>Multiple window management system</p>
+                            </div>
+                            <div style="background: #f8f9fa; padding: 20px; border-radius: 12px;">
+                                <h4 style="color: #9C27B0;">🎨 Feature 4</h4>
+                                <p>Custom theme & styling options</p>
+                            </div>
+                        </div>
+                        
+                        <div style="text-align: center; margin-top: 30px;">
+                            <button onclick="alert('Inline JavaScript berfungsi!')" 
+                                    style="padding: 12px 24px; background: #5E6CC9; color: white; 
+                                           border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">
+                                🎯 Test Inline JS
+                            </button>
+                        </div>
+                    </div>
+                `,
+                footer: `
+                    <button class="footer-btn secondary">Cancel</button>
+                    <button class="footer-btn">Save Draft</button>
+                    <button class="footer-btn" style="background: #4CAF50;">Publish</button>
+                `,
+                width: '700px',
+                height: '600px',
+                overlayOpacity: 0.5,
+                modal: false,
+                draggable: true,
+                resizable: true,
+                maximizable: true
+            });
+            
+            lastWindowId = id;
+            demoWindowIds.push(id);
+            updateStatus();
+            showToast('Custom window berhasil dibuka', 'success');
+        }
+
+        function demoModalWindow() {
+            const id = openWindow({
+                title: '🔒 Modal Window - Aksi Diperlukan',
+                content: `
+                    <div style="text-align: center; padding: 30px;">
+                        <div style="width: 80px; height: 80px; background: #F44336; color: white; 
+                                 border-radius: 50%; display: flex; align-items: center; 
+                                 justify-content: center; margin: 0 auto 20px; font-size: 2rem;">
+                            ⚠️
+                        </div>
+                        <h2 style="color: #F44336;">Konfirmasi Aksi</h2>
+                        <p style="font-size: 1.1em; line-height: 1.6; max-width: 500px; margin: 20px auto;">
+                            Apakah Anda yakin ingin menghapus item ini? Aksi ini tidak dapat dibatalkan.
+                        </p>
+                        <div style="background: #fff3cd; border: 1px solid #ffeaa7; 
+                                 border-radius: 8px; padding: 15px; margin: 30px auto; max-width: 500px;">
+                            <p style="margin: 0; color: #856404;">
+                                <strong>⚠️ Peringatan:</strong> Data yang dihapus tidak dapat dipulihkan.
+                                Pastikan Anda telah membackup data penting.
+                            </p>
+                        </div>
+                    </div>
+                `,
+                footer: `
+                    <button class="footer-btn secondary" onclick="closeWindow('${id}')">Batal</button>
+                    <button class="footer-btn" style="background: #F44336;" 
+                            onclick="handleDelete('${id}')">Hapus Permanen</button>
+                `,
+                width: '550px',
+                modal: true,
+                lockUnderlay: true,
+                closable: false, // Must use buttons to close
+                overlayOpacity: 0.7,
+                onBeforeClose: (id, config) => {
+                    // Prevent accidental close
+                    return confirm('Yakin ingin menutup window?');
+                }
+            });
+            
+            lastWindowId = id;
+            demoWindowIds.push(id);
+            updateStatus();
+            showToast('Modal window berhasil dibuka', 'warning');
+        }
+
+        function handleDelete(windowId) {
+            showToast('Item berhasil dihapus', 'success');
+            closeWindow(windowId);
+        }
+
+        function demoDarkWindow() {
+            const id = openWindow({
+                title: '🌙 Dark Theme Window',
+                content: `
+                    <div style="max-width: 500px; margin: 0 auto;">
+                        <div style="background: linear-gradient(135deg, #667eea, #764ba2); 
+                                 padding: 25px; border-radius: 12px; margin-bottom: 25px;">
+                            <h2 style="color: white; margin: 0;">Dark Mode Activated</h2>
+                            <p style="color: rgba(255,255,255,0.9);">Theme gelap untuk pengalaman yang lebih nyaman</p>
+                        </div>
+                        
+                        <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                            <h3 style="color: #7B68EE;">🎨 Features</h3>
+                            <ul style="color: #ccc; line-height: 1.8;">
+                                <li>Eye-friendly dark theme</li>
+                                <li>Reduced eye strain</li>
+                                <li>Better contrast for readability</li>
+                                <li>Modern aesthetic</li>
+                            </ul>
+                        </div>
+                        
+                        <div style="display: flex; gap: 15px; margin-top: 30px;">
+                            <div style="flex: 1; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px;">
+                                <h4 style="color: #FF7E5F;">☀️ Light</h4>
+                                <p style="color: #999; font-size: 0.9em;">Untuk kondisi terang</p>
+                            </div>
+                            <div style="flex: 1; background: rgba(94, 108, 201, 0.2); padding: 15px; border-radius: 8px; border: 2px solid #5E6CC9;">
+                                <h4 style="color: #5E6CC9;">🌙 Dark</h4>
+                                <p style="color: #999; font-size: 0.9em;">Untuk kondisi gelap</p>
+                            </div>
+                        </div>
+                    </div>
+                `,
+                footer: '<button class="footer-btn">Switch to Light</button>',
+                width: '550px',
+                theme: 'dark',
+                overlayOpacity: 0.8
+            });
+            
+            lastWindowId = id;
+            demoWindowIds.push(id);
+            updateStatus();
+            showToast('Dark theme window berhasil dibuka', 'info');
+        }
+
+        function demoCustomHeader() {
+            const id = openWindow({
+                title: 'Temporary Title',
+                content: '<p>Header akan diganti dengan custom design...</p>',
+                footer: '<button class="footer-btn">Close</button>',
+                width: '500px'
+            });
+            
+            // Reimplement header after 500ms
+            setTimeout(() => {
+                reimplWindowHeader(id, (headerEl, meta) => {
+                    headerEl.style.background = 'linear-gradient(135deg, #FF7E5F, #FEB47B)';
+                    headerEl.style.padding = '15px 20px';
+                    headerEl.style.height = '70px';
+                    
+                    headerEl.innerHTML = `
+                        <div style="display: flex; align-items: center; gap: 15px; flex: 1;">
+                            <div style="width: 40px; height: 40px; background: rgba(255,255,255,0.2); 
+                                     border-radius: 10px; display: flex; align-items: center; 
+                                     justify-content: center; font-size: 1.2rem;">
+                                🏗️
+                            </div>
+                            <div>
+                                <div style="color: white; font-size: 1.3rem; font-weight: bold;">
+                                    Custom Header Design
+                                </div>
+                                <div style="color: rgba(255,255,255,0.8); font-size: 0.9rem;">
+                                    Fully customized with JavaScript
+                                </div>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <button style="background: rgba(255,255,255,0.15); border: none; color: white; 
+                                     padding: 8px 16px; border-radius: 8px; cursor: pointer;">
+                                Action
+                            </button>
+                            <button id="closeBtn_${meta.id}" 
+                                    style="background: rgba(255,255,255,0.1); border: none; color: white; 
+                                     width: 36px; height: 36px; border-radius: 50%; font-size: 1.2rem; cursor: pointer;">
+                                ×
+                            </button>
+                        </div>
+                    `;
+                    
+                    // Attach close button
+                    document.getElementById(`closeBtn_${meta.id}`).addEventListener('click', () => {
+                        closeWindow(meta.id);
+                    });
+                });
+                
+                // Update content to match new header
+                contentWindow(id, `
+                    <div style="text-align: center; padding: 30px;">
+                        <h2 style="color: #FF7E5F;">🎨 Custom Header Implemented!</h2>
+                        <p>Header window ini telah sepenuhnya diganti dengan custom design.</p>
+                        <div style="background: rgba(255, 126, 95, 0.1); padding: 20px; 
+                                 border-radius: 12px; margin: 30px 0;">
+                            <p><strong>✨ Fitur Custom Header:</strong></p>
+                            <ul style="text-align: left; max-width: 400px; margin: 0 auto;">
+                                <li>Full control over header design</li>
+                                <li>Custom buttons and layout</li>
+                                <li>Event handling integration</li>
+                                <li>Complete styling freedom</li>
+                            </ul>
+                        </div>
+                    </div>
+                `);
+                
+            }, 500);
+            
+            lastWindowId = id;
+            demoWindowIds.push(id);
+            updateStatus();
+            showToast('Custom header berhasil diterapkan', 'success');
+        }
+
+        function demoSequence() {
+            if (testSequence) {
+                clearTimeout(testSequence);
+                testSequence = null;
+                showToast('Demo sequence dihentikan', 'warning');
+                return;
+            }
+            
+            showToast('Memulai demo sequence...', 'info');
+            
+            const id = openWindow({
+                title: 'Demo Sequence',
+                content: '<div class="wh-loading"></div>',
+                footer: '<button class="footer-btn">Ready</button>',
+                width: '450px'
+            });
+            
+            lastWindowId = id;
+            demoWindowIds.push(id);
+            
+            // Sequence of modifications
+            let step = 0;
+            
+            testSequence = setInterval(() => {
+                step++;
+                
+                switch(step) {
+                    case 1:
+                        contentWindow(id, '<h3>Step 1: Window terbuka</h3><p>Demo sequence dimulai...</p>');
+                        break;
+                        
+                    case 2:
+                        continueWindowTitle(id, ' - Step 2');
+                        contentWindow(id, '<h3>Step 2: Title updated</h3><p>Title ditambahkan dengan suffix</p>');
+                        break;
+                        
+                    case 3:
+                        windowTitle(id, '🎯 New Title');
+                        contentWindow(id, '<h3>Step 3: Title diganti</h3><p>Title sepenuhnya diganti</p>');
+                        break;
+                        
+                    case 4:
+                        contentWindow(id, `
+                            <h3>Step 4: Content diperbarui</h3>
+                            <p>Konten window diubah dengan HTML yang lebih kompleks</p>
+                            <div style="background: #f0f0f0; padding: 15px; border-radius: 8px; margin: 15px 0;">
+                                <p>✨ Fitur demo:</p>
+                                <ul>
+                                    <li>Dynamic content updates</li>
+                                    <li>Real-time modifications</li>
+                                    <li>Smooth transitions</li>
+                                </ul>
+                            </div>
+                        `);
+                        break;
+                        
+                    case 5:
+                        footerWindow(id, `
+                            <button class="footer-btn secondary">Cancel</button>
+                            <button class="footer-btn">Save</button>
+                            <button class="footer-btn" style="background: #4CAF50;">Complete</button>
+                        `);
+                        contentWindow(id, '<h3>Step 5: Footer diperbarui</h3><p>Tombol footer ditambah dan dimodifikasi</p>');
+                        break;
+                        
+                    case 6:
+                        downWindowContrast(id, 0.7);
+                        contentWindow(id, '<h3>Step 6: Contrast diubah</h3><p>Overlay opacity ditingkatkan menjadi 70%</p>');
+                        break;
+                        
+                    case 7:
+                        stayWindowFocus(id, true);
+                        contentWindow(id, '<h3>Step 7: Stay focus aktif</h3><p>Window tetap di depan meski klik di luar</p>');
+                        break;
+                        
+                    case 8:
+                        setTheme(id, 'dark');
+                        contentWindow(id, `
+                            <h3>Step 8: Dark theme diaktifkan</h3>
+                            <p>Window beralih ke mode gelap</p>
+                            <div style="background: rgba(255,255,255,0.1); padding: 15px; 
+                                     border-radius: 8px; margin: 15px 0;">
+                                <p>Theme berhasil diubah!</p>
+                            </div>
+                        `);
+                        break;
+                        
+                    case 9:
+                        contentWindow(id, '<h3>🎉 Demo Sequence Selesai!</h3><p>Semua fitur telah didemonstrasikan.</p>');
+                        clearInterval(testSequence);
+                        testSequence = null;
+                        showToast('Demo sequence selesai!', 'success');
+                        break;
+                }
+                
+                updateStatus();
+            }, 1000);
+        }
+
+        function demoInteractive() {
+            const id = openWindow({
+                title: '🎮 Interactive Demo',
+                content: `
+                    <div style="max-width: 500px; margin: 0 auto; text-align: center;">
+                        <h2 style="color: #5E6CC9;">Interactive Controls</h2>
+                        <p>Ubah properti window ini secara real-time:</p>
+                        
+                        <div style="background: #f8f9fa; padding: 25px; border-radius: 12px; margin: 25px 0;">
+                            <div style="margin-bottom: 20px;">
+                                <label style="display: block; margin-bottom: 8px; color: #666;">Title:</label>
+                                <input type="text" id="titleInput" value="🎮 Interactive Demo" 
+                                       style="width: 100%; padding: 10px; border: 2px solid #ddd; 
+                                              border-radius: 8px; font-size: 1em;">
+                            </div>
+                            
+                            <div style="margin-bottom: 20px;">
+                                <label style="display: block; margin-bottom: 8px; color: #666;">Content:</label>
+                                <textarea id="contentInput" style="width: 100%; padding: 10px; 
+                                          border: 2px solid #ddd; border-radius: 8px; font-size: 1em; 
+                                          height: 100px; resize: vertical;">
+Coba ubah konten ini dan klik "Update Content"!
+                                </textarea>
+                            </div>
+                            
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                                <button onclick="updateTitle('${id}')" 
+                                        style="padding: 12px; background: #5E6CC9; color: white; 
+                                               border: none; border-radius: 8px; cursor: pointer;">
+                                    Update Title
+                                </button>
+                                <button onclick="updateContent('${id}')" 
+                                        style="padding: 12px; background: #FF7E5F; color: white; 
+                                               border: none; border-radius: 8px; cursor: pointer;">
+                                    Update Content
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
+                            <button onclick="toggleLock('${id}')" 
+                                    style="padding: 10px 20px; background: #6c757d; color: white; 
+                                           border: none; border-radius: 8px; cursor: pointer;">
+                                Toggle Lock
+                            </button>
+                            <button onclick="toggleTheme('${id}')" 
+                                    style="padding: 10px 20px; background: #333; color: white; 
+                                           border: none; border-radius: 8px; cursor: pointer;">
+                                Toggle Theme
+                            </button>
+                            <button onclick="bringToFront('${id}')" 
+                                    style="padding: 10px 20px; background: #4CAF50; color: white; 
+                                           border: none; border-radius: 8px; cursor: pointer;">
+                                Bring to Front
+                            </button>
+                        </div>
+                    </div>
+                `,
+                footer: '<button class="footer-btn">Done</button>',
+                width: '600px',
+                height: '650px'
+            });
+            
+            lastWindowId = id;
+            demoWindowIds.push(id);
+            updateStatus();
+            showToast('Interactive demo berhasil dibuka', 'success');
+            
+            // Store ID globally for button functions
+            window.interactiveDemoId = id;
+        }
+
+        // Interactive demo helper functions
+        window.updateTitle = function(windowId) {
+            const input = document.getElementById('titleInput');
+            if (input && input.value) {
+                windowTitle(windowId, input.value);
+                showToast('Title diperbarui', 'success');
+            }
+        };
+
+        window.updateContent = function(windowId) {
+            const textarea = document.getElementById('contentInput');
+            if (textarea && textarea.value) {
+                contentWindow(windowId, `
+                    <div style="text-align: center; padding: 20px;">
+                        <h3 style="color: #5E6CC9;">Konten Diperbarui!</h3>
+                        <p>${textarea.value}</p>
+                        <div style="background: #f0f0f0; padding: 15px; border-radius: 8px; 
+                                 margin: 20px 0; font-style: italic;">
+                            <p>Konten ini diubah secara dinamis menggunakan API contentWindow()</p>
+                        </div>
+                    </div>
+                `);
+                showToast('Content diperbarui', 'success');
+            }
+        };
+
+        window.toggleLock = function(windowId) {
+            const win = windowManager.windows.get(windowId);
+            if (win) {
+                const newLock = !win.config.lockUnderlay;
+                lockWindow(windowId, newLock);
+                showToast(`Lock ${newLock ? 'diaktifkan' : 'dinonaktifkan'}`, 'info');
+            }
+        };
+
+        window.toggleTheme = function(windowId) {
+            const win = windowManager.windows.get(windowId);
+            if (win) {
+                const newTheme = win.config.theme === 'light' ? 'dark' : 'light';
+                setTheme(windowId, newTheme);
+                showToast(`Theme diubah ke ${newTheme}`, 'info');
+            }
+        };
+
+        window.bringToFront = function(windowId) {
+            bringToFront(windowId);
+            showToast('Window dibawa ke depan', 'info');
+        };
+
+        function testFeature(feature) {
+            if (!lastWindowId || !windowManager.windows.has(lastWindowId)) {
+                showToast('Buka window terlebih dahulu!', 'warning');
+                return;
+            }
+
+            const win = windowManager.windows.get(lastWindowId);
+            
+            switch(feature) {
+                case 'maximize':
+                    const maximizeBtn = win.element.querySelector('.wh-maximize-btn');
+                    if (maximizeBtn) maximizeBtn.click();
+                    showToast('Maximize window', 'info');
+                    break;
+                    
+                case 'minimize':
+                    minimizeWindow(lastWindowId);
+                    setTimeout(() => restoreWindow(lastWindowId), 2000);
+                    showToast('Window diminimize (akan restore dalam 2 detik)', 'info');
+                    break;
+                    
+                case 'bringToFront':
+                    bringToFront(lastWindowId);
+                    showToast('Window dibawa ke depan', 'success');
+                    break;
+                    
+                case 'changeTheme':
+                    const newTheme = win.config.theme === 'light' ? 'dark' : 'light';
+                    setTheme(lastWindowId, newTheme);
+                    showToast(`Theme diubah ke ${newTheme}`, 'info');
+                    break;
+            }
+            
+            updateStatus();
+        }
+
+        function closeAllDemoWindows() {
+            const count = closeAllWindows();
+            demoWindowIds = [];
+            lastWindowId = null;
+            
+            if (testSequence) {
+                clearInterval(testSequence);
+                testSequence = null;
+            }
+            
+            updateStatus();
+            showToast(`${count} window ditutup`, 'success');
+        }
+
+        // ===========================================
+        // UTILITY FUNCTIONS
+        // ===========================================
+        function showDocumentation() {
+            openWindow({
+                title: '📚 Dokumentasi WindowHandler',
+                content: `
+                    <div style="max-width: 700px; margin: 0 auto;">
+                        <h2 style="color: #5E6CC9;">Dokumentasi Lengkap</h2>
+                        
+                        <h3 style="margin-top: 30px;">🎯 Fitur Utama</h3>
+                        <ul style="line-height: 1.8;">
+                            <li><strong>Multi-Window Support</strong>: Buka banyak window tanpa batas</li>
+                            <li><strong>Random ID Generation</strong>: ID unik dengan token bertumbuh</li>
+                            <li><strong>Drag & Resize</strong>: Interaksi lengkap dengan mouse/touch</li>
+                            <li><strong>Close-on-Outside</strong>: Klik di luar untuk menutup</li>
+                            <li><strong>Theme Support</strong>: Light & dark theme</li>
+                            <li><strong>LocalStorage</strong>: Simpan posisi & ukuran</li>
+                            <li><strong>Event System</strong>: Callback untuk semua event</li>
+                            <li><strong>Customization</strong>: Header, content, footer bisa dikustom</li>
+                        </ul>
+                        
+                        <h3 style="margin-top: 30px;">🔧 API Reference</h3>
+                        <p>Semua API tersedia sebagai shortcut global:</p>
+                        <pre style="background: #f8f9fa; padding: 15px; border-radius: 8px; overflow: auto;">
+openWindow(config)          // Buka window baru
+openWindowAlert(content, title) // Alert window
+openWindowMore(count)       // Buka banyak window
+windowTitle(id, title)      // Ganti judul
+contentWindow(id, content)  // Ganti konten
+footerWindow(id, html)      // Ganti footer
+closeWindow(id)            // Tutup window
+closeAllWindows()          // Tutup semua
+closeWindowOutside(enable) // Toggle close-on-outside
+                        </pre>
+                        
+                        <h3 style="margin-top: 30px;">⚙️ Konfigurasi</h3>
+                        <p>Object config untuk openWindow():</p>
+                        <pre style="background: #f8f9fa; padding: 15px; border-radius: 8px; overflow: auto;">
+{
+  title: 'Judul Window',
+  content: 'HTML Content',
+  footer: 'HTML Footer',
+  width: '500px',
+  height: '400px',
+  position: { top: '25%', left: '25%' },
+  lockUnderlay: true,
+  overlayOpacity: 0.4,
+  theme: 'light',
+  modal: false,
+  draggable: true,
+  resizable: true,
+  closable: true,
+  onOpen: function(id, config) {},
+  onClose: function(id, config) {},
+  onBeforeClose: function(id, config) {}
+}
+                        </pre>
+                    </div>
+                `,
+                width: '750px',
+                height: '700px',
+                modal: true
+            });
+        }
+
+        function showApiReference() {
+            const id = openWindow({
+                title: '🔧 API Reference - WindowHandler',
+                content: `
+                    <div style="max-width: 800px; margin: 0 auto;">
+                        <h2 style="color: #5E6CC9;">Complete API Reference</h2>
+                        
+                        <div style="background: #f8f9fa; padding: 25px; border-radius: 12px; margin: 25px 0;">
+                            <h3>📦 Core Methods</h3>
+                            <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+                                <thead>
+                                    <tr style="background: #e9ecef;">
+                                        <th style="padding: 12px; text-align: left;">Method</th>
+                                        <th style="padding: 12px; text-align: left;">Description</th>
+                                        <th style="padding: 12px; text-align: left;">Example</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr style="border-bottom: 1px solid #dee2e6;">
+                                        <td style="padding: 12px;"><code>openWindow(config)</code></td>
+                                        <td style="padding: 12px;">Buka window baru</td>
+                                        <td style="padding: 12px;"><code>openWindow({title: 'Hello'})</code></td>
+                                    </tr>
+                                    <tr style="border-bottom: 1px solid #dee2e6;">
+                                        <td style="padding: 12px;"><code>openWindowAlert(content, title)</code></td>
+                                        <td style="padding: 12px;">Alert window cepat</td>
+                                        <td style="padding: 12px;"><code>openWindowAlert('Error!')</code></td>
+                                    </tr>
+                                    <tr style="border-bottom: 1px solid #dee2e6;">
+                                        <td style="padding: 12px;"><code>openWindowMore(count)</code></td>
+                                        <td style="padding: 12px;">Buka multiple windows</td>
+                                        <td style="padding: 12px;"><code>openWindowMore(5)</code></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div style="background: #f8f9fa; padding: 25px; border-radius: 12px; margin: 25px 0;">
+                            <h3>🎨 Modification Methods</h3>
+                            <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+                                <thead>
+                                    <tr style="background: #e9ecef;">
+                                        <th style="padding: 12px; text-align: left;">Method</th>
+                                        <th style="padding: 12px; text-align: left;">Description</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr style="border-bottom: 1px solid #dee2e6;">
+                                        <td style="padding: 12px;"><code>windowTitle(id, text)</code></td>
+                                        <td style="padding: 12px;">Ganti judul window</td>
+                                    </tr>
+                                    <tr style="border-bottom: 1px solid #dee2e6;">
+                                        <td style="padding: 12px;"><code>continueWindowTitle(id, suffix)</code></td>
+                                        <td style="padding: 12px;">Tambahkan suffix ke judul</td>
+                                    </tr>
+                                    <tr style="border-bottom: 1px solid #dee2e6;">
+                                        <td style="padding: 12px;"><code>contentWindow(id, html)</code></td>
+                                        <td style="padding: 12px;">Ganti konten window</td>
+                                    </tr>
+                                    <tr style="border-bottom: 1px solid #dee2e6;">
+                                        <td style="padding: 12px;"><code>footerWindow(id, html)</code></td>
+                                        <td style="padding: 12px;">Ganti footer window</td>
+                                    </tr>
+                                    <tr style="border-bottom: 1px solid #dee2e6;">
+                                        <td style="padding: 12px;"><code>reimplWindowHeader(id, fn)</code></td>
+                                        <td style="padding: 12px;">Custom header implementation</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div style="background: #f8f9fa; padding: 25px; border-radius: 12px; margin: 25px 0;">
+                            <h3>⚙️ Control Methods</h3>
+                            <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+                                <thead>
+                                    <tr style="background: #e9ecef;">
+                                        <th style="padding: 12px; text-align: left;">Method</th>
+                                        <th style="padding: 12px; text-align: left;">Description</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr style="border-bottom: 1px solid #dee2e6;">
+                                        <td style="padding: 12px;"><code>lockWindow(id, lock)</code></td>
+                                        <td style="padding: 12px;">Lock/unlock underlay</td>
+                                    </tr>
+                                    <tr style="border-bottom: 1px solid #dee2e6;">
+                                        <td style="padding: 12px;"><code>downWindowContrast(id, opacity)</code></td>
+                                        <td style="padding: 12px;">Ubah overlay opacity</td>
+                                    </tr>
+                                    <tr style="border-bottom: 1px solid #dee2e6;">
+                                        <td style="padding: 12px;"><code>stayWindowFocus(id, stay)</code></td>
+                                        <td style="padding: 12px;">Keep window on top</td>
+                                    </tr>
+                                    <tr style="border-bottom: 1px solid #dee2e6;">
+                                        <td style="padding: 12px;"><code>setTheme(id, theme)</code></td>
+                                        <td style="padding: 12px;">Ubah theme (light/dark)</td>
+                                    </tr>
+                                    <tr style="border-bottom: 1px solid #dee2e6;">
+                                        <td style="padding: 12px;"><code>bringToFront(id)</code></td>
+                                        <td style="padding: 12px;">Bawa window ke depan</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div style="text-align: center; margin-top: 30px;">
+                            <button onclick="closeWindow('${id}')" 
+                                    style="padding: 12px 30px; background: #5E6CC9; color: white; 
+                                           border: none; border-radius: 8px; cursor: pointer; font-size: 1.1em;">
+                                Got it! 👍
+                            </button>
+                        </div>
+                    </div>
+                `,
+                width: '850px',
+                height: '800px'
+            });
+        }
+
+        function showExamples() {
+            openWindow({
+                title: '💡 Contoh Penggunaan',
+                content: `
+                    <div style="max-width: 700px; margin: 0 auto;">
+                        <h2 style="color: #5E6CC9;">Contoh Penggunaan Praktis</h2>
+                        
+                        <div style="margin: 30px 0;">
+                            <h3>📝 Form Input</h3>
+                            <pre style="background: #f8f9fa; padding: 15px; border-radius: 8px; overflow: auto;">
+const formId = openWindow({
+  title: '📋 Contact Form',
+  content: \`
+    &lt;form id="contactForm"&gt;
+      &lt;input type="text" placeholder="Name"&gt;
+      &lt;input type="email" placeholder="Email"&gt;
+      &lt;textarea placeholder="Message"&gt;&lt;/textarea&gt;
+    &lt;/form&gt;
+  \`,
+  footer: \`
+    &lt;button class="footer-btn secondary"&gt;Cancel&lt;/button&gt;
+    &lt;button class="footer-btn" onclick="submitForm()"&gt;Submit&lt;/button&gt;
+  \`
+});
+                            </pre>
+                        </div>
+                        
+                        <div style="margin: 30px 0;">
+                            <h3>📊 Data Display</h3>
+                            <pre style="background: #f8f9fa; padding: 15px; border-radius: 8px; overflow: auto;">
+const data = { users: [{name: 'John', age: 25}, {name: 'Jane', age: 30}] };
+const tableHtml = \`&lt;table&gt;\${data.users.map(u =&gt; 
+  \`&lt;tr&gt;&lt;td&gt;\${u.name}&lt;/td&gt;&lt;td&gt;\${u.age}&lt;/td&gt;&lt;/tr&gt;\`
+).join('')}&lt;/table&gt;\`;
+
+openWindow({
+  title: '👥 User Data',
+  content: tableHtml,
+  width: '600px'
+});
+                            </pre>
+                        </div>
+                        
+                        <div style="margin: 30px 0;">
+                            <h3>🎮 Interactive Game</h3>
+                            <pre style="background: #f8f9fa; padding: 15px; border-radius: 8px; overflow: auto;">
+let score = 0;
+const gameId = openWindow({
+  title: '🎮 Click Game',
+  content: \`&lt;div id="game"&gt;
+    &lt;h3&gt;Score: &lt;span id="score"&gt;0&lt;/span&gt;&lt;/h3&gt;
+    &lt;button onclick="score++"&gt;Click Me!&lt;/button&gt;
+  &lt;/div&gt;\`,
+  footer: '&lt;button class="footer-btn"&gt;Restart&lt;/button&gt;'
+});
+
+// Update score every second
+setInterval(() => {
+  contentWindow(gameId, \`...updated content with score \${score}\`);
+}, 1000);
+                            </pre>
+                        </div>
+                        
+                        <div style="text-align: center; margin-top: 30px;">
+                            <p><strong>✨ Tip:</strong> WindowHandler cocok untuk:</p>
+                            <ul style="display: inline-block; text-align: left; margin: 15px 0;">
+                                <li>Form input & validation</li>
+                                <li>Data visualization</li>
+                                <li>Interactive tutorials</li>
+                                <li>Modal dialogs</li>
+                                <li>Multi-step workflows</li>
+                            </ul>
+                        </div>
+                    </div>
+                `,
+                width: '750px',
+                height: '700px'
+            });
+        }
+
+        function resetDemo() {
+            closeAllDemoWindows();
+            
+            // Reset checkboxes
+            document.getElementById('closeOutside').checked = true;
+            document.getElementById('lockUnderlay').checked = true;
+            document.getElementById('savePosition').checked = false;
+            document.getElementById('enableAnimations').checked = true;
+            
+            // Re-enable close outside
+            closeWindowOutside(true);
+            
+            showToast('Demo direset ke keadaan awal', 'info');
+            updateStatus();
+        }
+
+        function clearStorage() {
+            if (confirm('Hapus semua data window dari localStorage?')) {
+                clearWindowPositions();
+                showToast('LocalStorage berhasil dibersihkan', 'success');
+            }
+        }
+
+        // ===========================================
+        // INITIALIZATION
+        // ===========================================
+        document.addEventListener('DOMContentLoaded', function() {
+            // Enable close-on-outside by default
+            closeWindowOutside(true);
+            
+            // Setup event listeners for window events
+            onWindowEvent('ready', function() {
+                console.log('WindowHandler ready!');
+            });
+            
+            // Auto-update status every 2 seconds
+            setInterval(updateStatus, 2000);
+            
+            // Initial update
+            updateStatus();
+            
+            // Show welcome message
+            setTimeout(() => {
+                showToast('🎉 Gacha Window Handler siap digunakan!', 'success');
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

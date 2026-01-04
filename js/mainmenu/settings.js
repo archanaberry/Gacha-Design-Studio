@@ -39,7 +39,9 @@ document.addEventListener("DOMContentLoaded", function () {
         width: 50%;
         height: 50%;
         border: 0px solid #ccc;
-        position: absolute;
+        display: flex;
+        flex-direction: column;
+        allign-items: flex-start;
         border-radius: 13px;
         cursor: move;
         overflow: hidden;
@@ -92,7 +94,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     .content {
-        padding: 5%;
+        padding: 16px;
     }
 
     .setting-section {
@@ -109,13 +111,16 @@ document.addEventListener("DOMContentLoaded", function () {
 
     .switch {
         display: flex;
-        align-items: center;
+        flex-direction: column; /* susun vertikal */
+        align-items: flex-start; /* label/toggle rata kiri */
+        gap: 3px;
         margin-bottom: 10px;
     }
 
     .slider-container {
-        display: absolute;
-        align-items: center;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
         margin-bottom: 20px;
     }
 
@@ -135,7 +140,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
     .toggle-switch {
         position: relative;
-        display: inline-block;
+        display: block;
+        margin-top: 4px;
         width: 60px;
         height: 34px;
     }
@@ -181,7 +187,7 @@ document.addEventListener("DOMContentLoaded", function () {
     .custom-slider {
         -webkit-appearance: none;
         appearance: none;
-        width: 100%;
+        width: 200px;
         height: 24px;
         background: none;
         outline: none;
@@ -195,13 +201,15 @@ document.addEventListener("DOMContentLoaded", function () {
     .custom-slider::-webkit-slider-thumb {
         -webkit-appearance: none;
         appearance: none;
-        width: 32px;
-        height: 32px;
+        width: 42px;
+        height: 42px;
         background: url('/assets/ui/menu/thumb.svg') no-repeat center/contain;
         border: none;
         border-radius: 0;
         cursor: pointer;
         box-shadow: none;
+        /* Geser thumb vertikal */
+        transform: translateY(-8px); /* naik 20px */
     }
 
     .custom-slider::-moz-range-thumb {
@@ -312,18 +320,44 @@ document.addEventListener("DOMContentLoaded", function () {
     styleSheet.innerText = styles;
     document.head.appendChild(styleSheet);
 
-    // Add HTML elements
-    var overlay = document.createElement("div");
-    overlay.id = "overlay";
-    document.body.appendChild(overlay);
+    // We don't need the old overlay/popup HTML anymore - windowhandler.js creates its own
 
-    var settingsPopup = `
-    <div id="settingsPopup" class="container background shadow">
-        <div class="header1" id="header1">
-            <h2 class="title">Gacha Design Studio - Settings</h2>
-            <button class="close-button" onclick="closeSettingsPopup()">&times;</button>
-        </div>
-        <div class="content" id="settingsContent">
+    // Initialize audio settings from localStorage and expose global
+    window.AudioSettings = {
+        masterVolume: parseFloat(localStorage.getItem('masterVolume')) || 0.5,
+        bgmVolume: parseFloat(localStorage.getItem('bgmVolume')) || 0.5,
+        sfxVolume: parseFloat(localStorage.getItem('sfxVolume')) || 0.5,
+        uiVolume: parseFloat(localStorage.getItem('uiVolume')) || 0.5,
+        bgmEnabled: (localStorage.getItem('bgmEnabled') === null) ? true : (localStorage.getItem('bgmEnabled') === 'true')
+    };
+
+    // helper to broadcast audio settings to other modules
+    function broadcastAudioSettings() {
+        localStorage.setItem('masterVolume', window.AudioSettings.masterVolume);
+        localStorage.setItem('bgmVolume', window.AudioSettings.bgmVolume);
+        localStorage.setItem('sfxVolume', window.AudioSettings.sfxVolume);
+        localStorage.setItem('uiVolume', window.AudioSettings.uiVolume);
+        localStorage.setItem('bgmEnabled', window.AudioSettings.bgmEnabled);
+        document.dispatchEvent(new CustomEvent('audioSettingsChanged', { detail: Object.assign({}, window.AudioSettings) }));
+    }
+
+    function centerPopup(popup) {
+        popup.style.left = '25%';
+        popup.style.top = '25%';
+        popup.style.height = 'auto';
+    }
+
+    // Function definitions using windowhandler.js API
+    window.openSettings = function() {
+        // Check if windowhandler is available
+        if (typeof window.openWindow !== 'function') {
+            console.error('windowhandler.js API not loaded');
+            return;
+        }
+
+        // Create HTML content for settings
+        var settingsContent = `
+            <div class="content">
             <div class="setting-section">
                 <div class="setting-title">Audio</div>
                 <div class="switch">
@@ -354,172 +388,81 @@ document.addEventListener("DOMContentLoaded", function () {
                     <span id="uiVolumePercentage" class="percentage">50%</span>
                 </div>
                 <div id="bgmControls" class="bgm-controls">
-        <button id="prevBGM">Previous</button>
-        <span id="bgmTitle">Loading...</span>
-        <button id="nextBGM">Next</button>
-    </div>
+                    <button id="prevBGM">Previous</button>
+                    <span id="bgmTitle">Loading...</span>
+                    <button id="nextBGM">Next</button>
+                </div>
             </div>
-        </div>
-        <div class="resizer1" id="resizer1"></div>
-        <button class="ok-button closebutton" onclick="closeSettingsPopup()">OK</button>
-    </div>
-    `;
+            </div>
+        `;
 
-    document.body.insertAdjacentHTML('beforeend', settingsPopup);
+        // Create settings window using windowhandler API
+        openWindow({
+            title: 'Gacha Design Studio - Settings',
+            content: settingsContent,
+            footer: '<div style="width:100%;display:flex;justify-content:center;"><button class="footer-btn wh-ok-btn" onclick="window.closeWindow(window.currentSettingsWindowId)">OK</button></div>',
+            width: '50%',
+            height: 'auto',
+            lockUnderlay: false,
+            overlayOpacity: 0.4
+        });
 
-    // Initialize audio settings from localStorage and expose global
-    window.AudioSettings = {
-        masterVolume: parseFloat(localStorage.getItem('masterVolume')) || 0.5,
-        bgmVolume: parseFloat(localStorage.getItem('bgmVolume')) || 0.5,
-        sfxVolume: parseFloat(localStorage.getItem('sfxVolume')) || 0.5,
-        uiVolume: parseFloat(localStorage.getItem('uiVolume')) || 0.5,
-        bgmEnabled: (localStorage.getItem('bgmEnabled') === null) ? true : (localStorage.getItem('bgmEnabled') === 'true')
-    };
+        // Get the window ID from the manager
+        var windowIds = window.windowManager.getWindowIds();
+        window.currentSettingsWindowId = windowIds[windowIds.length - 1];
 
-    // Sync UI sliders/switch with stored values
-    document.getElementById('masterVolumeSlider').value = Math.round(window.AudioSettings.masterVolume * 100);
-    document.getElementById('masterVolumePercentage').textContent = Math.round(window.AudioSettings.masterVolume * 100) + '%';
-    document.getElementById('bgmVolumeSlider').value = Math.round(window.AudioSettings.bgmVolume * 100);
-    document.getElementById('bgmVolumePercentage').textContent = Math.round(window.AudioSettings.bgmVolume * 100) + '%';
-    document.getElementById('sfxVolumeSlider').value = Math.round(window.AudioSettings.sfxVolume * 100);
-    document.getElementById('sfxVolumePercentage').textContent = Math.round(window.AudioSettings.sfxVolume * 100) + '%';
-    document.getElementById('uiVolumeSlider').value = Math.round(window.AudioSettings.uiVolume * 100);
-    document.getElementById('uiVolumePercentage').textContent = Math.round(window.AudioSettings.uiVolume * 100) + '%';
-    document.getElementById('bgmSwitch').checked = !!window.AudioSettings.bgmEnabled;
+        // Restore stored values into the new window's controls
+        setTimeout(function() {
+            document.getElementById('masterVolumeSlider').value = Math.round(window.AudioSettings.masterVolume * 100);
+            document.getElementById('masterVolumePercentage').textContent = Math.round(window.AudioSettings.masterVolume * 100) + '%';
+            document.getElementById('bgmVolumeSlider').value = Math.round(window.AudioSettings.bgmVolume * 100);
+            document.getElementById('bgmVolumePercentage').textContent = Math.round(window.AudioSettings.bgmVolume * 100) + '%';
+            document.getElementById('sfxVolumeSlider').value = Math.round(window.AudioSettings.sfxVolume * 100);
+            document.getElementById('sfxVolumePercentage').textContent = Math.round(window.AudioSettings.sfxVolume * 100) + '%';
+            document.getElementById('uiVolumeSlider').value = Math.round(window.AudioSettings.uiVolume * 100);
+            document.getElementById('uiVolumePercentage').textContent = Math.round(window.AudioSettings.uiVolume * 100) + '%';
+            document.getElementById('bgmSwitch').checked = !!window.AudioSettings.bgmEnabled;
 
-    // helper to broadcast audio settings to other modules
-    function broadcastAudioSettings() {
-        localStorage.setItem('masterVolume', window.AudioSettings.masterVolume);
-        localStorage.setItem('bgmVolume', window.AudioSettings.bgmVolume);
-        localStorage.setItem('sfxVolume', window.AudioSettings.sfxVolume);
-        localStorage.setItem('uiVolume', window.AudioSettings.uiVolume);
-        localStorage.setItem('bgmEnabled', window.AudioSettings.bgmEnabled);
-        document.dispatchEvent(new CustomEvent('audioSettingsChanged', { detail: Object.assign({}, window.AudioSettings) }));
-    }
+            // Attach event listeners to controls
+            document.getElementById("masterVolumeSlider").addEventListener("input", updateVolumePercentage);
+            document.getElementById("bgmVolumeSlider").addEventListener("input", updateVolumePercentage);
+            document.getElementById("sfxVolumeSlider").addEventListener("input", updateVolumePercentage);
+            document.getElementById("uiVolumeSlider").addEventListener("input", updateVolumePercentage);
 
-    // Function definitions
-    window.openSettings = function() {
-        var overlay = document.getElementById('overlay');
-        var popup = document.getElementById('settingsPopup');
+            document.getElementById('masterVolumeSlider').addEventListener('input', function(e){
+                var val = e.target.value / 100;
+                window.AudioSettings.masterVolume = val;
+                document.getElementById('masterVolumePercentage').textContent = Math.round(val*100) + '%';
+                broadcastAudioSettings();
+            });
 
-        overlay.style.display = 'block';
-        popup.style.display = 'block';
+            document.getElementById('sfxVolumeSlider').addEventListener('input', function(e){
+                var val = e.target.value / 100;
+                window.AudioSettings.sfxVolume = val;
+                document.getElementById('sfxVolumePercentage').textContent = Math.round(val*100) + '%';
+                broadcastAudioSettings();
+            });
 
-        centerPopup(popup);
+            document.getElementById('bgmSwitch').addEventListener('change', function(e){
+                window.AudioSettings.bgmEnabled = !!e.target.checked;
+                broadcastAudioSettings();
+            });
 
-        var header1 = document.getElementById("header1");
-        var resizer1 = document.getElementById("resizer1");
-        var container = popup;
-        var offsetX, offsetY;
-        var isDragging = false;
-        var isResizing = false;
-
-        function startDrag(e) {
-            e.preventDefault();
-            isDragging = true;
-            offsetX = e.clientX - container.offsetLeft;
-            offsetY = e.clientY - container.offsetTop;
-            document.addEventListener("mousemove", drag);
-            document.addEventListener("mouseup", stopDrag);
-        }
-
-        function startDragTouch(e) {
-            e.preventDefault();
-            isDragging = true;
-            var touch = e.touches[0];
-            offsetX = touch.clientX - container.offsetLeft;
-            offsetY = touch.clientY - container.offsetTop;
-            document.addEventListener("touchmove", dragTouch);
-            document.addEventListener("touchend", stopDragTouch);
-        }
-
-        function drag(e) {
-            e.preventDefault();
-            if (!isDragging) return;
-            container.style.left = e.clientX - offsetX + "px";
-            container.style.top = e.clientY - offsetY + "px";
-        }
-
-        function dragTouch(e) {
-            e.preventDefault();
-            if (!isDragging) return;
-            var touch = e.touches[0];
-            container.style.left = touch.clientX - offsetX + "px";
-            container.style.top = touch.clientY - offsetY + "px";
-        }
-
-        function stopDrag() {
-            isDragging = false;
-            document.removeEventListener("mousemove", drag);
-            document.removeEventListener("mouseup", stopDrag);
-        }
-
-        function stopDragTouch() {
-            isDragging = false;
-            document.removeEventListener("touchmove", dragTouch);
-            document.removeEventListener("touchend", stopDragTouch);
-        }
-
-        function startResize(e) {
-            e.preventDefault();
-            isResizing = true;
-            offsetX = e.clientX - container.offsetWidth;
-            offsetY = e.clientY - container.offsetHeight;
-            document.addEventListener("mousemove", resize);
-            document.addEventListener("mouseup", stopResize);
-        }
-
-        function startResizeTouch(e) {
-            e.preventDefault();
-            isResizing = true;
-            var touch = e.touches[0];
-            offsetX = touch.clientX - container.offsetWidth;
-            offsetY = touch.clientY - container.offsetHeight;
-            document.addEventListener("touchmove", resizeTouch);
-            document.addEventListener("touchend", stopResizeTouch);
-        }
-
-        function resize(e) {
-            e.preventDefault();
-            if (!isResizing) return;
-            container.style.width = e.clientX - offsetX + "px";
-            container.style.height = e.clientY - offsetY + "px";
-        }
-
-        function resizeTouch(e) {
-            e.preventDefault();
-            if (!isResizing) return;
-            var touch = e.touches[0];
-            container.style.width = touch.clientX - offsetX + "px";
-            container.style.height = touch.clientY - offsetY + "px";
-        }
-
-        function stopResize() {
-            isResizing = false;
-            document.removeEventListener("mousemove", resize);
-            document.removeEventListener("mouseup", stopResize);
-        }
-
-        function stopResizeTouch() {
-            isResizing = false;
-            document.removeEventListener("touchmove", resizeTouch);
-            document.removeEventListener("touchend", stopResizeTouch);
-        }
-
-        header1.addEventListener("mousedown", startDrag);
-        header1.addEventListener("touchstart", startDragTouch);
-        resizer1.addEventListener("mousedown", startResize);
-        resizer1.addEventListener("touchstart", startResizeTouch);
-
-        document.getElementById("masterVolumeSlider").addEventListener("input", updateVolumePercentage);
-        document.getElementById("bgmVolumeSlider").addEventListener("input", updateVolumePercentage);
-        document.getElementById("sfxVolumeSlider").addEventListener("input", updateVolumePercentage);
-        document.getElementById("uiVolumeSlider").addEventListener("input", updateVolumePercentage);
+            document.getElementById("bgmVolumeSlider").addEventListener("input", updateBGMVolume);
+            document.getElementById("uiVolumeSlider").addEventListener("input", updateUIVolume);
+            document.getElementById("prevBGM").addEventListener("click", function() {
+                document.dispatchEvent(new CustomEvent("changeBGM", { detail: { direction: 'prev' } }));
+            });
+            document.getElementById("nextBGM").addEventListener("click", function() {
+                document.dispatchEvent(new CustomEvent("changeBGM", { detail: { direction: 'next' } }));
+            });
+        }, 50);
     }
 
     window.closeSettingsPopup = function() {
-        document.getElementById('settingsPopup').style.display = 'none';
-        document.getElementById('overlay').style.display = 'none';
+        if (window.currentSettingsWindowId && typeof window.closeWindow === 'function') {
+            window.closeWindow(window.currentSettingsWindowId);
+        }
     }
 
     function centerPopup(popup) {
@@ -535,32 +478,6 @@ document.addEventListener("DOMContentLoaded", function () {
         percentageSpan.textContent = percentage;
     }
 
-    // Add event listeners to volume sliders
-    // initial event listeners and wiring for synchronized audio settings
-    document.getElementById("bgmVolumeSlider").addEventListener("input", updateBGMVolume);
-    document.getElementById("uiVolumeSlider").addEventListener("input", updateUIVolume);
-
-    // Master and SFX handlers
-    document.getElementById('masterVolumeSlider').addEventListener('input', function(e){
-        var val = e.target.value / 100;
-        window.AudioSettings.masterVolume = val;
-        document.getElementById('masterVolumePercentage').textContent = Math.round(val*100) + '%';
-        broadcastAudioSettings();
-    });
-
-    document.getElementById('sfxVolumeSlider').addEventListener('input', function(e){
-        var val = e.target.value / 100;
-        window.AudioSettings.sfxVolume = val;
-        document.getElementById('sfxVolumePercentage').textContent = Math.round(val*100) + '%';
-        broadcastAudioSettings();
-    });
-
-    // BGM toggle
-    document.getElementById('bgmSwitch').addEventListener('change', function(e){
-        window.AudioSettings.bgmEnabled = !!e.target.checked;
-        broadcastAudioSettings();
-    });
-
     function updateBGMVolume() {
         var bgmVolume = document.getElementById("bgmVolumeSlider").value / 100;
         window.AudioSettings.bgmVolume = bgmVolume;
@@ -574,19 +491,4 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById('uiVolumePercentage').textContent = Math.round(uiVolume*100)+'%';
         broadcastAudioSettings();
     }
-
-    // expose a function to open settings from other places
-    window.openSettings = window.openSettings || function(){
-        document.getElementById('settingsPopup').style.display = 'block';
-        document.getElementById('overlay').style.display = 'block';
-    };
-
-    // Add event listeners for buttons
-    document.getElementById("prevBGM").addEventListener("click", function() {
-        document.dispatchEvent(new CustomEvent("changeBGM", { detail: { direction: 'prev' } }));
-    });
-
-    document.getElementById("nextBGM").addEventListener("click", function() {
-        document.dispatchEvent(new CustomEvent("changeBGM", { detail: { direction: 'next' } }));
-    });
 });
