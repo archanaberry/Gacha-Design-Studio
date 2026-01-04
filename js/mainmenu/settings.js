@@ -348,6 +348,20 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // Function definitions using windowhandler.js API
+    // Helper: compute a safe spawn position inside 10%..90% vertical band (center within 80% area)
+    function computeSafePosition(width, height) {
+        function pctOf(v) {
+            if (!v || typeof v !== 'string') return null;
+            var s = v.trim();
+            if (s.endsWith('%')) return parseFloat(s.slice(0, -1));
+            return null;
+        }
+        var w = pctOf(width);
+        var h = pctOf(height);
+        var left = (w !== null) ? (10 + (80 - w) / 2) : 25;
+        var top = (h !== null) ? (10 + (80 - h) / 2) : 25;
+        return { left: left + '%', top: top + '%' };
+    }
     window.openSettings = function() {
         // Check if windowhandler is available
         if (typeof window.openWindow !== 'function') {
@@ -397,12 +411,14 @@ document.addEventListener("DOMContentLoaded", function () {
         `;
 
         // Create settings window using windowhandler API
+        var _pos = computeSafePosition('50%', 'auto');
         openWindow({
             title: 'Gacha Design Studio - Settings',
             content: settingsContent,
             footer: '<div style="width:100%;display:flex;justify-content:center;"><button class="footer-btn wh-ok-btn" onclick="window.closeWindow(window.currentSettingsWindowId)">OK</button></div>',
             width: '50%',
             height: 'auto',
+            position: { top: _pos.left ? _pos.top : '25%', left: _pos.left },
             lockUnderlay: false,
             overlayOpacity: 0.4
         });
@@ -456,6 +472,14 @@ document.addEventListener("DOMContentLoaded", function () {
             document.getElementById("nextBGM").addEventListener("click", function() {
                 document.dispatchEvent(new CustomEvent("changeBGM", { detail: { direction: 'next' } }));
             });
+
+            // Ensure BGM title and playback reflect current state when settings opens
+            try {
+                if (typeof updateBGMTitel === 'function') updateBGMTitel();
+            } catch (e) {}
+            try {
+                if (typeof applyAudioSettings === 'function') applyAudioSettings(window.AudioSettings || null);
+            } catch (e) {}
         }, 50);
     }
 

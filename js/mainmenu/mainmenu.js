@@ -180,15 +180,25 @@ window.openBgPicker = function() {
         `;
 
         // Create maintenance window using windowhandler API
-        openWindow({
-            title: 'Gacha Design Studio',
-            content: maintenanceContent,
-            footer: '<button class="footer-btn wh-ok-btn" onclick="window.closeWindow(window.currentMaintenanceWindowId)">OK</button>',
-            width: '50%',
-            height: 'auto',
-            lockUnderlay: false,
-            overlayOpacity: 0.4
-        });
+            // Create maintenance window using windowhandler API
+            function computeSafePosition(width, height) {
+                function pctOf(v) { if (!v || typeof v !== 'string') return null; var s=v.trim(); if (s.endsWith('%')) return parseFloat(s.slice(0,-1)); return null; }
+                var w = pctOf(width); var h = pctOf(height);
+                var left = (w !== null) ? (10 + (80 - w) / 2) : 25;
+                var top = (h !== null) ? (10 + (80 - h) / 2) : 25;
+                return { left: left + '%', top: top + '%' };
+            }
+            var _pos = computeSafePosition('50%', 'auto');
+            openWindow({
+                title: 'Gacha Design Studio',
+                content: maintenanceContent,
+                footer: '<button class="footer-btn wh-ok-btn" onclick="window.closeWindow(window.currentMaintenanceWindowId)">OK</button>',
+                width: '50%',
+                height: 'auto',
+                position: { top: _pos.top, left: _pos.left },
+                lockUnderlay: false,
+                overlayOpacity: 0.4
+            });
 
         // Get the window ID from the manager
         var windowIds = window.windowManager.getWindowIds();
