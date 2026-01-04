@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Gacha Window</title>
+
+<style>
+@font-face {
+  font-family: "Comfortaa";
+  src: url("../../assets/font/Comfortaa-Regular.ttf");
+}
+@font-face {
+  font-family: "Comfortaa-Bold";
+  src: url("../../assets/font/Comfortaa-Bold.ttf");
+}
+
+html, body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  background: #999;
+  overflow: hidden;
+  font-family: "Comfortaa", sans-serif;
+}
+
+/* OPEN BUTTON */
+.open-btn {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: none;
+  background: #5E6CC9;
+  color: white;
+  cursor: pointer;
+}
+
+/* OVERLAY */
+#overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  display: none;
+}
+
+/* WINDOW */
+.window {
+  position: absolute;
+  top: 25%;
+  left: 25%;
+  width: 50%;
+  min-width: 320px;
+  min-height: 260px;
+  background: white;
+  border-radius: 14px;
+  box-shadow: 0 0 15px rgba(0,0,0,0.6);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* HEADER */
+.window-header {
+  height: 64px;
+  background: #5E6CC9;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  cursor: move;
+  user-select: none;
+  touch-action: none;
+}
+
+.window-title-wrap {
+  position: relative;
+  font-family: "Comfortaa-Bold";
+  font-size: 22px;
+}
+
+.window-title-outline {
+  position: absolute;
+  inset: 0;
+  color: transparent;
+  -webkit-text-stroke: 6px black;
+  pointer-events: none;
+}
+
+.window-title-main {
+  position: relative;
+  color: white;
+}
+
+.close-btn {
+  margin-left: auto;
+  font-size: 32px;
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+}
+
+/* CONTENT */
+.window-content {
+  padding: 16px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* FOOTER */
+.window-footer {
+  height: 48px;
+  padding: 0 16px;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.footer-btn {
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: none;
+  background: #5E6CC9;
+  color: white;
+  cursor: pointer;
+}
+
+/* RESIZER */
+.resizer {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 18px;
+  height: 18px;
+  cursor: se-resize;
+  touch-action: none;
+}
+</style>
+</head>
+
+<body>
+
+<button class="open-btn" onclick="openWindow()">Open Studio</button>
+<div id="overlay"></div>
+
+<script>
+let win, header, resizer;
+let mode = null;
+let ox = 0, oy = 0, sw = 0, sh = 0;
+
+function openWindow() {
+  if (document.getElementById("window")) return;
+
+  overlay.style.display = "block";
+
+  document.body.insertAdjacentHTML("beforeend", `
+  <div class="window" id="window">
+    <div class="window-header" id="header">
+      <div class="window-title-wrap">
+        <div class="window-title-outline">Gacha Design Studio -</div>
+        <div class="window-title-main">Gacha Design Studio -</div>
+      </div>
+      <button class="close-btn" id="btnClose">×</button>
+    </div>
+
+    <div class="window-content">
+      Lorem ipsum dolor sit amet.<br><br>
+      Konten panjang agar scroll aktif.<br><br>
+      Lorem ipsum dolor sit amet.
+    </div>
+
+    <div class="window-footer">
+      <button class="footer-btn" id="btnOk">OK</button>
+    </div>
+
+    <div class="resizer" id="resizer"></div>
+  </div>
+  `);
+
+  win = document.getElementById("window");
+  header = document.getElementById("header");
+  resizer = document.getElementById("resizer");
+
+  /* ===== DRAG ===== */
+  header.addEventListener("pointerdown", e => {
+    if (e.target.tagName === "BUTTON") return;
+    mode = "drag";
+    ox = e.clientX - win.offsetLeft;
+    oy = e.clientY - win.offsetTop;
+    header.setPointerCapture(e.pointerId);
+  });
+
+  /* ===== RESIZE ===== */
+  resizer.addEventListener("pointerdown", e => {
+    mode = "resize";
+    sw = win.offsetWidth - e.clientX;
+    sh = win.offsetHeight - e.clientY;
+    resizer.setPointerCapture(e.pointerId);
+  });
+
+  /* CLOSE BUTTON */
+  document.getElementById("btnClose").onclick =
+  document.getElementById("btnOk").onclick = e => {
+    e.stopPropagation();
+    closeWindow();
+  };
+}
+
+/* MOVE */
+document.addEventListener("pointermove", e => {
+  if (!mode || !win) return;
+
+  if (mode === "drag") {
+    win.style.left = e.clientX - ox + "px";
+    win.style.top  = e.clientY - oy + "px";
+  }
+  if (mode === "resize") {
+    win.style.width  = e.clientX + sw + "px";
+    win.style.height = e.clientY + sh + "px";
+  }
+});
+
+/* RELEASE */
+document.addEventListener("pointerup", e => {
+  if (header?.hasPointerCapture(e.pointerId))
+    header.releasePointerCapture(e.pointerId);
+  if (resizer?.hasPointerCapture(e.pointerId))
+    resizer.releasePointerCapture(e.pointerId);
+  mode = null;
+});
+
+/* REMOVE WINDOW */
+function closeWindow() {
+  win?.remove();
+  overlay.style.display = "none";
+}
+</script>
+
+</body>
+</html>
