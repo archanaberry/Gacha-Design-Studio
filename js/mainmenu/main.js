@@ -267,6 +267,18 @@ button:focus-visible {
   width: 30vmin;
 }
 
+@media (max-width: 505px) {
+  .archanaberrydev img {
+    top: 40%;
+  }
+}
+
+@media (max-width: 200px) {
+  .archanaberrydev img {
+    top: 60%;
+  }
+}
+
 .gachadesignstudio {
   position: relative;
   height: 100vh;
@@ -278,7 +290,7 @@ button:focus-visible {
   position: absolute;
   left: 50%;
   transform: translate(-50%, -50%);
-  top: 26.5%;
+  top: 35%;
 }
 
 .main-menu-bg {
