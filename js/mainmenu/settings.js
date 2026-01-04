@@ -456,6 +456,14 @@ document.addEventListener("DOMContentLoaded", function () {
             document.getElementById("nextBGM").addEventListener("click", function() {
                 document.dispatchEvent(new CustomEvent("changeBGM", { detail: { direction: 'next' } }));
             });
+
+            // Ensure BGM title and playback reflect current state when settings opens
+            try {
+                if (typeof updateBGMTitel === 'function') updateBGMTitel();
+            } catch (e) {}
+            try {
+                if (typeof applyAudioSettings === 'function') applyAudioSettings(window.AudioSettings || null);
+            } catch (e) {}
         }, 50);
     }
 
