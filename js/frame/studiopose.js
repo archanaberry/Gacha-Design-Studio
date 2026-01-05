@@ -80,6 +80,9 @@
         <button id="toggleSelectorBtn">Nyalakan Seleksi</button>
         <button id="groupBtn" onclick="groupSelectedLayers()">Grupkan</button>
         <button id="ungroupBtn" onclick="ungroupSelectedLayers()">Pisahkan</button>
+        <button id="duplicateBtn" onclick="duplicateSelectedLayers()">Duplikasi</button>
+        <button id="copyBtn" onclick="copySelectedLayers()">Salin</button>
+        <button id="pasteBtn" onclick="pasteCopiedLayers()">Tempel</button>
         <button id="deleteBtn" onclick="deleteSelectedLayer()">Hapus Lapisan</button>
         
         <input type="file" id="svgUpload" accept=".svg" style="display:none" onchange="addSVG(event)">

@@ -340,3 +340,86 @@ function renderLayer(layer) {
         console.error("Layer tidak memiliki array `src` yang valid.");
     }
 }
+
+// ------------------ Group / Duplicate / Copy / Delete helpers (sandbox) ------------------
+const clipboardLayers_sandbox = [];
+
+function getLayerInstanceFromElement_sandbox(el) {
+    return layers.find(l => l.element === el);
+}
+
+function getSelectedLayerElements_sandbox() {
+    return Array.from(document.querySelectorAll('.layer.selected'));
+}
+
+function groupSelectedLayers() {
+    const selectedEls = getSelectedLayerElements_sandbox();
+    if (!selectedEls.length) return;
+    const container = document.querySelector('.container');
+    const group = document.createElement('div');
+    group.classList.add('layer-group');
+    group.dataset.groupName = `Group${Date.now()}`;
+    selectedEls.forEach(el => group.appendChild(el));
+    container.appendChild(group);
+}
+
+function ungroupSelectedLayers() {
+    const selectedGroups = Array.from(document.querySelectorAll('.layer-group.selected, .layer-group'));
+    if (!selectedGroups.length) return;
+    const container = document.querySelector('.container');
+    selectedGroups.forEach(group => {
+        while (group.firstChild) container.appendChild(group.firstChild);
+        group.remove();
+    });
+}
+
+function deleteSelectedLayer() {
+    const selectedEls = getSelectedLayerElements_sandbox();
+    if (!selectedEls.length) return;
+    selectedEls.forEach(el => {
+        const inst = getLayerInstanceFromElement_sandbox(el);
+        if (inst) {
+            const idx = layers.indexOf(inst);
+            if (idx !== -1) layers.splice(idx, 1);
+        }
+        el.remove();
+    });
+    selected = null;
+}
+
+function duplicateSelectedLayers() {
+    const selectedEls = getSelectedLayerElements_sandbox();
+    if (!selectedEls.length) return;
+    const container = document.querySelector('.container');
+    selectedEls.forEach(el => {
+        const inst = getLayerInstanceFromElement_sandbox(el);
+        if (!inst) return;
+        const imgs = Array.from(inst.element.querySelectorAll('img'));
+        const srcClone = imgs.map(i => i.src);
+        const newLayer = new Layer(inst.name + '_copy', srcClone, {}, []);
+        layers.push(newLayer);
+        newLayer.attach(container, onlayerdragstart);
+    });
+}
+
+function copySelectedLayers() {
+    const selectedEls = getSelectedLayerElements_sandbox();
+    clipboardLayers_sandbox.length = 0;
+    selectedEls.forEach(el => {
+        const inst = getLayerInstanceFromElement_sandbox(el);
+        if (!inst) return;
+        const imgs = Array.from(inst.element.querySelectorAll('img'));
+        const src = imgs.map(i => i.src);
+        clipboardLayers_sandbox.push({ name: inst.name, src: src, options: {} });
+    });
+}
+
+function pasteCopiedLayers() {
+    if (!clipboardLayers_sandbox.length) return;
+    const container = document.querySelector('.container');
+    clipboardLayers_sandbox.forEach(data => {
+        const newLayer = new Layer(data.name + '_paste', data.src.slice(), data.options || {});
+        layers.push(newLayer);
+        newLayer.attach(container, onlayerdragstart);
+    });
+}
