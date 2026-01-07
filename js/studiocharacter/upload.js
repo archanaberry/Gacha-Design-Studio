@@ -47,9 +47,13 @@ async function addSVGFiles(files) {
         groups[base].push({ file: f, index: idx });
     });
 
-    const container = document.querySelector('.container');
+    const container = document.querySelector('.container') || document.getElementById('panel1');
 
-    // For each group, read files and create Layer with ordered src
+    // Jika container tidak ada, abort
+    if (!container) {
+        console.error('Container not found for adding images');
+        return;
+    }
     for (const base of Object.keys(groups)) {
         // Sort by index DESC so that lower index (0) will be appended last -> topmost
         groups[base].sort((a, b) => b.index - a.index);
@@ -59,6 +63,11 @@ async function addSVGFiles(files) {
         const newLayer = new Layer(base, dataUrls);
         layers.push(newLayer);
         newLayer.attach(container, onlayerdragstart);
+        
+        // Jika selector aktif, set pointer-events ke none
+        if (window.__selectorActive) {
+            newLayer.element.style.pointerEvents = 'none';
+        }
     }
 }
 

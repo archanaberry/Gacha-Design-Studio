@@ -319,6 +319,12 @@ class Layer {
     attach(dstRoot, ondragstart) {
         dstRoot.appendChild(this.element);
         this.#ondragstart = (e) => {
+            // Jika selector multi aktif, jangan jalankan drag individual
+            // e.stopPropagation() untuk mencegah event bubbling ke container
+            if (window.__selectorActive) {
+                e.stopPropagation();
+                return;
+            }
             ondragstart(e, this);
         };
 

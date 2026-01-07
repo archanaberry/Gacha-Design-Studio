@@ -89,14 +89,14 @@ input {
     z-index: 0;
 }
 
+.layer.selected {
+    outline: 1px solid blue;
+}
+
 .layer > :not(:first-child) {
     position: absolute;
     top: 0;
     left: 0;
-}
-
-.layer.selected {
-    outline: 1px solid blue;
 }
 
 #rotationControl {
