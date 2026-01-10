@@ -110,8 +110,8 @@ class Selector {
         // Set global flag untuk memblokir layer drag saat selector aktif
         window.__selectorActive = this.selectorActive;
         
-        // Toggle pointer-events pada semua layer
-        const layers = document.querySelectorAll('.layer');
+        // Toggle pointer-events pada semua layer dan groups
+        const layers = document.querySelectorAll('.layer, .layer-group');
         layers.forEach(layer => {
             if (this.selectorActive) {
                 // Saat selector aktif: layer tidak bisa di-interact (event pass through)
@@ -133,7 +133,7 @@ class Selector {
 
     selectLayersInBox(box) {
         this.selectedLayers = [];
-        const layers = document.querySelectorAll('.layer');
+        const layers = document.querySelectorAll('.layer, .layer-group');
         layers.forEach(layer => {
             const layerRect = layer.getBoundingClientRect();
             if (box.left <= layerRect.right && box.right >= layerRect.left && 
@@ -145,7 +145,8 @@ class Selector {
     }
 
     deselectAllLayers() {
-        this.selectedLayers.forEach(layer => {
+        const allSelectable = document.querySelectorAll('.layer.selected, .layer-group.selected');
+        allSelectable.forEach(layer => {
             layer.classList.remove('selected');
         });
         this.selectedLayers = [];

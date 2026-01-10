@@ -86,9 +86,9 @@
         <button id="pasteBtn" onclick="pasteCopiedLayers()">Tempel</button>
         <button id="deleteBtn" onclick="deleteSelectedLayer()">Hapus Lapisan</button>
         
-        <input type="file" id="svgUpload" accept=".svg" style="display:none" onchange="addSVG(event)">
+        <input type="file" id="svgUpload" accept=".svg" multiple style="display:none" onchange="addImage(event)">
         <button onclick="document.getElementById('svgUpload').click()">Tambahkan SVG</button>
-        <input type="file" id="imageUpload" accept="image/*" style="display:none" onchange="addImage(event)">
+        <input type="file" id="imageUpload" accept="image/*" multiple style="display:none" onchange="addImage(event)">
         <button onclick="document.getElementById('imageUpload').click()">Tambahkan Sisipan</button>
         
     </div>

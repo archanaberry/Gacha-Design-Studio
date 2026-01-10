@@ -94,15 +94,61 @@ document.addEventListener('DOMContentLoaded', () => {
         const dt = e.dataTransfer;
         if (!dt) return;
         const files = dt.files;
-        addSVGFiles(files);
+        addFiles(files);
     });
 });
+
+// Function to add files, detecting SVG or image
+async function addFiles(files) {
+    if (!files) return;
+    const hasSVG = Array.from(files).some(f => f.name.toLowerCase().endsWith('.svg'));
+    if (hasSVG) {
+        addSVGFiles(files);
+    } else {
+        addImageFiles(files);
+    }
+}
+
+// Accept multiple image files
+async function addImageFiles(files) {
+    if (!files || files.length === 0) return;
+
+    // Filter only image files
+    const imageFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
+    if (!imageFiles.length) return;
+
+    const container = document.querySelector('.container') || document.getElementById('panel1');
+
+    // Jika container tidak ada, abort
+    if (!container) {
+        console.error('Container not found for adding images');
+        return;
+    }
+
+    for (const file of imageFiles) {
+        const dataUrl = await readFileAsDataURL(file);
+        const newLayer = new Layer(file.name.replace(/\.[^/.]+$/, ''), [dataUrl]);
+        layers.push(newLayer);
+        newLayer.attach(container, onlayerdragstart);
+        
+        // Jika selector aktif, set pointer-events ke none
+        if (window.__selectorActive) {
+            newLayer.element.style.pointerEvents = 'none';
+        }
+    }
+}
 
 // Backwards-compatible single-file handler (used by frame HTML button)
 function addImage(event) {
     const files = event.target.files;
     if (!files) return;
-    addSVGFiles(files);
+    // Check if SVG or image
+    const hasSVG = Array.from(files).some(f => f.name.toLowerCase().endsWith('.svg'));
+    if (hasSVG) {
+        addSVGFiles(files);
+    } else {
+        addImageFiles(files);
+    }
 }
 
 function updateLayerElement(layer, key, src) {

@@ -37,19 +37,23 @@ class Layer {
     constructor(name, src, options = {}, childLayers = []) {
         this.#name = name;
         this.#src = Array.isArray(src) ? src : [src];
-        this.x = 0; // Posisi awal x
-        this.y = 0; // Posisi awal y
-        this.rotation = 0; // Rotasi awal
-        this.scale = 1; // Skala awal
+        this.#x = 0; // Posisi awal x
+        this.#y = 0; // Posisi awal y
+        this.#rotation = 0; // Rotasi awal
+        this.#scale = 1; // Skala awal
         this.selected = false; // Status seleksi
         this.#flipX = false; // Apakah horizontal flipped
         this.#flipY = false; // Apakah vertical flipped   
         this.#width = options.width || null; // Lebar awal
         this.#height = options.height || null; // Tinggi awal     
         this.element = null; // Referensi ke elemen DOM
-        this.#childLayers = childLayers.map(child =>
-            new Layer(child.layerName, child.src, child.options, child.childLayers || [])
-        );
+        this.#childLayers = childLayers.map(child => {
+            if (child instanceof Layer) {
+                return child;
+            } else {
+                return new Layer(child.layerName, child.src, child.options, child.childLayers || []);
+            }
+        });
 
         this.#initElement();
 
@@ -96,6 +100,13 @@ class Layer {
         console.log(`Initializing element for layer "${this.#name}"`);
         this.element = document.createElement('div');
         this.element.classList.add('layer');
+        
+        if (this.#childLayers.length > 0) {
+            this.element.classList.add('layer-group');
+            this.element.style.minWidth = '20px';
+            this.element.style.minHeight = '20px';
+            this.element.style.background = 'rgba(0,123,255,0.2)';
+        }
         
         this.#src.forEach((src, index) => {
             const imgElement = document.createElement('img');
@@ -272,6 +283,10 @@ class Layer {
         this.#updateElement(); // Perbarui status flipY elemen DOM
     }      
 
+    get src() {
+        return this.#src;
+    }
+
     set width(value) {
     this.#width = value;
 
@@ -316,26 +331,37 @@ class Layer {
         }
     }
 
-    attach(dstRoot, ondragstart) {
+    attach(dstRoot, ondragstart = null) {
         dstRoot.appendChild(this.element);
-        this.#ondragstart = (e) => {
-            // Jika selector multi aktif, jangan jalankan drag individual
-            // e.stopPropagation() untuk mencegah event bubbling ke container
-            if (window.__selectorActive) {
-                e.stopPropagation();
-                return;
-            }
-            ondragstart(e, this);
-        };
+        if (ondragstart) {
+            this.#ondragstart = (e) => {
+                // Jika selector multi aktif, jangan jalankan drag individual
+                // e.stopPropagation() untuk mencegah event bubbling ke container
+                if (window.__selectorActive) {
+                    e.stopPropagation();
+                    return;
+                }
+                ondragstart(e, this);
+            };
 
-        this.element.addEventListener('mousedown', this.#ondragstart);
-        this.element.addEventListener('touchstart', this.#ondragstart);
+            this.element.addEventListener('mousedown', this.#ondragstart);
+            this.element.addEventListener('touchstart', this.#ondragstart);
+        }
+
+        // Inisialisasi child layers
+        this.#childLayers.forEach(child => child.attach(this.element, ondragstart));
     }
 
     detach() {
-        this.element.parentElement.removeChild(this.element);
-        this.element.removeEventListener('mousedown', this.#ondragstart);
-        this.element.removeEventListener('touchstart', this.#ondragstart);
+        if (this.element.parentElement) {
+            this.element.parentElement.removeChild(this.element);
+        }
+        if (this.#ondragstart) {
+            this.element.removeEventListener('mousedown', this.#ondragstart);
+            this.element.removeEventListener('touchstart', this.#ondragstart);
+        }
+        // Detach child layers
+        this.#childLayers.forEach(child => child.detach());
     }
 }
 
