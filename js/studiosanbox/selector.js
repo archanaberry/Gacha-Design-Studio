@@ -30,6 +30,9 @@ const css = `
     pointer-events: none;
     z-index: 1000;
 }
+.selector-container {
+    position: relative;
+}
 `;
 
 const style = document.createElement('style');
@@ -47,6 +50,12 @@ class Selector {
         this.startY = 0;
         this.isDragging = false;
         this.selectedLayers = [];
+
+        // Ensure container punya positioning yang benar untuk absolute child positioning
+        const containerStyle = window.getComputedStyle(this.container);
+        if (containerStyle.position === 'static') {
+            this.container.style.position = 'relative';
+        }
 
         this.button.addEventListener('click', this.toggleSelector.bind(this));
         this.container.addEventListener('mousedown', this.onMouseDown.bind(this));
@@ -98,17 +107,33 @@ class Selector {
 
     toggleSelector() {
         this.selectorActive = !this.selectorActive;
+        // Set global flag untuk memblokir layer drag saat selector aktif
+        window.__selectorActive = this.selectorActive;
+        
+        // Toggle pointer-events pada semua layer dan groups
+        const layers = document.querySelectorAll('.layer, .layer-group');
+        layers.forEach(layer => {
+            if (this.selectorActive) {
+                // Saat selector aktif: layer tidak bisa di-interact (event pass through)
+                layer.style.pointerEvents = 'none';
+            } else {
+                // Saat selector mati: layer bisa di-interact normal
+                layer.style.pointerEvents = 'auto';
+            }
+        });
+        
         if (this.selectorActive) {
             this.button.textContent = "Matikan Seleksi";
         } else {
             this.button.textContent = "Nyalakan Seleksi";
             this.clearSelectionBox();
+            this.deselectAllLayers();
         }
     }
 
     selectLayersInBox(box) {
         this.selectedLayers = [];
-        const layers = document.querySelectorAll('.layer');
+        const layers = document.querySelectorAll('.layer, .layer-group');
         layers.forEach(layer => {
             const layerRect = layer.getBoundingClientRect();
             if (box.left <= layerRect.right && box.right >= layerRect.left && 
@@ -120,7 +145,8 @@ class Selector {
     }
 
     deselectAllLayers() {
-        this.selectedLayers.forEach(layer => {
+        const allSelectable = document.querySelectorAll('.layer.selected, .layer-group.selected');
+        allSelectable.forEach(layer => {
             layer.classList.remove('selected');
         });
         this.selectedLayers = [];
@@ -155,9 +181,13 @@ class Selector {
     onMouseUp(e) {
         if (!this.selectorActive || !this.isDragging) return;
         this.isDragging = false;
-        const box = this.selectionBox.getBoundingClientRect();
-        this.selectLayersInBox(box);
-        this.clearSelectionBox();
+        
+        // Check apakah selection box ada sebelum di-access
+        if (this.selectionBox) {
+            const box = this.selectionBox.getBoundingClientRect();
+            this.selectLayersInBox(box);
+            this.clearSelectionBox();
+        }
     }
 
     onTouchStart(e) {
@@ -184,9 +214,13 @@ class Selector {
     onTouchEnd(e) {
         if (!this.selectorActive || !this.isDragging) return;
         this.isDragging = false;
-        const box = this.selectionBox.getBoundingClientRect();
-        this.selectLayersInBox(box);
-        this.clearSelectionBox();
+        
+        // Check apakah selection box ada sebelum di-access
+        if (this.selectionBox) {
+            const box = this.selectionBox.getBoundingClientRect();
+            this.selectLayersInBox(box);
+            this.clearSelectionBox();
+        }
     }
 
     onKeyDown(e) {
@@ -199,8 +233,25 @@ class Selector {
     }
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-    const container = document.getElementById('panel1');
+// Inisialisasi Selector lebih robust
+function initSelector() {
+    const container = document.getElementById('panel1') || document.querySelector('.container');
     const toggleSelectorBtn = document.getElementById('toggleSelectorBtn');
+    
+    if (!container || !toggleSelectorBtn) {
+        console.warn('Selector: Container or button not found, retrying...');
+        setTimeout(initSelector, 100);
+        return;
+    }
+    
+    console.log('Selector initialized successfully');
     new Selector(container, toggleSelectorBtn);
-});
+}
+
+// Coba init saat DOMContentLoaded
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initSelector);
+} else {
+    // Jika document sudah loaded, langsung init
+    initSelector();
+}

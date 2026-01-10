@@ -284,32 +284,55 @@ function updateLayerSize(dimension, value) {
 }
 
 function moveLayerUp() {
-    if (!selected) return;
-    const currentIndex = layers.indexOf(selected);
-    if (currentIndex < layers.length - 1) {
-        const temp = layers[currentIndex];
-        layers[currentIndex] = layers[currentIndex + 1];
-        layers[currentIndex + 1] = temp;
-        renderLayer();
-    }
+    const selectedEls = getSelectedLayerElements();
+    if (!selectedEls.length) return;
+    // Move each selected layer up in the layers array
+    selectedEls.forEach(el => {
+        const inst = getLayerInstanceFromElement(el);
+        if (!inst) return;
+        const currentIndex = layers.indexOf(inst);
+        if (currentIndex < layers.length - 1) {
+            const temp = layers[currentIndex];
+            layers[currentIndex] = layers[currentIndex + 1];
+            layers[currentIndex + 1] = temp;
+        }
+    });
+    renderLayer();
 }
 
 function moveLayerDown() {
-    if (!selected) return;
-    const currentIndex = layers.indexOf(selected);
-    if (currentIndex > 0) {
-        const temp = layers[currentIndex];
-        layers[currentIndex] = layers[currentIndex - 1];
-        layers[currentIndex - 1] = temp;
-        renderLayer();
-    }
+    const selectedEls = getSelectedLayerElements();
+    if (!selectedEls.length) return;
+    // Move each selected layer down in the layers array
+    selectedEls.forEach(el => {
+        const inst = getLayerInstanceFromElement(el);
+        if (!inst) return;
+        const currentIndex = layers.indexOf(inst);
+        if (currentIndex > 0) {
+            const temp = layers[currentIndex];
+            layers[currentIndex] = layers[currentIndex - 1];
+            layers[currentIndex - 1] = temp;
+        }
+    });
+    renderLayer();
 }
 
 function renderLayer(layer) {
-    const container = document.getElementById('container'); // Container tempat layer ditampilkan
+    const container = document.querySelector('.container') || document.getElementById('panel1'); // Container tempat layer ditampilkan
+
+    if (!container) {
+        console.error('Container not found for rendering');
+        return;
+    }
+
+    if (!layer) {
+        // Render all layers
+        layers.forEach(l => renderLayer(l));
+        return;
+    }
 
     // Hapus elemen layer sebelumnya untuk mencegah duplikasi
-    const existingElements = document.querySelectorAll(`[data-layer-name="${layer.layerName}"]`);
+    const existingElements = document.querySelectorAll(`[data-layer-name="${layer.name}"]`);
     existingElements.forEach(el => el.remove());
 
     // Pastikan src ada dan merupakan array
@@ -318,8 +341,8 @@ function renderLayer(layer) {
         layer.src.forEach((src, index) => {
             const imgElement = document.createElement('img');
             imgElement.src = src;
-            imgElement.dataset.layerName = layer.layerName; // Tandai elemen ini sebagai bagian dari layer
-            imgElement.id = `layer-${layer.layerName}-${index}`; // ID unik untuk setiap elemen
+            imgElement.dataset.layerName = layer.name; // Tandai elemen ini sebagai bagian dari layer
+            imgElement.id = `layer-${layer.name}-${index}`; // ID unik untuk setiap elemen
 
             // Terapkan properti layer ke elemen gambar
             imgElement.style.position = 'absolute';
@@ -329,13 +352,21 @@ function renderLayer(layer) {
             imgElement.style.height = `${layer.height}px`;
             imgElement.style.transform = `
                 rotate(${layer.rotation}deg)
-                scale(${layer.scaleX}, ${layer.scaleY})
+                scale(${layer.scale}, ${layer.scale})
             `;
             imgElement.style.transformOrigin = 'center center';
 
-            // Tambahkan elemen gambar ke container
-            container.appendChild(imgElement);
+            // Tambahkan elemen gambar ke layer.element
+            layer.element.appendChild(imgElement);
         });
+
+        // Set z-index on the layer element based on order
+        layer.element.style.zIndex = layers.indexOf(layer) + 1;
+
+        // Ensure layer.element is attached to container if not already
+        if (!container.contains(layer.element)) {
+            container.appendChild(layer.element);
+        }
     } else {
         console.error("Layer tidak memiliki array `src` yang valid.");
     }
@@ -355,21 +386,63 @@ function getSelectedLayerElements_sandbox() {
 function groupSelectedLayers() {
     const selectedEls = getSelectedLayerElements_sandbox();
     if (!selectedEls.length) return;
-    const container = document.querySelector('.container');
-    const group = document.createElement('div');
-    group.classList.add('layer-group');
-    group.dataset.groupName = `Group${Date.now()}`;
-    selectedEls.forEach(el => group.appendChild(el));
-    container.appendChild(group);
+    const container = document.getElementById('panel1') || document.querySelector('.container');
+    const selectedLayers = selectedEls.map(el => getLayerInstanceFromElement_sandbox(el)).filter(l => l);
+    if (!selectedLayers.length) return;
+
+    // Detach selected layers
+    selectedLayers.forEach(l => l.detach());
+
+    // Create group layer
+    const groupLayer = new Layer('Group', [], {}, selectedLayers);
+    layers.push(groupLayer);
+
+    // Remove selected layers from layers array
+    selectedLayers.forEach(l => {
+        const idx = layers.indexOf(l);
+        if (idx !== -1) layers.splice(idx, 1);
+    });
+
+    // Attach group
+    groupLayer.attach(container, onlayerdragstart);
+
+    // Adjust positions
+    const minX = Math.min(...selectedLayers.map(l => l.x));
+    const minY = Math.min(...selectedLayers.map(l => l.y));
+    groupLayer.x = minX;
+    groupLayer.y = minY;
+    selectedLayers.forEach(layer => {
+        layer.x -= minX;
+        layer.y -= minY;
+    });
+
+    // Set selection
+    selectedLayers.forEach(layer => layer.selected = false);
+    groupLayer.selected = true;
+
+    renderLayer(groupLayer);
 }
 
 function ungroupSelectedLayers() {
-    const selectedGroups = Array.from(document.querySelectorAll('.layer-group.selected, .layer-group'));
-    if (!selectedGroups.length) return;
-    const container = document.querySelector('.container');
-    selectedGroups.forEach(group => {
-        while (group.firstChild) container.appendChild(group.firstChild);
-        group.remove();
+    const selectedEls = getSelectedLayerElements_sandbox();
+    if (!selectedEls.length) return;
+    const container = document.getElementById('panel1') || document.querySelector('.container');
+
+    selectedEls.forEach(el => {
+        const inst = getLayerInstanceFromElement_sandbox(el);
+        if (inst && inst.childLayers && inst.childLayers.length > 0) {
+            // Ungroup
+            inst.detach();
+            inst.childLayers.forEach(child => {
+                child.x += inst.x;
+                child.y += inst.y;
+                layers.push(child);
+                child.attach(container, onlayerdragstart);
+                renderLayer(child);
+            });
+            const idx = layers.indexOf(inst);
+            if (idx !== -1) layers.splice(idx, 1);
+        }
     });
 }
 
@@ -390,15 +463,25 @@ function deleteSelectedLayer() {
 function duplicateSelectedLayers() {
     const selectedEls = getSelectedLayerElements_sandbox();
     if (!selectedEls.length) return;
-    const container = document.querySelector('.container');
+    const container = document.getElementById('panel1') || document.querySelector('.container');
     selectedEls.forEach(el => {
         const inst = getLayerInstanceFromElement_sandbox(el);
         if (!inst) return;
         const imgs = Array.from(inst.element.querySelectorAll('img'));
         const srcClone = imgs.map(i => i.src);
-        const newLayer = new Layer(inst.name + '_copy', srcClone, {}, []);
+        const newLayer = new Layer(inst.name + '_copy', srcClone, {
+            x: inst.x,
+            y: inst.y,
+            rotation: inst.rotation,
+            scale: inst.scale,
+            flipX: inst.isFlipX,
+            flipY: inst.isFlipY,
+            width: inst.width,
+            height: inst.height
+        });
         layers.push(newLayer);
         newLayer.attach(container, onlayerdragstart);
+        renderLayer(newLayer); // Render the new layer
     });
 }
 
@@ -410,16 +493,30 @@ function copySelectedLayers() {
         if (!inst) return;
         const imgs = Array.from(inst.element.querySelectorAll('img'));
         const src = imgs.map(i => i.src);
-        clipboardLayers_sandbox.push({ name: inst.name, src: src, options: {} });
+        clipboardLayers_sandbox.push({
+            name: inst.name,
+            src: src,
+            options: {
+                x: inst.x,
+                y: inst.y,
+                rotation: inst.rotation,
+                scale: inst.scale,
+                flipX: inst.isFlipX,
+                flipY: inst.isFlipY,
+                width: inst.width,
+                height: inst.height
+            }
+        });
     });
 }
 
 function pasteCopiedLayers() {
     if (!clipboardLayers_sandbox.length) return;
-    const container = document.querySelector('.container');
+    const container = document.getElementById('panel1') || document.querySelector('.container');
     clipboardLayers_sandbox.forEach(data => {
         const newLayer = new Layer(data.name + '_paste', data.src.slice(), data.options || {});
         layers.push(newLayer);
         newLayer.attach(container, onlayerdragstart);
+        renderLayer(newLayer); // Render the new layer
     });
 }

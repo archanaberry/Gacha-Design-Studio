@@ -47,9 +47,13 @@ class Layer {
         this.#width = options.width || null; // Lebar awal
         this.#height = options.height || null; // Tinggi awal     
         this.element = null; // Referensi ke elemen DOM
-        this.#childLayers = childLayers.map(child =>
-            new Layer(child.layerName, child.src, child.options, child.childLayers || [])
-        );
+        this.#childLayers = childLayers.map(child => {
+            if (child instanceof Layer) {
+                return child;
+            } else {
+                return new Layer(child.layerName, child.src, child.options, child.childLayers || []);
+            }
+        });
 
         this.#initElement();
 
@@ -316,20 +320,37 @@ class Layer {
         }
     }
 
-    attach(dstRoot, ondragstart) {
+    attach(dstRoot, ondragstart = null) {
         dstRoot.appendChild(this.element);
-        this.#ondragstart = (e) => {
-            ondragstart(e, this);
-        };
+        if (ondragstart) {
+            this.#ondragstart = (e) => {
+                // Jika selector multi aktif, jangan jalankan drag individual
+                // e.stopPropagation() untuk mencegah event bubbling ke container
+                if (window.__selectorActive) {
+                    e.stopPropagation();
+                    return;
+                }
+                ondragstart(e, this);
+            };
 
-        this.element.addEventListener('mousedown', this.#ondragstart);
-        this.element.addEventListener('touchstart', this.#ondragstart);
+            this.element.addEventListener('mousedown', this.#ondragstart);
+            this.element.addEventListener('touchstart', this.#ondragstart);
+        }
+
+        // Inisialisasi child layers
+        this.#childLayers.forEach(child => child.attach(this.element, ondragstart));
     }
 
     detach() {
-        this.element.parentElement.removeChild(this.element);
-        this.element.removeEventListener('mousedown', this.#ondragstart);
-        this.element.removeEventListener('touchstart', this.#ondragstart);
+        if (this.element.parentElement) {
+            this.element.parentElement.removeChild(this.element);
+        }
+        if (this.#ondragstart) {
+            this.element.removeEventListener('mousedown', this.#ondragstart);
+            this.element.removeEventListener('touchstart', this.#ondragstart);
+        }
+        // Detach child layers
+        this.#childLayers.forEach(child => child.detach());
     }
 }
 
