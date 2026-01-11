@@ -30,6 +30,7 @@ const styles = `
     height: 10px; /* Atur tinggi garis splitter */
     background-color: blue;
     cursor: ns-resize; /* Ubah kursor saat di atas garis splitter */
+    z-index: 10;
 }
 body, html {
     margin: 0;
@@ -49,11 +50,16 @@ body, html {
     position: relative;
 }
 
+.panel1 {
+    overflow: hidden;
+}
+
 .panel2 {
     position: absolute;
     bottom: 0px;
     left: 0px;
     right: 0px;
+    z-index: 10;
 }
 
 #imageUpload1, #imageUpload2 {

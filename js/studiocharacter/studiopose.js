@@ -482,7 +482,7 @@ function groupSelectedLayers() {
   const selectedEls = getSelectedLayerElements();
   if (!selectedEls.length) return;
   const container = document.getElementById('panel1') || document.querySelector('.container');
-  const selectedLayers = selectedEls.map(el => getLayerInstanceFromElement(el)).filter(l => l);
+  const selectedLayers = selectedEls.map(el => getLayerInstanceFromElement(el)).filter(l => l && l.childLayers.length === 0);
   if (!selectedLayers.length) return;
 
   // Detach selected layers
