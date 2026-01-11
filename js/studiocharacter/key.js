@@ -60,3 +60,39 @@ function stopMove() {
 document.addEventListener('mouseup', stopMove);
 document.addEventListener('touchend', stopMove);
 document.addEventListener('touchcancel', stopMove);
+
+/**
+ * Handle ESC key untuk membuka settings di studio
+ */
+document.addEventListener('keydown', function(event) {
+  // ESC key = 27 atau event.key === 'Escape'
+  if (event.key === 'Escape' || event.keyCode === 27) {
+    console.log('studiocharacter/key.js: ESC key pressed - opening settings');
+    if (typeof window.openSettingsWindow === 'function') {
+      event.preventDefault();
+      window.openSettingsWindow();
+    }
+  }
+});
+
+/**
+ * Handle Android back button (backbutton event dari Cordova atau device plugin)
+ * Juga handle dengan window popstate untuk browser back button
+ */
+document.addEventListener('backbutton', function(event) {
+  console.log('studiocharacter/key.js: Android back button pressed - opening settings');
+  if (typeof window.openSettingsWindow === 'function') {
+    event.preventDefault();
+    window.openSettingsWindow();
+  }
+});
+
+// Fallback untuk browser back button (jika tidak ada Cordova)
+window.addEventListener('popstate', function(event) {
+  console.log('studiocharacter/key.js: Browser back button detected');
+  // Prevent default back navigation
+  event.preventDefault();
+  if (typeof window.openSettingsWindow === 'function') {
+    window.openSettingsWindow();
+  }
+});

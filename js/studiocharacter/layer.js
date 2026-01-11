@@ -33,6 +33,7 @@ class Layer {
     #src = [];
     #childLayers = [];
     #ondragstart = null;
+    #color = null;
 
     constructor(name, src, options = {}, childLayers = []) {
         this.#name = name;
@@ -45,7 +46,8 @@ class Layer {
         this.#flipX = false; // Apakah horizontal flipped
         this.#flipY = false; // Apakah vertical flipped   
         this.#width = options.width || null; // Lebar awal
-        this.#height = options.height || null; // Tinggi awal     
+        this.#height = options.height || null; // Tinggi awal
+        this.#color = options.color || null; // Warna opsional
         this.element = null; // Referensi ke elemen DOM
         this.#childLayers = childLayers.map(child => {
             if (child instanceof Layer) {
@@ -110,10 +112,26 @@ class Layer {
         
         this.#src.forEach((src, index) => {
             const imgElement = document.createElement('img');
-            imgElement.src = src;
             imgElement.draggable = false;
             imgElement.classList.add('src-item');
             imgElement.dataset.index = index; // Tambahkan indeks untuk identifikasi
+            
+            if (src.endsWith('.svg') && this.#color) {
+                fetch(src).then(r => r.text()).then(svgText => {
+                    svgText = svgText.replace(/fill="[^"]*"/g, `fill="${this.#color}"`);
+                    svgText = svgText.replace(/stroke="[^"]*"/g, `stroke="${this.#color}"`);
+                    svgText = svgText.replace(/fill:\s*[^;]+/g, `fill:${this.#color}`);
+                    svgText = svgText.replace(/stroke:\s*[^;]+/g, `stroke:${this.#color}`);
+                    const dataUrl = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgText)));
+                    imgElement.src = dataUrl;
+                }).catch(e => {
+                    console.error('Failed to load SVG', e);
+                    imgElement.src = src;
+                });
+            } else {
+                imgElement.src = src;
+            }
+            
             this.element.appendChild(imgElement);
             
             // Tambahkan event listener untuk seleksi
@@ -287,6 +305,27 @@ class Layer {
         return this.#src;
     }
 
+    get width() {
+        return this.#width;
+    }
+
+    get height() {
+        return this.#height;
+    }
+
+    get childLayers() {
+        return this.#childLayers;
+    }
+
+    get color() {
+        return this.#color;
+    }
+
+    set color(value) {
+        this.#color = value;
+        this.#updateElement();
+    }
+
     set width(value) {
     this.#width = value;
 
@@ -346,6 +385,11 @@ class Layer {
 
             this.element.addEventListener('mousedown', this.#ondragstart);
             this.element.addEventListener('touchstart', this.#ondragstart);
+        }
+
+        // Add click handler untuk multi-select (jika function tersedia)
+        if (typeof addLayerClickHandler === 'function') {
+            addLayerClickHandler(this);
         }
 
         // Inisialisasi child layers

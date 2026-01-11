@@ -23,18 +23,57 @@
 /** @type {Layer} Elemen yang sedang dipilih */
 let selected = null;
 
+/**
+ * STRUKTUR LAYER DATA:
+ * =====================
+ * 
+ * 1. SINGLE LAYER (tidak ada children):
+ *    {
+ *      "layerName": "Kepala",
+ *      "src": ["assets/head.svg"],
+ *      "options": { "flipX": true }
+ *    }
+ * 
+ * 2. GROUP LAYER (dengan children):
+ *    {
+ *      "layerName": "Body Group",
+ *      "src": ["assets/group.svg"],  // opsional
+ *      "options": {},
+ *      "childLayers": [
+ *        { "layerName": "Sub 1", "src": [...], "options": {} },
+ *        { "layerName": "Sub 2", "src": [...], "options": {} }
+ *      ]
+ *    }
+ * 
+ * 3. NESTED GROUP (group dalam group):
+ *    {
+ *      "layerName": "Main Group",
+ *      "src": [],
+ *      "childLayers": [
+ *        {
+ *          "layerName": "Sub Group",
+ *          "src": [],
+ *          "childLayers": [
+ *            { "layerName": "Item", "src": [...] }
+ *          ]
+ *        }
+ *      ]
+ *    }
+ */
+
 // Fungsi untuk membuat instance Layer dari objek JSON
 function createLayerFromObject(layerObj) {
-    const layers = [];
-    const { layerName, src = [], options = {}, childLayers = [] } = layerObj;
-
-    // Buat instance Layer
-    const layer = new Layer(layerName, src, options);
-
-    // Jika ada childLayers, buat juga instance-nya
-    if (childLayers.length > 0) {
-        layer.childLayers = childLayers.map(createLayerFromObject);
+    if (!layerObj || !layerObj.layerName || !layerObj.src) {
+        console.error('Invalid layer data:', layerObj);
+        return null;
     }
+
+    const layer = new Layer(
+        layerObj.layerName,
+        layerObj.src,
+        layerObj.options || {},
+        layerObj.childLayers || []
+    );
 
     return layer;
 }
@@ -49,7 +88,8 @@ const layers = [
         "assets/character/base/arm2.svg"
       ],
       "options": {
-        "flipX": true
+        "flipX": true,
+        "color": "#ff0000"
       }
     },
     {
@@ -272,6 +312,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const container = document.getElementById('panel1') || document.querySelector('.container');
     for (const layer of layers) {
         layer.attach(container, onlayerdragstart);
+        // Tambah click handler untuk multi-select support
+        addLayerClickHandler(layer);
     }
 
     // Hapus seleksi ketika user mengklik elemen yang bukan layer, splitter, atau panel tertentu
@@ -295,6 +337,31 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+/**
+ * Tambahkan click handler untuk layer agar bisa multi-select ketika selector aktif
+ */
+function addLayerClickHandler(layer) {
+    if (!layer.element) return;
+    
+    layer.element.addEventListener('click', function(e) {
+        // Jika selector aktif, tambah ke multi-selection
+        if (window.__selectorActive) {
+            e.stopPropagation();
+            // Toggle selection pada layer ini
+            if (layer.element.classList.contains('selected')) {
+                layer.element.classList.remove('selected');
+            } else {
+                layer.element.classList.add('selected');
+            }
+            return;
+        }
+        
+        // Jika selector tidak aktif, gunakan single selection biasa
+        selectLayer(layer);
+        e.stopPropagation();
+    });
+}
 
 /**
  * Panggil fungsi ini saat objek dipilih
@@ -404,37 +471,25 @@ function updateLayerSize(dimension, value) {
 }
 
 function moveLayerUp() {
-    const selectedEls = getSelectedLayerElements();
-    if (!selectedEls.length) return;
-    // Move each selected layer up in the layers array
-    selectedEls.forEach(el => {
-        const inst = getLayerInstanceFromElement(el);
-        if (!inst) return;
-        const currentIndex = layers.indexOf(inst);
-        if (currentIndex < layers.length - 1) {
-            const temp = layers[currentIndex];
-            layers[currentIndex] = layers[currentIndex + 1];
-            layers[currentIndex + 1] = temp;
-        }
-    });
-    renderLayer();
+    if (!selected) return;
+    const currentIndex = layers.indexOf(selected);
+    if (currentIndex < layers.length - 1) {
+        const temp = layers[currentIndex];
+        layers[currentIndex] = layers[currentIndex + 1];
+        layers[currentIndex + 1] = temp;
+        renderLayer();
+    }
 }
 
 function moveLayerDown() {
-    const selectedEls = getSelectedLayerElements();
-    if (!selectedEls.length) return;
-    // Move each selected layer down in the layers array
-    selectedEls.forEach(el => {
-        const inst = getLayerInstanceFromElement(el);
-        if (!inst) return;
-        const currentIndex = layers.indexOf(inst);
-        if (currentIndex > 0) {
-            const temp = layers[currentIndex];
-            layers[currentIndex] = layers[currentIndex - 1];
-            layers[currentIndex - 1] = temp;
-        }
-    });
-    renderLayer();
+    if (!selected) return;
+    const currentIndex = layers.indexOf(selected);
+    if (currentIndex > 0) {
+        const temp = layers[currentIndex];
+        layers[currentIndex] = layers[currentIndex - 1];
+        layers[currentIndex - 1] = temp;
+        renderLayer();
+    }
 }
 
 function renderLayer(layer) {
@@ -446,19 +501,17 @@ function renderLayer(layer) {
     }
 
     if (!layer) {
-        // Render all layers
-        layers.forEach(l => renderLayer(l));
+        // Render all layers by reordering
+        layers.forEach(l => {
+            if (l.element.parentElement !== container) {
+                container.appendChild(l.element);
+            }
+        });
         return;
     }
 
-    // Set z-index based on order
-    layer.element.style.zIndex = layers.indexOf(layer) + 1;
-
-    // For groups, set z-index for children
-    if (layer.childLayers && layer.childLayers.length > 0) {
-        layer.childLayers.forEach(child => {
-            child.element.style.zIndex = layers.indexOf(child) + 1;
-        });
+    if (layer.element.parentElement !== container) {
+        container.appendChild(layer.element);
     }
 
     // Ensure layer.element is attached to container if not already
@@ -470,139 +523,355 @@ function renderLayer(layer) {
 // ------------------ Group / Duplicate / Copy / Delete helpers ------------------
 const clipboardLayers = [];
 
-function getLayerInstanceFromElement(el) {
-  return layers.find(l => l.element === el);
-}
+/**
+ * Gabung multiple layers dengan mengambil src mereka
+ * Src akan diurutkan berdasarkan posisi Y (tinggi-rendah)
+ * Layer name diambil dari layer yang paling atas (Y paling kecil)
+ * 
+ * Contoh:
+ * Sebelum (multi-select):
+ *   - Head (Y: 50, src: head.svg)
+ *   - Torso (Y: 100, src: torso.svg)
+ *   - Legs (Y: 150, src: legs.svg)
+ * 
+ * Sesudah (klik "Gabung Src"):
+ *   - Head (src: [head.svg, torso.svg, legs.svg])
+ */
+function mergeSelectedLayersSrc() {
+  // Ambil semua selected layers dari DOM
+  const selectedElements = document.querySelectorAll('.layer.selected');
+  const layersToMerge = [];
+  
+  selectedElements.forEach(el => {
+    const layer = layers.find(l => l.element === el);
+    if (layer) layersToMerge.push(layer);
+  });
 
-function getSelectedLayerElements() {
-  return Array.from(document.querySelectorAll('.layer.selected'));
-}
+  if (layersToMerge.length < 2) {
+    console.warn('Please select at least 2 layers to merge');
+    return;
+  }
 
-function groupSelectedLayers() {
-  const selectedEls = getSelectedLayerElements();
-  if (!selectedEls.length) return;
   const container = document.getElementById('panel1') || document.querySelector('.container');
-  const selectedLayers = selectedEls.map(el => getLayerInstanceFromElement(el)).filter(l => l && l.childLayers.length === 0);
-  if (!selectedLayers.length) return;
 
-  // Detach selected layers
-  selectedLayers.forEach(l => l.detach());
+  // Sort layers berdasarkan Y position (tinggi-rendah)
+  const sortedLayers = [...layersToMerge].sort((a, b) => a.y - b.y);
 
-  // Create group layer
-  const groupLayer = new Layer('Group', [], {}, selectedLayers);
-  layers.push(groupLayer);
+  // Layer pertama (paling atas) menjadi base
+  const baseLayer = sortedLayers[0];
+  const baseIndex = layers.indexOf(baseLayer);
 
-  // Remove selected layers from layers array
-  selectedLayers.forEach(l => {
-    const idx = layers.indexOf(l);
+  // Kumpulkan semua src dari semua layers
+  const allSrcs = [];
+  sortedLayers.forEach(layer => {
+    const imgs = Array.from(layer.element.querySelectorAll('img'));
+    imgs.forEach(img => {
+      if (img.src && !allSrcs.includes(img.src)) {
+        allSrcs.push(img.src);
+      }
+    });
+  });
+
+  if (allSrcs.length === 0) return;
+
+  // Create merged layer dengan semua src
+  const mergedLayer = new Layer(baseLayer.name, allSrcs, {
+    x: baseLayer.x,
+    y: baseLayer.y
+  }, []);
+
+  // Replace base layer dengan merged layer
+  if (baseIndex !== -1) {
+    layers[baseIndex] = mergedLayer;
+  } else {
+    layers.push(mergedLayer);
+  }
+
+  // Hapus layer lain yang di-merge
+  sortedLayers.slice(1).forEach(layer => {
+    const idx = layers.indexOf(layer);
     if (idx !== -1) layers.splice(idx, 1);
   });
 
-  // Attach group
-  groupLayer.attach(container, onlayerdragstart);
+  // Detach semua dan attach merged layer
+  sortedLayers.forEach(layer => layer.detach());
+  mergedLayer.attach(container, onlayerdragstart);
+  addLayerClickHandler(mergedLayer);
 
-  // Adjust positions
-  const minX = Math.min(...selectedLayers.map(l => l.x));
-  const minY = Math.min(...selectedLayers.map(l => l.y));
-  groupLayer.x = minX;
-  groupLayer.y = minY;
-  selectedLayers.forEach(layer => {
-    layer.x -= minX;
-    layer.y -= minY;
-  });
-
-  // Set selection
-  selectedLayers.forEach(layer => layer.selected = false);
-  groupLayer.selected = true;
-
-  renderLayer(groupLayer);
+  selectLayer(mergedLayer);
+  renderLayer();
 }
 
-function ungroupSelectedLayers() {
-  const selectedEls = getSelectedLayerElements();
-  if (!selectedEls.length) return;
-  const container = document.getElementById('panel1') || document.querySelector('.container');
+/**
+ * Reset studio - refresh halaman untuk re-init dengan template layers
+ * Menampilkan dialog konfirmasi terlebih dahulu
+ */
+function resetStudio() {
+  // Buat HTML untuk dialog dengan Ya/Tidak buttons
+  const dialogHTML = `
+    <div style="padding: 20px; text-align: center;">
+      <p style="font-size: 16px; margin: 15px 0;">
+        <strong>Apakah anda yakin untuk merapihkan ulang studio? 😢</strong>
+      </p>
+      <p style="font-size: 14px; margin: 15px 0; color: #666;">
+        Progress kerjamu akan hilang untuk karakter ini TwT
+      </p>
+      <p style="font-size: 12px; margin: 20px 0; color: #999;">
+        Studio akan di-refresh dan template layers akan di-load ulang
+      </p>
+    </div>
+  `;
 
-  selectedEls.forEach(el => {
-    const inst = getLayerInstanceFromElement(el);
-    if (inst && inst.childLayers && inst.childLayers.length > 0) {
-      // Ungroup
-      inst.detach();
-      inst.childLayers.forEach(child => {
-        child.x += inst.x;
-        child.y += inst.y;
-        layers.push(child);
-        child.attach(container, onlayerdragstart);
-        renderLayer(child);
-      });
-      const idx = layers.indexOf(inst);
-      if (idx !== -1) layers.splice(idx, 1);
-    }
+  // Create footer buttons separately to avoid windowId reference before initialization
+  const footerHTML = `
+    <button class="footer-btn" style="background-color: #ff6b6b; color: white;" onclick="confirmResetStudio();">
+      Ya, Hapus Semua
+    </button>
+    <button class="footer-btn" onclick="window.closeWindow(window.__resetWindowId);">
+      Batal
+    </button>
+  `;
+
+  const windowId = openWindow({
+    title: 'Reset Studio',
+    content: dialogHTML,
+    footer: footerHTML,
+    width: '400px',
+    height: 'auto'
   });
+
+  // Store windowId globally so buttons can access it
+  window.__resetWindowId = windowId;
+}
+
+/**
+ * Konfirmasi reset studio - refresh halaman
+ */
+function confirmResetStudio() {
+  console.log('Resetting studio...');
+  // Close the dialog window
+  if (window.__resetWindowId) {
+    window.closeWindow(window.__resetWindowId);
+  }
+  // Refresh halaman untuk re-init semua
+  window.location.reload();
+}
+
+/**
+ * Pisahkan single layer dengan multiple src menjadi multiple separate layers
+ * Setiap src akan menjadi layer baru terpisah di root level
+ * 
+ * Contoh:
+ * Sebelum: Kepala (src: [head1.svg, head2.svg, head3.svg])
+ * Sesudah: 
+ *   - Kepala_0 (src: head1.svg)
+ *   - Kepala_1 (src: head2.svg)
+ *   - Kepala_2 (src: head3.svg)
+ */
+function ungroupSrcLayers() {
+  if (!selected) return;
+  
+  const imgs = Array.from(selected.element.querySelectorAll('img'));
+  if (imgs.length <= 1) {
+    console.warn('Layer has only one source, cannot ungroup');
+    return;
+  }
+
+  const container = document.getElementById('panel1') || document.querySelector('.container');
+  const originalLayer = selected;
+  const baseX = originalLayer.x;
+  const baseY = originalLayer.y;
+  const originalIndex = layers.indexOf(originalLayer);
+  const originalName = originalLayer.name;
+
+  // Create separate layers untuk setiap src
+  const newLayers = imgs.map((img, idx) => {
+    const newLayerName = `${originalName}_${idx}`;
+    const newLayer = new Layer(newLayerName, [img.src], {
+      x: baseX,
+      y: baseY
+    }, []);
+    return newLayer;
+  });
+
+  // Hapus original layer dari layers array
+  if (originalIndex !== -1) {
+    layers.splice(originalIndex, 1);
+  }
+
+  // Tambah semua layer baru di posisi original
+  newLayers.forEach((layer, idx) => {
+    layers.splice(originalIndex + idx, 0, layer);
+  });
+
+  // Detach original dan attach semua layer baru
+  originalLayer.detach();
+  newLayers.forEach(layer => {
+    layer.attach(container, onlayerdragstart);
+    addLayerClickHandler(layer);
+  });
+
+  // Select layer pertama
+  selectLayer(newLayers[0]);
+  renderLayer();
+}
+
+/**
+ * Wrap selected layer(s) dalam group baru
+ * Bisa handle single selection atau multi-selection dari selector
+ */
+function groupSelectedLayer() {
+  const container = document.getElementById('panel1') || document.querySelector('.container');
+  
+  // Cek apakah ada multi-selection dari selector
+  const selectedElements = document.querySelectorAll('.layer.selected');
+  const layersToGroup = [];
+  
+  if (selectedElements.length > 1) {
+    // Multi-select dari selector: kumpulkan semua selected layers
+    selectedElements.forEach(el => {
+      const layer = layers.find(l => l.element === el);
+      if (layer) layersToGroup.push(layer);
+    });
+  } else if (selected) {
+    // Single select: gunakan selected variable
+    layersToGroup.push(selected);
+  } else {
+    return;
+  }
+
+  if (layersToGroup.length === 0) return;
+
+  // Hitung min position
+  const minX = Math.min(...layersToGroup.map(l => l.x));
+  const minY = Math.min(...layersToGroup.map(l => l.y));
+
+  // Reset posisi relative terhadap group
+  const childrenForGroup = layersToGroup.map(layer => {
+    layer.x -= minX;
+    layer.y -= minY;
+    return layer;
+  });
+
+  // Detach semua
+  childrenForGroup.forEach(l => l.detach());
+
+  // Create group
+  const groupLayer = new Layer('Group', [], {
+    x: minX,
+    y: minY
+  }, childrenForGroup);
+
+  // Update layers array: hapus children, tambah group
+  const firstIndex = layers.indexOf(layersToGroup[0]);
+  layersToGroup.forEach(layer => {
+    const idx = layers.indexOf(layer);
+    if (idx !== -1) layers.splice(idx, 1);
+  });
+  
+  if (firstIndex !== -1) {
+    layers.splice(firstIndex, 0, groupLayer);
+  } else {
+    layers.push(groupLayer);
+  }
+
+  // Attach group
+  groupLayer.attach(container, onlayerdragstart);
+  selectLayer(groupLayer);
+  renderLayer();
+}
+
+/**
+ * Ungroup: keluar satu level dari hierarchy
+ * Jika selected adalah group, ambil childLayers dan pindahkan ke parent level
+ */
+function ungroupSelectedLayer() {
+  if (!selected || !selected.childLayers || selected.childLayers.length === 0) {
+    console.warn('Selected layer is not a group, try ungroupSrcLayers() instead');
+    return;
+  }
+
+  const container = document.getElementById('panel1') || document.querySelector('.container');
+  const groupLayer = selected;
+  const groupIndex = layers.indexOf(groupLayer);
+  const groupX = groupLayer.x;
+  const groupY = groupLayer.y;
+
+  // Ambil semua child dan hitung posisi absolutnya
+  const childrenToAdd = [];
+  groupLayer.childLayers.forEach(child => {
+    child.x += groupX;  // Posisi absolute
+    child.y += groupY;
+    childrenToAdd.push(child);
+  });
+
+  // Detach group
+  groupLayer.detach();
+
+  // Hapus group dari layers
+  if (groupIndex !== -1) {
+    layers.splice(groupIndex, 1);
+  }
+
+  // Add semua children ke layers di posisi group yang lama
+  childrenToAdd.forEach((child, idx) => {
+    layers.splice(groupIndex + idx, 0, child);  // Insert di posisi original
+    child.attach(container, onlayerdragstart);
+  });
+
+  deselectLayer();
+  renderLayer();
 }
 
 function deleteSelectedLayer() {
-  const selectedEls = getSelectedLayerElements();
-  if (!selectedEls.length) return;
-  selectedEls.forEach(el => {
-    const inst = getLayerInstanceFromElement(el);
-    if (inst) {
-      const idx = layers.indexOf(inst);
-      if (idx !== -1) layers.splice(idx, 1);
-    }
-    el.remove();
-  });
+  if (!selected) return;
+  const idx = layers.indexOf(selected);
+  if (idx !== -1) layers.splice(idx, 1);
+  selected.detach();
   selected = null;
 }
 
 function duplicateSelectedLayers() {
-  const selectedEls = getSelectedLayerElements();
-  if (!selectedEls.length) return;
+  if (!selected) return;
   const container = document.getElementById('panel1') || document.querySelector('.container');
-  selectedEls.forEach(el => {
-    const inst = getLayerInstanceFromElement(el);
-    if (!inst) return;
-    // Collect img srcs from DOM
-    const imgs = Array.from(inst.element.querySelectorAll('img'));
-    const srcClone = imgs.map(i => i.src);
-    const newLayer = new Layer(inst.name + '_copy', srcClone, {
-      x: inst.x,
-      y: inst.y,
-      rotation: inst.rotation,
-      scale: inst.scale,
-      flipX: inst.isFlipX,
-      flipY: inst.isFlipY,
-      width: inst.width,
-      height: inst.height
-    });
-    layers.push(newLayer);
-    newLayer.attach(container, onlayerdragstart);
-    renderLayer(newLayer); // Render the new layer
+  
+  // Collect img srcs from DOM
+  const imgs = Array.from(selected.element.querySelectorAll('img'));
+  const srcClone = imgs.map(i => i.src);
+  const newLayer = new Layer(selected.name + '_copy', srcClone, {
+    x: selected.x,
+    y: selected.y,
+    rotation: selected.rotation,
+    scale: selected.scale,
+    flipX: selected.isFlipX,
+    flipY: selected.isFlipY,
+    width: selected.width,
+    height: selected.height
   });
+  layers.push(newLayer);
+  newLayer.attach(container, onlayerdragstart);
+  renderLayer(newLayer);
 }
 
 function copySelectedLayers() {
-  const selectedEls = getSelectedLayerElements();
+  if (!selected) return;
   clipboardLayers.length = 0;
-  selectedEls.forEach(el => {
-    const inst = getLayerInstanceFromElement(el);
-    if (!inst) return;
-    const imgs = Array.from(inst.element.querySelectorAll('img'));
-    const src = imgs.map(i => i.src);
-    clipboardLayers.push({
-      name: inst.name,
-      src: src,
-      options: {
-        x: inst.x,
-        y: inst.y,
-        rotation: inst.rotation,
-        scale: inst.scale,
-        flipX: inst.isFlipX,
-        flipY: inst.isFlipY,
-        width: inst.width,
-        height: inst.height
-      }
-    });
+  
+  const imgs = Array.from(selected.element.querySelectorAll('img'));
+  const src = imgs.map(i => i.src);
+  clipboardLayers.push({
+    name: selected.name,
+    src: src,
+    options: {
+      x: selected.x,
+      y: selected.y,
+      rotation: selected.rotation,
+      scale: selected.scale,
+      flipX: selected.isFlipX,
+      flipY: selected.isFlipY,
+      width: selected.width,
+      height: selected.height
+    }
   });
 }
 
@@ -615,4 +884,255 @@ function pasteCopiedLayers() {
     newLayer.attach(container, onlayerdragstart);
     renderLayer(newLayer); // Render the new layer
   });
+}
+
+/**
+ * Buka settings window menggunakan openWindow() dari windowhandler.js
+ * Ini adalah alternative ke pause menu, bisa dipanggil dari ESC atau back button
+ */
+function openSettingsWindow() {
+  // Check if windowhandler is available
+  if (typeof window.openWindow !== 'function') {
+    console.error('studiopose.js: windowhandler.js API not loaded');
+    return;
+  }
+
+  // Create HTML content for settings (same as pausestudio.js)
+  var settingsContent = `
+    <div class="content">
+      <div class="setting-section">
+        <div class="setting-title">⚙️ Audio Settings</div>
+        <div class="switch">
+          <label class="slider-label">BGM Enabled</label>
+          <label class="toggle-switch">
+            <input type="checkbox" id="bgmSwitch">
+            <span class="slider-switch"></span>
+          </label>
+        </div>
+        <div class="slider-container">
+          <label class="slider-label">Master Volume</label>
+          <input type="range" id="masterVolumeSlider" class="custom-slider" min="0" max="100" value="50">
+          <span id="masterVolumePercentage" class="percentage">50%</span>
+        </div>
+        <div class="slider-container">
+          <label class="slider-label">BGM Volume</label>
+          <input type="range" id="bgmVolumeSlider" class="custom-slider" min="0" max="100" value="50">
+          <span id="bgmVolumePercentage" class="percentage">50%</span>
+        </div>
+        <div class="slider-container">
+          <label class="slider-label">SFX Volume</label>
+          <input type="range" id="sfxVolumeSlider" class="custom-slider" min="0" max="100" value="50">
+          <span id="sfxVolumePercentage" class="percentage">50%</span>
+        </div>
+        <div class="slider-container">
+          <label class="slider-label">UI Volume</label>
+          <input type="range" id="uiVolumeSlider" class="custom-slider" min="0" max="100" value="50">
+          <span id="uiVolumePercentage" class="percentage">50%</span>
+        </div>
+        <div id="studioAudioBGMControls" class="bgm-controls">
+          <button id="prevStudioAudioBGM" style="padding: 8px 12px; cursor: pointer;">⏮️ Previous</button>
+          <span id="studioAudioBGMTitle" style="margin: 0 20px; flex-grow: 1; text-align: center;">Loading...</span>
+          <button id="nextStudioAudioBGM" style="padding: 8px 12px; cursor: pointer;">Next ⏭️</button>
+        </div>
+        
+        <div style="width: 100%; text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ccc;">
+          <button id="exitStudioBtn" style="background-color: #ff6b6b; color: white; padding: 12px 24px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; font-weight: bold;">
+            🚪 Keluar dari Studio
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Generate unique window ID
+  var windowId = 'settingsWindow_' + Date.now();
+
+  // Create settings window using windowhandler API
+  openWindow({
+    title: '🎵 Studio Settings',
+    content: settingsContent,
+    footer: `<button class="footer-btn" onclick="window.closeWindow('${windowId}')" style="width:100%;padding:10px;cursor:pointer;">Close</button>`,
+    width: '55%',
+    height: 'auto'
+  });
+
+  // Store window ID globally so buttons can close it
+  window.__studioSettingsWindowId = windowId;
+
+  // Set slider values from current settings
+  setTimeout(() => {
+    if (window.AudioSettings) {
+      document.getElementById('masterVolumeSlider').value = Math.round(window.AudioSettings.masterVolume * 100);
+      document.getElementById('bgmVolumeSlider').value = Math.round(window.AudioSettings.bgmVolume * 100);
+      document.getElementById('sfxVolumeSlider').value = Math.round(window.AudioSettings.sfxVolume * 100);
+      document.getElementById('uiVolumeSlider').value = Math.round(window.AudioSettings.uiVolume * 100);
+      document.getElementById('bgmSwitch').checked = !!window.AudioSettings.bgmEnabled;
+      
+      // Update percentage displays
+      document.getElementById('masterVolumePercentage').textContent = Math.round(window.AudioSettings.masterVolume * 100) + '%';
+      document.getElementById('bgmVolumePercentage').textContent = Math.round(window.AudioSettings.bgmVolume * 100) + '%';
+      document.getElementById('sfxVolumePercentage').textContent = Math.round(window.AudioSettings.sfxVolume * 100) + '%';
+      document.getElementById('uiVolumePercentage').textContent = Math.round(window.AudioSettings.uiVolume * 100) + '%';
+    }
+
+    // Attach event listeners
+    document.getElementById('masterVolumeSlider')?.addEventListener('input', function(e) {
+      var val = e.target.value / 100;
+      window.AudioSettings.masterVolume = val;
+      document.getElementById('masterVolumePercentage').textContent = Math.round(val * 100) + '%';
+      broadcastAudioSettings();
+    });
+
+    document.getElementById('bgmVolumeSlider')?.addEventListener('input', function(e) {
+      var val = e.target.value / 100;
+      window.AudioSettings.bgmVolume = val;
+      document.getElementById('bgmVolumePercentage').textContent = Math.round(val * 100) + '%';
+      broadcastAudioSettings();
+    });
+
+    document.getElementById('sfxVolumeSlider')?.addEventListener('input', function(e) {
+      var val = e.target.value / 100;
+      window.AudioSettings.sfxVolume = val;
+      document.getElementById('sfxVolumePercentage').textContent = Math.round(val * 100) + '%';
+      broadcastAudioSettings();
+    });
+
+    document.getElementById('uiVolumeSlider')?.addEventListener('input', function(e) {
+      var val = e.target.value / 100;
+      window.AudioSettings.uiVolume = val;
+      document.getElementById('uiVolumePercentage').textContent = Math.round(val * 100) + '%';
+      broadcastAudioSettings();
+    });
+
+    document.getElementById('bgmSwitch')?.addEventListener('change', function(e) {
+      window.AudioSettings.bgmEnabled = !!e.target.checked;
+      broadcastAudioSettings();
+    });
+
+    // BGM navigation
+    document.getElementById('prevStudioAudioBGM')?.addEventListener('click', function() {
+      document.dispatchEvent(new CustomEvent('changeStudioBGM', { detail: { direction: 'prev' } }));
+      updateStudioBGMTitleInSettings();
+    });
+
+    document.getElementById('nextStudioAudioBGM')?.addEventListener('click', function() {
+      document.dispatchEvent(new CustomEvent('changeStudioBGM', { detail: { direction: 'next' } }));
+      updateStudioBGMTitleInSettings();
+    });
+
+    // Exit studio button
+    document.getElementById('exitStudioBtn')?.addEventListener('click', function() {
+      console.log('studiopose.js: Exit studio button clicked');
+      if (typeof window.openExitStudioDialog === 'function') {
+        window.openExitStudioDialog();
+      }
+    });
+
+    // Update BGM title
+    updateStudioBGMTitleInSettings();
+  }, 50);
+}
+
+/**
+ * Helper function untuk update studio BGM title di settings window
+ */
+function updateStudioBGMTitleInSettings() {
+  try {
+    if (typeof window.studioBGMList !== 'undefined' && window.currentStudioBGMIndex !== undefined) {
+      var title = document.getElementById('studioAudioBGMTitle');
+      if (title) {
+        title.textContent = window.studioBGMList[window.currentStudioBGMIndex][1] || 'Loading...';
+      }
+    }
+  } catch (e) {
+    console.warn('studiopose.js: Could not update studio BGM title', e);
+  }
+}
+
+/**
+ * Helper function untuk broadcast audio settings
+ */
+function broadcastAudioSettings() {
+  if (!window.AudioSettings) return;
+  localStorage.setItem('masterVolume', window.AudioSettings.masterVolume);
+  localStorage.setItem('bgmVolume', window.AudioSettings.bgmVolume);
+  localStorage.setItem('sfxVolume', window.AudioSettings.sfxVolume);
+  localStorage.setItem('uiVolume', window.AudioSettings.uiVolume);
+  localStorage.setItem('bgmEnabled', window.AudioSettings.bgmEnabled);
+  document.dispatchEvent(new CustomEvent('audioSettingsChanged', { 
+    detail: Object.assign({}, window.AudioSettings) 
+  }));
+}
+
+/**
+ * Buka dialog konfirmasi keluar dari studio
+ */
+function openExitStudioDialog() {
+  if (typeof window.openWindow !== 'function') {
+    console.error('studiopose.js: windowhandler.js API not loaded');
+    return;
+  }
+
+  var exitDialogContent = `
+    <div style="padding: 20px; text-align: center;">
+      <p style="font-size: 16px; margin: 15px 0; color: #333;">
+        <strong>Kamu yakin ingin keluar dari studio, segala tindakan progress mu akan hilang selamanya gabisa dikembalikan?, jangan lupa simpan :3</strong>
+      </p>
+      <p style="font-size: 14px; margin: 20px 0; color: #666;">
+        ⚠️ Semua perubahan yang belum disimpan akan hilang
+      </p>
+    </div>
+  `;
+
+  var exitWindowId = openWindow({
+    title: 'Apakah Kamu Ingin Keluar dari Studio Karakter?',
+    content: exitDialogContent,
+    footer: `
+      <button style="background-color: #ff6b6b; color: white; padding: 10px 20px; border: none; cursor: pointer; margin-right: 10px; border-radius: 5px; font-weight: bold;" 
+              onclick="confirmExitStudio(); window.closeWindow(window.__exitStudioWindowId);">
+        Iya deh, aku keluar
+      </button>
+      <button style="background-color: #5E6CC9; color: white; padding: 10px 20px; border: none; cursor: pointer; border-radius: 5px; font-weight: bold;" 
+              onclick="window.closeWindow(window.__exitStudioWindowId);">
+        Gak jadi keluar aku
+      </button>
+    `,
+    width: '55%',
+    height: 'auto'
+  });
+
+  window.__exitStudioWindowId = exitWindowId;
+}
+
+/**
+ * Confirm exit studio - navigate back to mainmenu
+ */
+function confirmExitStudio() {
+  console.log('studiopose.js: Confirming exit from studio');
+  
+  // Stop studio BGM
+  if (typeof window.stopStudioBGMWithFade === 'function') {
+    try {
+      window.stopStudioBGMWithFade(500);
+    } catch (e) {
+      console.warn('studiopose.js: Could not stop BGM', e);
+    }
+  }
+
+  // Dispatch exit event
+  try {
+    document.dispatchEvent(new Event('studioExit'));
+  } catch (e) {}
+
+  // Navigate back to mainmenu
+  setTimeout(() => {
+    // Method 1: Using history.back() if available
+    if (window.history && window.history.back) {
+      window.history.back();
+    } 
+    // Method 2: Navigate to mainmenu.html
+    else if (window.location) {
+      window.location.href = 'mainmenu.html';
+    }
+  }, 500);
 }
