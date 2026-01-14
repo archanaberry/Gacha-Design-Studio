@@ -39,19 +39,28 @@ body, html {
     overflow: hidden;
 }
 
+
 .panel1, .panel2 {
     margin: 0;
+    padding: 0;
     background: none;
     background-size: cover;
     height: 100%;
-    align-items: center;
-    justify-content: center;
+    width: 100%;
     flex-direction: column;
     position: relative;
+    display: flex;
+}
+
+.panel2 {
+    align-items: initial;
+    justify-content: initial;
 }
 
 .panel1 {
-    overflow: hidden;
+    overflow: visible;
+    min-height: 100%;
+    box-sizing: border-box;
 }
 
 .panel2 {
@@ -93,10 +102,22 @@ input {
     left: 0px;
     top: 0px;
     z-index: 0;
+    touch-action: none;
 }
 
 .layer.selected {
     outline: 1px solid blue;
+}
+
+.layer-group {
+    border: none !important;
+    background: transparent !important;
+    pointer-events: none;
+}
+
+.layer-group.selected {
+    border: 2px solid #007bff !important;
+    pointer-events: auto;
 }
 
 .layer > :not(:first-child) {

@@ -28,34 +28,61 @@ function updateCoordInput() {
     document.getElementById('yCoord').value = selected.y;
 }
 
-function moveLayer(direction) {
-    if (!selected) return;
 
-    switch (direction) {
-        case 'up':
-            selected.y -= sensitivity;
-            break;
-        case 'down':
-            selected.y += sensitivity;
-            break;
-        case 'left':
-            selected.x -= sensitivity;
-            break;
-        case 'right':
-            selected.x += sensitivity;
-            break;
-    }
-    updateCoordInput();
+function moveLayer(direction) {
+  if (!selected) return;
+  let step = sensitivity || 1;
+  switch (direction) {
+    case 'up':
+      selected.y -= step;
+      break;
+    case 'down':
+      selected.y += step;
+      break;
+    case 'left':
+      selected.x -= step;
+      break;
+    case 'right':
+      selected.x += step;
+      break;
+  }
+  updateCoordInput();
 }
 
 function startMove(direction) {
-    moveLayer(direction);
-    interval = setInterval(() => moveLayer(direction), 0.1);
+  moveLayer(direction);
+  interval = setInterval(() => moveLayer(direction), 16); // ~60fps
 }
 
 function stopMove() {
-    clearInterval(interval);
+  clearInterval(interval);
 }
+
+// Keyboard arrow keys
+document.addEventListener('keydown', function(event) {
+  if (!selected) return;
+  if (event.target && (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA')) return;
+  let handled = false;
+  switch (event.key) {
+    case 'ArrowUp':
+      moveLayer('up');
+      handled = true;
+      break;
+    case 'ArrowDown':
+      moveLayer('down');
+      handled = true;
+      break;
+    case 'ArrowLeft':
+      moveLayer('left');
+      handled = true;
+      break;
+    case 'ArrowRight':
+      moveLayer('right');
+      handled = true;
+      break;
+  }
+  if (handled) event.preventDefault();
+});
 
 document.addEventListener('mouseup', stopMove);
 document.addEventListener('touchend', stopMove);

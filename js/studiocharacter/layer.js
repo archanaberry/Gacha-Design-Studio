@@ -34,6 +34,7 @@ class Layer {
     #childLayers = [];
     #ondragstart = null;
     #color = null;
+    #parentLayer = null; // Reference ke parent layer jika ini adalah child
 
     constructor(name, src, options = {}, childLayers = []) {
         this.#name = name;
@@ -105,16 +106,33 @@ class Layer {
         
         if (this.#childLayers.length > 0) {
             this.element.classList.add('layer-group');
-            this.element.style.minWidth = '20px';
-            this.element.style.minHeight = '20px';
-            this.element.style.background = 'rgba(0,123,255,0.2)';
+            // Hapus styling frame - gunakan styling bawaan saja
         }
+        
+        let maxWidth = 0, maxHeight = 0;
+        let imageDimensions = [];
         
         this.#src.forEach((src, index) => {
             const imgElement = document.createElement('img');
             imgElement.draggable = false;
             imgElement.classList.add('src-item');
             imgElement.dataset.index = index; // Tambahkan indeks untuk identifikasi
+            
+            // Load image to get dimensions
+            const img = new Image();
+            img.onload = () => {
+                imageDimensions[index] = { width: img.naturalWidth, height: img.naturalHeight };
+                if (img.naturalWidth > maxWidth || img.naturalHeight > maxHeight) {
+                    maxWidth = Math.max(maxWidth, img.naturalWidth);
+                    maxHeight = Math.max(maxHeight, img.naturalHeight);
+                    // Auto-set layer dimensions ke largest image jika belum ada
+                    if (!this.#width) this.#width = maxWidth;
+                    if (!this.#height) this.#height = maxHeight;
+                }
+            };
+            img.onerror = () => {
+                console.warn(`Failed to load image: ${src}`);
+            };
             
             if (src.endsWith('.svg') && this.#color) {
                 fetch(src).then(r => r.text()).then(svgText => {
@@ -124,12 +142,15 @@ class Layer {
                     svgText = svgText.replace(/stroke:\s*[^;]+/g, `stroke:${this.#color}`);
                     const dataUrl = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgText)));
                     imgElement.src = dataUrl;
+                    img.src = dataUrl; // Also load for dimensions
                 }).catch(e => {
                     console.error('Failed to load SVG', e);
                     imgElement.src = src;
+                    img.src = src;
                 });
             } else {
                 imgElement.src = src;
+                img.src = src; // Load untuk get dimensions
             }
             
             this.element.appendChild(imgElement);
@@ -168,18 +189,34 @@ class Layer {
         // Atur posisi dan ukuran elemen utama
         this.element.style.left = this.#x + 'px'; // Posisi horizontal
         this.element.style.top = this.#y + 'px'; // Posisi vertikal
-        this.element.style.width = this.#width + 'px'; // Lebar
-        this.element.style.height = this.#height + 'px'; // Tinggi
-    
-        // Cari elemen gambar di dalam elemen utama
-        const imgElement = this.element.querySelector('img');
-    
-        // Periksa keberadaan imgElement sebelum mengakses style-nya
-        if (imgElement) {
-            if (this.#width) imgElement.style.width = this.#width + 'px';
-            if (this.#height) imgElement.style.height = this.#height + 'px';
+        
+        // Jika ini adalah grouped layer, hitung bounding box dari children
+        if (this.#childLayers.length > 0) {
+            const bounds = this.#calculateGroupBounds();
+            this.element.style.width = bounds.width + 'px';
+            this.element.style.height = bounds.height + 'px';
+            // Border hanya tampil jika selected
+            this.element.style.boxSizing = 'border-box';
+            this.element.style.background = 'transparent';
+            this.element.style.pointerEvents = 'none'; // Izinkan klik melewati ke children
         } else {
-            console.warn('Image element not found in layer:', this.#name);
+            this.element.style.width = this.#width + 'px'; // Lebar
+            this.element.style.height = this.#height + 'px'; // Tinggi
+            this.element.style.border = 'none';
+            this.element.style.pointerEvents = 'auto';
+        }
+    
+        // Cari elemen gambar di dalam elemen utama (hanya untuk non-grouped layers)
+        if (this.#childLayers.length === 0) {
+            const imgElement = this.element.querySelector('img');
+        
+            // Periksa keberadaan imgElement sebelum mengakses style-nya
+            if (imgElement) {
+                if (this.#width) imgElement.style.width = this.#width + 'px';
+                if (this.#height) imgElement.style.height = this.#height + 'px';
+            } else {
+                console.warn('Image element not found in layer:', this.#name);
+            }
         }
     
         // Terapkan transformasi (rotasi, skala, flip)
@@ -195,6 +232,43 @@ class Layer {
         const nameLabel = this.element.querySelector('.layer-name');
         if (nameLabel) {
             nameLabel.textContent = this.#name;
+        }
+    }
+    
+    #calculateGroupBounds() {
+        // Hitung bounding box dari semua child layers
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        
+        this.#childLayers.forEach(child => {
+            const x = child.x;
+            const y = child.y;
+            const width = child.element?.clientWidth || child.width || 0;
+            const height = child.element?.clientHeight || child.height || 0;
+            
+            minX = Math.min(minX, x);
+            minY = Math.min(minY, y);
+            maxX = Math.max(maxX, x + width);
+            maxY = Math.max(maxY, y + height);
+        });
+        
+        // Pastikan bounds valid
+        if (minX === Infinity) minX = 0;
+        if (minY === Infinity) minY = 0;
+        if (maxX === -Infinity) maxX = 0;
+        if (maxY === -Infinity) maxY = 0;
+        
+        return {
+            x: minX,
+            y: minY,
+            width: Math.max(maxX - minX, 20), // Minimum width 20px
+            height: Math.max(maxY - minY, 20) // Minimum height 20px
+        };
+    }
+
+    #notifyParentUpdate() {
+        // Jika ini adalah child layer, beritahu parent untuk update bounds
+        if (this.#parentLayer) {
+            this.#parentLayer.#updateElement();
         }
     }   
     
@@ -274,11 +348,13 @@ class Layer {
     set x(value) {
         this.#x = value;
         this.#updateElement(); // Perbarui posisi elemen DOM
+        this.#notifyParentUpdate(); // Beritahu parent jika ada
     }
     
     set y(value) {
         this.#y = value;
         this.#updateElement(); // Perbarui posisi elemen DOM
+        this.#notifyParentUpdate(); // Beritahu parent jika ada
     }
     
     set rotation(value) {
@@ -356,12 +432,22 @@ class Layer {
         if (this.element) {
             if (value) {
                 this.element.classList.add('selected');
+                // Jika ini group layer, tampilkan border
+                if (this.#childLayers.length > 0) {
+                    this.element.style.border = '2px solid #007bff';
+                    this.element.style.pointerEvents = 'auto';
+                }
                 // Tandai semua elemen src di dalam layer
                 this.element.querySelectorAll('.src-item').forEach(img => {
                     img.classList.add('src-selected');
                 });
             } else {
                 this.element.classList.remove('selected');
+                // Jika ini group layer, hapus border
+                if (this.#childLayers.length > 0) {
+                    this.element.style.border = 'none';
+                    this.element.style.pointerEvents = 'none';
+                }
                 this.element.querySelectorAll('.src-item').forEach(img => {
                     img.classList.remove('src-selected');
                     this.#resetInputs();
@@ -392,8 +478,11 @@ class Layer {
             addLayerClickHandler(this);
         }
 
-        // Inisialisasi child layers
-        this.#childLayers.forEach(child => child.attach(this.element, ondragstart));
+        // Inisialisasi child layers dan set parent reference
+        this.#childLayers.forEach(child => {
+            child.#parentLayer = this; // Set parent reference
+            child.attach(this.element, ondragstart);
+        });
     }
 
     detach() {
