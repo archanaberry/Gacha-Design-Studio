@@ -30,6 +30,7 @@ const styles = `
     height: 10px; /* Atur tinggi garis splitter */
     background-color: blue;
     cursor: ns-resize; /* Ubah kursor saat di atas garis splitter */
+    z-index: 10;
 }
 body, html {
     margin: 0;
@@ -38,15 +39,28 @@ body, html {
     overflow: hidden;
 }
 
+
 .panel1, .panel2 {
     margin: 0;
+    padding: 0;
     background: none;
     background-size: cover;
     height: 100%;
-    align-items: center;
-    justify-content: center;
+    width: 100%;
     flex-direction: column;
     position: relative;
+    display: flex;
+}
+
+.panel2 {
+    align-items: initial;
+    justify-content: initial;
+}
+
+.panel1 {
+    overflow: visible;
+    min-height: 100%;
+    box-sizing: border-box;
 }
 
 .panel2 {
@@ -54,6 +68,7 @@ body, html {
     bottom: 0px;
     left: 0px;
     right: 0px;
+    z-index: 10;
 }
 
 #imageUpload1, #imageUpload2 {
@@ -87,10 +102,22 @@ input {
     left: 0px;
     top: 0px;
     z-index: 0;
+    touch-action: none;
 }
 
 .layer.selected {
     outline: 1px solid blue;
+}
+
+.layer-group {
+    border: none !important;
+    background: transparent !important;
+    pointer-events: none;
+}
+
+.layer-group.selected {
+    border: 2px solid #007bff !important;
+    pointer-events: auto;
 }
 
 .layer > :not(:first-child) {

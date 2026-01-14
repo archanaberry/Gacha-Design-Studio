@@ -110,17 +110,8 @@ class Selector {
         // Set global flag untuk memblokir layer drag saat selector aktif
         window.__selectorActive = this.selectorActive;
         
-        // Toggle pointer-events pada semua layer dan groups
-        const layers = document.querySelectorAll('.layer, .layer-group');
-        layers.forEach(layer => {
-            if (this.selectorActive) {
-                // Saat selector aktif: layer tidak bisa di-interact (event pass through)
-                layer.style.pointerEvents = 'none';
-            } else {
-                // Saat selector bisa di-interact normal
-                layer.style.pointerEvents = 'auto';
-            }
-        });
+        // JANGAN disable pointer-events - biarkan click events jalan untuk selection
+        // Hanya blokir drag pada layer.js dengan __selectorActive flag
         
         if (this.selectorActive) {
             this.button.textContent = "Matikan Seleksi";

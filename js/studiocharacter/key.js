@@ -28,35 +28,98 @@ function updateCoordInput() {
     document.getElementById('yCoord').value = selected.y;
 }
 
-function moveLayer(direction) {
-    if (!selected) return;
 
-    switch (direction) {
-        case 'up':
-            selected.y -= sensitivity;
-            break;
-        case 'down':
-            selected.y += sensitivity;
-            break;
-        case 'left':
-            selected.x -= sensitivity;
-            break;
-        case 'right':
-            selected.x += sensitivity;
-            break;
-    }
-    updateCoordInput();
+function moveLayer(direction) {
+  if (!selected) return;
+  let step = sensitivity || 1;
+  switch (direction) {
+    case 'up':
+      selected.y -= step;
+      break;
+    case 'down':
+      selected.y += step;
+      break;
+    case 'left':
+      selected.x -= step;
+      break;
+    case 'right':
+      selected.x += step;
+      break;
+  }
+  updateCoordInput();
 }
 
 function startMove(direction) {
-    moveLayer(direction);
-    interval = setInterval(() => moveLayer(direction), 0.1);
+  moveLayer(direction);
+  interval = setInterval(() => moveLayer(direction), 16); // ~60fps
 }
 
 function stopMove() {
-    clearInterval(interval);
+  clearInterval(interval);
 }
+
+// Keyboard arrow keys
+document.addEventListener('keydown', function(event) {
+  if (!selected) return;
+  if (event.target && (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA')) return;
+  let handled = false;
+  switch (event.key) {
+    case 'ArrowUp':
+      moveLayer('up');
+      handled = true;
+      break;
+    case 'ArrowDown':
+      moveLayer('down');
+      handled = true;
+      break;
+    case 'ArrowLeft':
+      moveLayer('left');
+      handled = true;
+      break;
+    case 'ArrowRight':
+      moveLayer('right');
+      handled = true;
+      break;
+  }
+  if (handled) event.preventDefault();
+});
 
 document.addEventListener('mouseup', stopMove);
 document.addEventListener('touchend', stopMove);
 document.addEventListener('touchcancel', stopMove);
+
+/**
+ * Handle ESC key untuk membuka settings di studio
+ */
+document.addEventListener('keydown', function(event) {
+  // ESC key = 27 atau event.key === 'Escape'
+  if (event.key === 'Escape' || event.keyCode === 27) {
+    console.log('studiocharacter/key.js: ESC key pressed - opening settings');
+    if (typeof window.openSettingsWindow === 'function') {
+      event.preventDefault();
+      window.openSettingsWindow();
+    }
+  }
+});
+
+/**
+ * Handle Android back button (backbutton event dari Cordova atau device plugin)
+ * Juga handle dengan window popstate untuk browser back button
+ */
+document.addEventListener('backbutton', function(event) {
+  console.log('studiocharacter/key.js: Android back button pressed - opening settings');
+  if (typeof window.openSettingsWindow === 'function') {
+    event.preventDefault();
+    window.openSettingsWindow();
+  }
+});
+
+// Fallback untuk browser back button (jika tidak ada Cordova)
+window.addEventListener('popstate', function(event) {
+  console.log('studiocharacter/key.js: Browser back button detected');
+  // Prevent default back navigation
+  event.preventDefault();
+  if (typeof window.openSettingsWindow === 'function') {
+    window.openSettingsWindow();
+  }
+});

@@ -78,12 +78,16 @@
         
         <br>
         <button id="toggleSelectorBtn">Nyalakan Seleksi</button>
-        <button id="groupBtn" onclick="groupSelectedLayers()">Grupkan</button>
-        <button id="ungroupBtn" onclick="ungroupSelectedLayers()">Pisahkan</button>
+        <button id="groupBtn" onclick="groupSelectedLayer()">Grupkan</button>
+        <button id="ungroupBtn" onclick="ungroupSelectedLayer()">Pisahkan Grup</button>
+        <button id="ungroupSrcBtn" onclick="ungroupSrcLayers()">Pisahkan Src</button>
+        <button id="mergeBtn" onclick="mergeSelectedLayersSrc()">Gabung Src</button>
         <button id="duplicateBtn" onclick="duplicateSelectedLayers()">Duplikasi</button>
         <button id="copyBtn" onclick="copySelectedLayers()">Salin</button>
         <button id="pasteBtn" onclick="pasteCopiedLayers()">Tempel</button>
         <button id="deleteBtn" onclick="deleteSelectedLayer()">Hapus Lapisan</button>
+        <button id="resetBtn" onclick="resetStudio()" style="background-color: #ff6b6b;">Reset Studio</button>
+        <button id="settingsBtn" onclick="openSettingsWindow()" style="background-color: #4a5ba7; color: white;">⚙️ Setelan</button>
         
         <input type="file" id="svgUpload" accept=".svg" multiple style="display:none" onchange="addImage(event)">
         <button onclick="document.getElementById('svgUpload').click()">Tambahkan SVG</button>
@@ -96,9 +100,13 @@
     <div id="splitter"></div>
 
     <!-- Skrip -->
+    <!-- Skrip -->
+    <script src="js/windowhandler.js"></script>
     <script src="js/mainmenu/studiopose.js"></script>
     <script src="js/studiocharacter/layer.js"></script>
     <script src="js/studiocharacter/studiopose.js"></script>
+    <script src="js/studiocharacter/pausestudio.js"></script>
+    <script src="js/studiocharacter/bgm.js"></script>
     <script src="js/studiocharacter/splitter.js"></script>
     <script src="js/studiocharacter/background.js"></script>
     <script src="js/studiocharacter/opacity.js"></script>
