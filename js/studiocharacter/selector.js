@@ -24,11 +24,10 @@
 const css = `
 .selection-box {
     position: absolute;
-    display: none;
     border: 2px dashed blue;
     background: rgba(173, 216, 230, 0.5);
     pointer-events: none;
-    z-index: 1000;
+    z-index: 5;
 }
 .selector-container {
     position: relative;
@@ -50,6 +49,10 @@ class Selector {
         this.startY = 0;
         this.isDragging = false;
         this.selectedLayers = [];
+        
+        // Bind handlers untuk document-level events
+        this.onDocumentMouseMove = this.onMouseMove.bind(this);
+        this.onDocumentMouseUp = this.onMouseUp.bind(this);
 
         // Ensure container punya positioning yang benar untuk absolute child positioning
         const containerStyle = window.getComputedStyle(this.container);
@@ -59,10 +62,6 @@ class Selector {
 
         this.button.addEventListener('click', this.toggleSelector.bind(this));
         this.container.addEventListener('mousedown', this.onMouseDown.bind(this));
-        this.container.addEventListener('mousemove', this.onMouseMove.bind(this));
-        this.container.addEventListener('mouseup', this.onMouseUp.bind(this));
-
-        // Touch events
         this.container.addEventListener('touchstart', this.onTouchStart.bind(this), { passive: true });
         this.container.addEventListener('touchmove', this.onTouchMove.bind(this), { passive: false });
         this.container.addEventListener('touchend', this.onTouchEnd.bind(this));
@@ -93,12 +92,14 @@ class Selector {
     setSelectionBox(x, y, w, h) {
         this.createSelectionBox();
 
-        // Adjust position and size
-        this.selectionBox.style.left = `${Math.min(x, x + w)}px`;
-        this.selectionBox.style.top = `${Math.min(y, y + h)}px`;
+        // x, y sudah container-relative, langsung set ke dalam container
+        const left = Math.min(x, x + w);
+        const top = Math.min(y, y + h);
+
+        this.selectionBox.style.left = `${left}px`;
+        this.selectionBox.style.top = `${top}px`;
         this.selectionBox.style.width = `${Math.abs(w)}px`;
         this.selectionBox.style.height = `${Math.abs(h)}px`;
-        this.selectionBox.style.display = 'block'; // Ensure the box is visible
     }
 
     clearSelectionBox() {
@@ -110,8 +111,17 @@ class Selector {
         // Set global flag untuk memblokir layer drag saat selector aktif
         window.__selectorActive = this.selectorActive;
         
-        // JANGAN disable pointer-events - biarkan click events jalan untuk selection
-        // Hanya blokir drag pada layer.js dengan __selectorActive flag
+        // Toggle pointer-events pada semua layer agar event bisa pass through saat selector aktif
+        const layers = document.querySelectorAll('.layer, .layer-group');
+        layers.forEach(layer => {
+            if (this.selectorActive) {
+                // Saat selector aktif: layer tidak bisa di-interact (event pass through)
+                layer.style.pointerEvents = 'none';
+            } else {
+                // Saat selector mati: layer bisa di-interact normal
+                layer.style.pointerEvents = 'auto';
+            }
+        });
         
         if (this.selectorActive) {
             this.button.textContent = "Matikan Seleksi";
@@ -153,17 +163,26 @@ class Selector {
 
     onMouseDown(e) {
         if (!this.selectorActive) return;
-        this.startX = e.clientX;
-        this.startY = e.clientY;
+        const containerRect = this.container.getBoundingClientRect();
+        this.startX = e.clientX - containerRect.left;
+        this.startY = e.clientY - containerRect.top;
         this.isDragging = true;
         this.clearSelectionBox();
         this.deselectAllLayers();
+        
+        // Disable pointer-events pada container agar document listener bisa tangkap event
+        this.container.style.pointerEvents = 'none';
+        
+        // Attach document-level listeners untuk capture movement di atas semua elemen
+        document.addEventListener('mousemove', this.onDocumentMouseMove);
+        document.addEventListener('mouseup', this.onDocumentMouseUp);
     }
 
     onMouseMove(e) {
         if (!this.selectorActive || !this.isDragging) return;
-        const currentX = e.clientX;
-        const currentY = e.clientY;
+        const containerRect = this.container.getBoundingClientRect();
+        const currentX = e.clientX - containerRect.left;
+        const currentY = e.clientY - containerRect.top;
         const width = currentX - this.startX;
         const height = currentY - this.startY;
         this.setSelectionBox(this.startX, this.startY, width, height);
@@ -172,6 +191,13 @@ class Selector {
     onMouseUp(e) {
         if (!this.selectorActive || !this.isDragging) return;
         this.isDragging = false;
+        
+        // Re-enable pointer-events pada container
+        this.container.style.pointerEvents = 'auto';
+        
+        // Detach document-level listeners
+        document.removeEventListener('mousemove', this.onDocumentMouseMove);
+        document.removeEventListener('mouseup', this.onDocumentMouseUp);
         
         // Check apakah selection box ada sebelum di-access
         if (this.selectionBox) {
@@ -184,8 +210,9 @@ class Selector {
     onTouchStart(e) {
         if (!this.selectorActive) return;
         const touch = e.touches[0];
-        this.startX = touch.clientX;
-        this.startY = touch.clientY;
+        const containerRect = this.container.getBoundingClientRect();
+        this.startX = touch.clientX - containerRect.left;
+        this.startY = touch.clientY - containerRect.top;
         this.isDragging = true;
         this.clearSelectionBox();
         this.deselectAllLayers();
@@ -194,8 +221,9 @@ class Selector {
     onTouchMove(e) {
         if (!this.selectorActive || !this.isDragging) return;
         const touch = e.touches[0];
-        const currentX = touch.clientX;
-        const currentY = touch.clientY;
+        const containerRect = this.container.getBoundingClientRect();
+        const currentX = touch.clientX - containerRect.left;
+        const currentY = touch.clientY - containerRect.top;
         const width = currentX - this.startX;
         const height = currentY - this.startY;
         this.setSelectionBox(this.startX, this.startY, width, height);
