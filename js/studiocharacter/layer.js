@@ -28,12 +28,15 @@ class Layer {
     #scale = 1;
     #flipX = false;
     #flipY = false;
+    #skewX = 0;
+    #skewY = 0;
     #width = null; // Tambahkan properti width
     #height = null; // Tambahkan properti height
     #src = [];
     #childLayers = [];
     #ondragstart = null;
     #color = null;
+    #srcColors = {}; // Warna spesifik untuk setiap src (color0, color1, color2, dst)
     #parentLayer = null; // Reference ke parent layer jika ini adalah child
 
     constructor(name, src, options = {}, childLayers = []) {
@@ -62,14 +65,54 @@ class Layer {
 
         // Set initial options
         if (options) {
-            if ('x' in options) this.#x = options.x;
-            if ('y' in options) this.#y = options.y;
+            // Posisi default
+            if ('posX' in options) this.#x = options.posX;
+            if ('x' in options) this.#x = options.x; // Backward compatibility
+            if ('posY' in options) this.#y = options.posY;
+            if ('y' in options) this.#y = options.y; // Backward compatibility
+            
+            // Transformasi
             if ('rotation' in options) this.#rotation = options.rotation;
+            if ('rotate' in options) this.#rotation = options.rotate;
             if ('scale' in options) this.#scale = options.scale;
-            if ('flipX' in options) this.#flipX = options.flipX; // Gunakan #flipX
-            if ('flipY' in options) this.#flipY = options.flipY; // Gunakan #flipY
+            if ('skewX' in options) this.#skewX = options.skewX;
+            if ('skewY' in options) this.#skewY = options.skewY;
+            
+            // Flip
+            if ('flipX' in options) this.#flipX = options.flipX;
+            if ('flipY' in options) this.#flipY = options.flipY;
+            
+            // Ukuran
+            if ('width' in options && !this.#width) this.#width = options.width;
+            if ('height' in options && !this.#height) this.#height = options.height;
+            
+            // Warna - parse color0, color1, color2, dst
+            this.#parseColorOptions(options);
         }
         this.#updateElement();
+    }
+
+    #parseColorOptions(options) {
+        // Parse color untuk seluruh layer
+        if ('color' in options && options.color !== null) {
+            this.#color = options.color;
+        }
+        
+        // Parse color per src (color0, color1, color2, dst)
+        for (let i = 0; i < this.#src.length; i++) {
+            const colorKey = `color${i}`;
+            if (colorKey in options && options[colorKey] !== null) {
+                this.#srcColors[i] = options[colorKey];
+            }
+        }
+    }
+
+    #getColorForSrc(index) {
+        // Return warna spesifik untuk src, atau warna layer umum, atau null
+        if (index in this.#srcColors) {
+            return this.#srcColors[index];
+        }
+        return this.#color;
     }
 
     #resetInputs() {
@@ -134,12 +177,13 @@ class Layer {
                 console.warn(`Failed to load image: ${src}`);
             };
             
-            if (src.endsWith('.svg') && this.#color) {
+            const colorForThis = this.#getColorForSrc(index);
+            if (src.endsWith('.svg') && colorForThis) {
                 fetch(src).then(r => r.text()).then(svgText => {
-                    svgText = svgText.replace(/fill="[^"]*"/g, `fill="${this.#color}"`);
-                    svgText = svgText.replace(/stroke="[^"]*"/g, `stroke="${this.#color}"`);
-                    svgText = svgText.replace(/fill:\s*[^;]+/g, `fill:${this.#color}`);
-                    svgText = svgText.replace(/stroke:\s*[^;]+/g, `stroke:${this.#color}`);
+                    svgText = svgText.replace(/fill="[^"]*"/g, `fill="${colorForThis}"`);
+                    svgText = svgText.replace(/stroke="[^"]*"/g, `stroke="${colorForThis}"`);
+                    svgText = svgText.replace(/fill:\s*[^;]+/g, `fill:${colorForThis}`);
+                    svgText = svgText.replace(/stroke:\s*[^;]+/g, `stroke:${colorForThis}`);
                     const dataUrl = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgText)));
                     imgElement.src = dataUrl;
                     img.src = dataUrl; // Also load for dimensions
@@ -219,13 +263,15 @@ class Layer {
             }
         }
     
-        // Terapkan transformasi (rotasi, skala, flip)
+        // Terapkan transformasi (rotasi, skala, flip, skew)
         const transforms = [
             `rotate(${this.#rotation}deg)`,
             `scale(${this.#scale})`,
         ];
         if (this.#flipX) transforms.push('scaleX(-1)');
         if (this.#flipY) transforms.push('scaleY(-1)');
+        if (this.#skewX !== 0) transforms.push(`skewX(${this.#skewX}deg)`);
+        if (this.#skewY !== 0) transforms.push(`skewY(${this.#skewY}deg)`);
         this.element.style.transform = transforms.join(' ');
     
         // Perbarui label nama layer
@@ -337,6 +383,14 @@ class Layer {
         return this.#flipY;
     }
 
+    get skewX() {
+        return this.#skewX;
+    }
+
+    get skewY() {
+        return this.#skewY;
+    }
+
     get selected() {
         return this.selectedState;
     }
@@ -375,6 +429,25 @@ class Layer {
     set flipY(value) {
         this.#flipY = value;
         this.#updateElement(); // Perbarui status flipY elemen DOM
+    }
+
+    set skewX(value) {
+        this.#skewX = value;
+        this.#updateElement(); // Perbarui skewX elemen DOM
+    }
+
+    set skewY(value) {
+        this.#skewY = value;
+        this.#updateElement(); // Perbarui skewY elemen DOM
+    }
+
+    set srcColors(colors) {
+        this.#srcColors = colors;
+        this.#updateElement();
+    }
+
+    get srcColors() {
+        return this.#srcColors;
     }      
 
     get src() {

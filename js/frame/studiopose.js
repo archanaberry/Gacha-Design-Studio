@@ -69,6 +69,15 @@
         <label for="rotationControl">Rotate:</label>
         <input type="range" id="rotationControl" min="0" max="360" value="0" oninput="handleRotation(this.value)">
         <div id="rotationIndicator">0</div>
+        
+        <label for="skewXControl">Skew X:</label>
+        <input type="text" id="skewXControl" placeholder="0" oninput="handleSkewX(this.value)">
+        <input type="range" id="skewXSlider" min="-45" max="45" value="0" oninput="handleSkewXSlider(this.value)">
+        
+        <label for="skewYControl">Skew Y:</label>
+        <input type="text" id="skewYControl" placeholder="0" oninput="handleSkewY(this.value)">
+        <input type="range" id="skewYSlider" min="-45" max="45" value="0" oninput="handleSkewYSlider(this.value)">
+        
         <button onclick="moveLayerUp()">Naikkan</button>
         <button onclick="moveLayerDown()">Turunkan</button>
         <button onclick="exportAsSVG()">Ekspor sebagai SVG</button>

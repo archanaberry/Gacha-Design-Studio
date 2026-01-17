@@ -216,6 +216,10 @@ const flipHorizontal = document.getElementById('flipHorizontal');
 const flipVertical = document.getElementById('flipVertical');
 const rotationIndicator = document.getElementById('rotationIndicator');
 const layerNameInput = document.getElementById('layerName');
+const skewXControl = document.getElementById('skewXControl');
+const skewXSlider = document.getElementById('skewXSlider');
+const skewYControl = document.getElementById('skewYControl');
+const skewYSlider = document.getElementById('skewYSlider');
 const splitter = document.getElementById('splitter');
 const panel1 = document.getElementById('panel1');
 const panel2 = document.getElementById('panel2');
@@ -401,6 +405,10 @@ function deselectLayer() {
 function updateCoordInput() {
     xCoordInput.value = selected.x;
     yCoordInput.value = selected.y;
+    skewXControl.value = selected.skewX || 0;
+    skewXSlider.value = selected.skewX || 0;
+    skewYControl.value = selected.skewY || 0;
+    skewYSlider.value = selected.skewY || 0;
 }
 
 function handleXCoord(value) {
@@ -417,6 +425,46 @@ function handleRotation(value) {
     if(!selected) return;
     selected.rotation = parseFloat(value);
     rotationIndicator.innerText = value;
+}
+
+function handleSkewX(value) {
+    if(!selected) return;
+    const skewValue = parseFloat(value);
+    selected.skewX = skewValue;
+    
+    // Update slider jika ada
+    const slider = document.getElementById('skewXSlider');
+    if (slider) slider.value = skewValue;
+}
+
+function handleSkewXSlider(value) {
+    if(!selected) return;
+    const skewValue = parseFloat(value);
+    selected.skewX = skewValue;
+    
+    // Update text input
+    const input = document.getElementById('skewXControl');
+    if (input) input.value = skewValue;
+}
+
+function handleSkewY(value) {
+    if(!selected) return;
+    const skewValue = parseFloat(value);
+    selected.skewY = skewValue;
+    
+    // Update slider jika ada
+    const slider = document.getElementById('skewYSlider');
+    if (slider) slider.value = skewValue;
+}
+
+function handleSkewYSlider(value) {
+    if(!selected) return;
+    const skewValue = parseFloat(value);
+    selected.skewY = skewValue;
+    
+    // Update text input
+    const input = document.getElementById('skewYControl');
+    if (input) input.value = skewValue;
 }
 
 function handleScale(value) {
