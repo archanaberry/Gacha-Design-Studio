@@ -200,17 +200,17 @@ button:focus-visible {
   left: 40%;
 }
 
-
+*
 .imporoc:active,
 .eksporoc:active,
 .changebg:active {
   transform: scale(0.95);
 }
+*/
 
 .eksporoc:active img {
   margin-right: 5px;
 }
-
 
 .imporoc:after,
 .eksporoc:after,
@@ -224,7 +224,6 @@ button:focus-visible {
   z-index: -1;
   transform: translate(-50%, -50%) scale(0);
 }
-
 
 .imporoc:hover:after,
 .eksporoc:hover:after,
