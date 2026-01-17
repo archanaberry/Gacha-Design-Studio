@@ -1,4 +1,26 @@
+/****************************************************************/
+//                                                              //
+//  -------------------Gacha Design Studio--------------------  //
+//  Created by: Archana Berry                                   //
+//  Assets credits: Lunime, OGL (Open Game License), MIT CC     //
+//  Version resource: v0.001_alpha                              //
+//  File: windowhandler.js                                      //
+//  Type: module[framework]                                     //
+//  Desc: Window Handling call framework utility                //
+//                                                              //
+//  ----------------------------------------------------------  //
+//                                                              //
+//  ---- Do not use this as a gacha design game as        ----  //
+//  ---- template, or modifying it to make a other        ----  //
+//  ---- version, than this without Archana Berry's       ----  //
+//  ---- permission's, except to help with repairs or     ----  //
+//  ---- updates art assets and etc with contributing     ----  //
+//                                                              //
+//**************************************************************//
+// Please patient for release Gacha Design Studio in Playstore UwU
+
 // windowhandler.js
+
 // WindowHandler - Sistem Manajemen Window Overlay (single-file, CSS inline + JS)
 // Versi: 1.0.1 (perbaikan z-index, overlay behavior, pointer stability, focus & cleanup)
 

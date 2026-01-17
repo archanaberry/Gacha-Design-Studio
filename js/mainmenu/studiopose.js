@@ -138,7 +138,7 @@ input {
 /* Gaya untuk Selector */
 .selection-box {
     position: absolute;
-    z-index: 999;
+    z-index: 5;
     border: 1px solid #007bff;
     background-color: rgba(0, 123, 255, 0.3);
 }

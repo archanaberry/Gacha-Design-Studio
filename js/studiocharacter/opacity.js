@@ -24,11 +24,28 @@
 function setBackground(panelId) {
     const fileInput = document.getElementById(panelId === 'panel1' ? 'imageUpload1' : 'imageUpload2');
     const file = fileInput.files[0];
+    
+    // Validasi file ada
+    if (!file) {
+        console.error('Tidak ada file yang dipilih');
+        return;
+    }
+    
+    // Validasi tipe file
+    if (!file.type.startsWith('image/')) {
+        console.error('File harus berupa gambar');
+        return;
+    }
+    
     const reader = new FileReader();
 
     reader.onload = function(e) {
         const panel = document.getElementById(panelId);
         panel.style.backgroundImage = `url('${e.target.result}')`;
+    }
+    
+    reader.onerror = function() {
+        console.error('Gagal membaca file');
     }
 
     reader.readAsDataURL(file);
