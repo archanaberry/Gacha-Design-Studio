@@ -103,6 +103,11 @@
         <input type="file" id="imageUpload" accept="image/*" multiple style="display:none" onchange="addImage(event)">
         <button onclick="document.getElementById('imageUpload').click()">Tambahkan Sisipan</button>
         
+        <!-- Layer SRC Manager Container -->
+        <div id="menusrcContainer" style="margin-top: 15px; border-top: 2px solid #ddd; padding-top: 15px;"></div>
+        
+        <!-- Child Layers Manager Container -->
+        <div id="menulayerContainer" style="margin-top: 15px; border-top: 2px solid #333; padding-top: 15px;"></div>
     </div>
 
     <!-- Garis splitter -->
@@ -124,6 +129,8 @@
     <script src="js/studiocharacter/sensivity.js"></script>
     <script src="js/studiocharacter/upload.js"></script>
     <script src="js/studiocharacter/export.js"></script>
+    <script src="js/studiocharacter/layersrcmanager.js"></script>
+    <script src="js/studiocharacter/menulayer.js"></script>
     <!-- Skrip -->
 
 </body>
