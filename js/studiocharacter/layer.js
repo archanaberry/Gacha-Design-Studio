@@ -38,8 +38,11 @@ class Layer {
     #color = null;
     #srcColors = {}; // Warna spesifik untuk setiap src (color0, color1, color2, dst)
     #parentLayer = null; // Reference ke parent layer jika ini adalah child
+    #opacity = 1; // 0-1
+    options = {};
 
     constructor(name, src, options = {}, childLayers = []) {
+        this.options = options || {};
         this.#name = name;
         this.#src = Array.isArray(src) ? src : [src];
         this.#x = 0; // Posisi awal x
@@ -65,6 +68,8 @@ class Layer {
 
         // Set initial options
         if (options) {
+            // Simpan options untuk referensi eksternal (selected.options dll.)
+            this.options = options;
             // Posisi default
             if ('posX' in options) this.#x = options.posX;
             if ('x' in options) this.#x = options.x; // Backward compatibility
@@ -88,6 +93,13 @@ class Layer {
             
             // Warna - parse color0, color1, color2, dst
             this.#parseColorOptions(options);
+            // Opacity
+            if ('opacity' in options) {
+                // Expect value 0-1; if user provided 0-100, normalize
+                let val = options.opacity;
+                if (val > 1) val = Math.min(100, val) / 100;
+                this.#opacity = Number(val) || 0;
+            }
         }
         this.#updateElement();
     }
@@ -208,6 +220,8 @@ class Layer {
                 e.stopPropagation(); // Hindari seleksi layer utama
                 this.#selectImage(index);
             });
+            // Terapkan opacity per src pada saat inisialisasi
+            imgElement.style.opacity = this.#opacity;
         });
     
         // Inisialisasi child layers
@@ -268,6 +282,9 @@ class Layer {
         }
     
         // Terapkan transformasi (rotasi, skala, flip, skew)
+        // Terapkan opacity
+        this.element.style.opacity = this.#opacity;
+
         const transforms = [
             `rotate(${this.#rotation}deg)`,
             `scale(${this.#scale})`,
@@ -476,6 +493,27 @@ class Layer {
     set color(value) {
         this.#color = value;
         this.#updateElement();
+    }
+
+    get opacity() {
+        return this.#opacity;
+    }
+
+    set opacity(value) {
+        // Accept 0-1 or 0-100
+        let v = Number(value);
+        if (isNaN(v)) return;
+        if (v > 1) v = Math.min(100, v) / 100;
+        this.#opacity = v;
+        // Simpan ke options agar history/function lain bisa baca
+        this.options = this.options || {};
+        this.options.opacity = v;
+        // Terapkan ke elemen utama
+        if (this.element) this.element.style.opacity = v;
+        // Terapkan ke semua src images
+        this.element && this.element.querySelectorAll('.src-item').forEach(img => {
+            img.style.opacity = v;
+        });
     }
 
     set width(value) {

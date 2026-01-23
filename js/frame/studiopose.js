@@ -157,6 +157,10 @@
             <!-- Panel bawah -->
             <div class="panel2 input-container" id="panel2">
         
+<!-- Checkbox untuk center layer -->
+<label for="centerLayerCheckbox">Ketengah Layer:</label>
+<input type="checkbox" id="centerLayerCheckbox" onchange="centerSelectedLayer()">
+
 <!-- Tombol arah -->
 <label for="sensitivitySlider">Sensitivitas:</label>
 <input type="range" id="sensitivitySlider" min="0.1" max="100" step="0.1" value="0.1" oninput="handleSensitivity(this.value)">
@@ -314,6 +318,42 @@
             // Allow panel1 to grow unlimited when panel3 is hidden
             panel1.style.minHeight = 'auto';
         }
+    }
+
+    // ========== CENTER LAYER FUNCTION ==========
+    function centerSelectedLayer() {
+        if (typeof selected === 'undefined' || !selected) {
+            console.warn('No layer selected');
+            return;
+        }
+        
+        const panel1 = document.getElementById('panel1');
+        if (!panel1) {
+            console.warn('Panel1 not found');
+            return;
+        }
+        
+        const panelRect = panel1.getBoundingClientRect();
+        const panelWidth = panelRect.width;
+        const panelHeight = panelRect.height;
+        
+        const layerWidth = selected.width || 100; // Default jika tidak ada
+        const layerHeight = selected.height || 100;
+        
+        const centerX = (panelWidth / 2) - (layerWidth / 2);
+        const centerY = (panelHeight / 2) - (layerHeight / 2);
+        
+        // Set posisi layer ke tengah
+        selected.x = centerX;
+        selected.y = centerY;
+        
+        // Update input fields jika ada
+        const xInput = document.getElementById('xCoord');
+        const yInput = document.getElementById('yCoord');
+        if (xInput) xInput.value = Math.round(centerX);
+        if (yInput) yInput.value = Math.round(centerY);
+        
+        console.log(`Layer centered at (${centerX}, ${centerY})`);
     }
 
     // Initialize splitter for panel3 (horizontal - left to right)
