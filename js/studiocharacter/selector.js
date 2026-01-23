@@ -143,6 +143,11 @@ class Selector {
                 this.selectedLayers.push(layer);
             }
         });
+        
+        // Sinkronisasi ke panel lain setelah selection di selector
+        if (typeof updateMenuLayerSelectionForMultiSelect === 'function') {
+            updateMenuLayerSelectionForMultiSelect();
+        }
     }
 
     deselectAllLayers() {
@@ -151,6 +156,11 @@ class Selector {
             layer.classList.remove('selected');
         });
         this.selectedLayers = [];
+        
+        // Sinkronisasi deselect ke semua panel
+        if (typeof syncDeselectionAcrossAllPanels === 'function') {
+            syncDeselectionAcrossAllPanels();
+        }
     }
 
     moveSelectedLayers(dx, dy) {

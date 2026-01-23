@@ -68,6 +68,11 @@ async function addSVGFiles(files) {
         if (window.__selectorActive) {
             newLayer.element.style.pointerEvents = 'none';
         }
+
+        // Update framework display di panel3
+        if (window.frameworkDisplay) {
+            window.frameworkDisplay.update(layers);
+        }
     }
 }
 
@@ -135,6 +140,11 @@ async function addImageFiles(files) {
         if (window.__selectorActive) {
             newLayer.element.style.pointerEvents = 'none';
         }
+    }
+
+    // Update framework display di panel3
+    if (window.frameworkDisplay) {
+        window.frameworkDisplay.update(layers);
     }
 }
 

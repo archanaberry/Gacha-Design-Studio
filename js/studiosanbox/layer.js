@@ -107,6 +107,11 @@ class Layer {
             imgElement.draggable = false;
             imgElement.classList.add('src-item');
             imgElement.dataset.index = index; // Tambahkan indeks untuk identifikasi
+            
+            // Set z-index berdasarkan urutan src untuk memastikan rendering order yang benar
+            // src0 (index 0) = z-index 0, src1 (index 1) = z-index 1, dst
+            imgElement.style.zIndex = index;
+            
             this.element.appendChild(imgElement);
             
             // Tambahkan event listener untuk seleksi

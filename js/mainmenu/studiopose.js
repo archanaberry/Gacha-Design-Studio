@@ -22,8 +22,54 @@
 // studiopose.js
 
 const styles = `
-/* Gaya untuk garis splitter */
+/* Main container layout - Horizontal flex layout */
+#mainContainer {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
 
+/* Panel 3 (Framework) - Left side, hidden by default */
+.panel3 {
+    background: none;
+    background-size: cover;
+    width: 0px;
+    min-height: 100%;
+    overflow: auto;
+    flex-shrink: 0;
+    border-right: 1px solid #ccc;
+    position: relative;
+    display: none;
+}
+
+/* Horizontal splitter between panel3 and panel group */
+#splitterH {
+    width: 5px;
+    height: 100%;
+    background-color: #999;
+    cursor: ew-resize;
+    z-index: 20;
+    flex-shrink: 0;
+    display: none;
+}
+
+#splitterH:hover {
+    background-color: #666;
+}
+
+/* Panel group - middle and right container */
+.panel-group {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+/* Gaya untuk garis splitter vertikal */
 #splitter {
     position: absolute;
     width: 100%;
@@ -45,7 +91,6 @@ body, html {
     padding: 0;
     background: none;
     background-size: cover;
-    height: 100%;
     width: 100%;
     flex-direction: column;
     position: relative;
@@ -55,11 +100,13 @@ body, html {
 .panel2 {
     align-items: initial;
     justify-content: initial;
+    height: 100%;
 }
 
 .panel1 {
     overflow: visible;
-    min-height: 100%;
+    min-height: auto;
+    flex: 1;
     box-sizing: border-box;
 }
 
@@ -71,12 +118,13 @@ body, html {
     z-index: 10;
 }
 
-#imageUpload1, #imageUpload2 {
+#imageUpload1, #imageUpload2, #imageUpload3 {
     margin-bottom: 10px;
 }
 
 #imageUpload1,
-#imageUpload2 {
+#imageUpload2,
+#imageUpload3 {
     margin-bottom: 20px;
 }
 
@@ -187,8 +235,73 @@ input {
         }
 
         /* Additional styles */
-        #sensitivitySlider, #opacitySlider1, #opacitySlider2, #rotationControl {
+        #sensitivitySlider, #opacitySlider1, #opacitySlider2, #opacitySlider3, #rotationControl {
             width: 100px;
+        }
+
+        /* Framework Display Styles */
+        #frameworkGrid {
+            display: grid !important;
+            grid-template-columns: repeat(3, 1fr) !important;
+            gap: 5px !important;
+            padding: 10px !important;
+        }
+
+        .framework-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 8px;
+            border: 2px solid transparent;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+
+        .framework-card:hover {
+            border-color: #888;
+        }
+
+        .framework-card-selected {
+            border: 2px solid #007bff !important;
+            background-color: rgba(0, 123, 255, 0.1);
+        }
+
+        .framework-frame {
+            width: 120px;
+            height: 120px;
+            border: 5px solid #333;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f5f5f5;
+            overflow: hidden;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .framework-frame img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .framework-label {
+            font-size: 12px;
+            text-align: center;
+            color: #333;
+            word-break: break-word;
+            max-width: 120px;
+            line-height: 1.3;
+        }
+
+        #panel3 h2 {
+            font-size: 20px !important;
+            margin: 10px 5px !important;
+            padding: 10px !important;
+            color: #333;
         }
 `;
 

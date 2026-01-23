@@ -161,6 +161,10 @@ class Layer {
             imgElement.classList.add('src-item');
             imgElement.dataset.index = index; // Tambahkan indeks untuk identifikasi
             
+            // Set z-index berdasarkan urutan src untuk memastikan rendering order yang benar
+            // src0 (index 0) = z-index 0, src1 (index 1) = z-index 1, dst
+            imgElement.style.zIndex = index;
+            
             // Load image to get dimensions
             const img = new Image();
             img.onload = () => {
@@ -339,9 +343,9 @@ class Layer {
     /**
      * @param {boolean} selected
      */
-
-    //
     set selected(value) {
+        this.selectedState = value;
+        
         if (!this.element) {
             return;
         }
@@ -352,8 +356,7 @@ class Layer {
             this.element.classList.remove('selected');
             this.#resetInputs(); // Panggil fungsi untuk membersihkan input
         }
-    }    
-    //
+    }
 
     get name() {
         return this.#name;
