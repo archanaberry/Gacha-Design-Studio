@@ -22,7 +22,7 @@
 // opacity.js
 
 function setBackground(panelId) {
-    const fileInput = document.getElementById(panelId === 'panel1' ? 'imageUpload1' : 'imageUpload2');
+    const fileInput = document.getElementById(panelId === 'panel1' ? 'imageUpload1' : panelId === 'panel2' ? 'imageUpload2' : 'imageUpload3');
     const file = fileInput.files[0];
     
     // Validasi file ada
@@ -52,10 +52,20 @@ function setBackground(panelId) {
 }
 
 function setOpacity(panelId) {
-    const opacitySlider = document.getElementById(panelId === 'panel1' ? 'opacitySlider1' : 'opacitySlider2');
-    const opacityInput = document.getElementById(panelId === 'panel1' ? 'opacityInput1' : 'opacityInput2');
+    const sliderId = panelId === 'panel1' ? 'opacitySlider1' : panelId === 'panel2' ? 'opacitySlider2' : 'opacitySlider3';
+    const inputId = panelId === 'panel1' ? 'opacityInput1' : panelId === 'panel2' ? 'opacityInput2' : 'opacityInput3';
+    
+    const opacitySlider = document.getElementById(sliderId);
+    const opacityInput = document.getElementById(inputId);
     const panel = document.getElementById(panelId);
 
-    panel.style.opacity = opacitySlider.value / 100;
-    opacityInput.value = opacitySlider.value + '%';
+    if (opacitySlider && opacityInput && panel) {
+        panel.style.opacity = opacitySlider.value / 100;
+        opacityInput.value = opacitySlider.value + '%';
+        
+        // Save configuration using bgconfig
+        if (typeof updateBgConfig === 'function') {
+            updateBgConfig(panelId, undefined, opacitySlider.value);
+        }
+    }
 }

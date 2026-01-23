@@ -78,127 +78,312 @@ function createLayerFromObject(layerObj) {
     return layer;
 }
 
+/**
+ * ============================================================
+ * DEFAULT CHARACTER LAYER TEMPLATE
+ * ============================================================
+ * 
+ * STRUKTUR LAYER DENGAN PROPERTIES LENGKAP:
+ * 
+ * options: {
+ *   // POSISI (Panel2: xCoord, yCoord)
+ *   "posX": 0,        // x0 - Posisi horizontal awal
+ *   "posY": 0,        // y1 - Posisi vertikal awal
+ *   
+ *   // ROTASI & SKALA (Panel2: rotationControl, scale)
+ *   "rotation": 0,    // Rotate 0-360 derajat
+ *   "scale": 1,       // Scale 0-2+ (1=normal)
+ *   
+ *   // SKEW (Panel2: skewXControl, skewYControl)
+ *   "skewX": 0,       // Skew X -45 hingga 45
+ *   "skewY": 0,       // Skew Y -45 hingga 45
+ *   
+ *   // FLIP (Panel2: flipHorizontal, flipVertical)
+ *   "flipX": false,   // Flip horizontal
+ *   "flipY": false,   // Flip vertikal
+ *   
+ *   // UKURAN (Panel2: width, height)
+ *   "width": null,    // Auto jika null
+ *   "height": null,   // Auto jika null
+ *   
+ *   // OPASITAS (Panel2: opacitySlider)
+ *   "opacity": 1,     // 0-1 (1=fully opaque)
+ *   
+ *   // WARNA (untuk SVG)
+ *   "color": null,    // Warna global
+ *   "color0": null,   // Warna src[0]
+ *   "color1": null    // Warna src[1]
+ * }
+ * 
+ * CATATAN: Setiap layer siap di-customize di panel2 secara real-time
+ * Refer: CHARACTER_TEMPLATE_GUIDE.md untuk dokumentasi lengkap
+ * ============================================================
+ */
+
 const layers = [
-    // lapisan //
-    // Tangan kanan
+    // ========== TANGAN KANAN ==========
     {
       "layerName": "Lengan atas kanan",
       "src": [
-        "assets/character/base/arm1.svg",
-        "assets/character/base/arm2.svg"
+        "assets/character/base/arm1.svg",    // src0 (outline)
+        "assets/character/base/arm2.svg"     // src1 (base)
       ],
       "options": {
+        "posX": 63,
+        "posY": 127,
+        "rotation": 0,
+        "scale": 1,
+        "skewX": 0,
+        "skewY": 0,
         "flipX": true,
-        //"color": "#ff0000"
+        "flipY": false,
+        "width": null,
+        "height": null,
+        "opacity": 1,
+        "color": null
       }
     },
     {
       "layerName": "Lengan bawah kanan",
       "src": [
-        "assets/character/base/hand1.svg",
-        "assets/character/base/hand2.svg"
+        "assets/character/base/hand1.svg",   // src0 (outline)
+        "assets/character/base/hand2.svg"    // src1 (base)
       ],
       "options": {
-        "flipX": true
+        "posX": 67,
+        "posY": 151,
+        "rotation": 0,
+        "scale": 1,
+        "skewX": 0,
+        "skewY": 0,
+        "flipX": true,
+        "flipY": false,
+        "width": null,
+        "height": null,
+        "opacity": 1,
+        "color": null
       }
     },
     {
       "layerName": "Tangan kanan",
       "src": [
-        "assets/character/base/finger3.svg",
-        "assets/character/base/finger4.svg"
+        "assets/character/base/finger3.svg", // src0 (outline)
+        "assets/character/base/finger4.svg"  // src1 (base)
       ],
       "options": {
-        "flipX": true
+        "posX": 74,
+        "posY": 170,
+        "rotation": 0,
+        "scale": 1,
+        "skewX": 0,
+        "skewY": 0,
+        "flipX": true,
+        "flipY": false,
+        "width": null,
+        "height": null,
+        "opacity": 1,
+        "color": null
       }
     },
   
-    // Kaki kanan
+    // ========== KAKI KANAN ==========
     {
       "layerName": "Paha atas kanan",
       "src": [
-        "assets/character/base/leg1.svg",
-        "assets/character/base/leg2.svg"
+        "assets/character/base/leg1.svg",    // src0 (outline)
+        "assets/character/base/leg2.svg"     // src1 (base)
       ],
       "options": {
-        "flipX": true
+        "posX": 0,
+        "posY": 0,
+        "rotation": 0,
+        "scale": 1,
+        "skewX": 0,
+        "skewY": 0,
+        "flipX": true,
+        "flipY": false,
+        "width": null,
+        "height": null,
+        "opacity": 1,
+        "color": null
       }
     },
     {
       "layerName": "Kaki kanan",
       "src": [
-        "assets/character/base/foot1.svg",
-        "assets/character/base/foot2.svg"
+        "assets/character/base/foot1.svg",   // src0 (outline)
+        "assets/character/base/foot2.svg"    // src1 (base)
       ],
       "options": {
-        "flipX": true
+        "posX": 0,
+        "posY": 0,
+        "rotation": 0,
+        "scale": 1,
+        "skewX": 0,
+        "skewY": 0,
+        "flipX": true,
+        "flipY": false,
+        "width": null,
+        "height": null,
+        "opacity": 1,
+        "color": null
       }
     },
   
-    // Kepala
+    // ========== BADAN ==========
     {
       "layerName": "Badan",
       "src": [
-        "assets/character/base/body1.svg",
-        "assets/character/base/body2.svg"
+        "assets/character/base/body1.svg",   // src0 (outline)
+        "assets/character/base/body2.svg"    // src1 (base)
       ],
-      "options": {}
+      "options": {
+        "posX": 44,
+        "posY": 112,
+        "rotation": 0,
+        "scale": 1,
+        "skewX": 0,
+        "skewY": 0,
+        "flipX": false,
+        "flipY": false,
+        "width": null,
+        "height": null,
+        "opacity": 0,
+        "color": null
+      }
     },
   
-    // Badan
+    // ========== KEPALA ==========
     {
       "layerName": "Kepala",
       "src": [
-        "assets/character/base/head1.svg",
-        "assets/character/base/head2.svg"
+        "assets/character/base/head1.svg",   // src0 (outline)
+        "assets/character/base/head2.svg"    // src1 (base)
       ],
-      "options": {}
+      "options": {
+        "posX": 0,
+        "posY": 0,
+        "rotation": 0,
+        "scale": 1,
+        "skewX": 0,
+        "skewY": 0,
+        "flipX": false,
+        "flipY": false,
+        "width": null,
+        "height": null,
+        "opacity": 1,
+        "color": null
+      }
     },
   
-    // Tangan kiri
+    // ========== TANGAN KIRI ==========
     {
       "layerName": "Lengan atas kiri",
       "src": [
-        "assets/character/base/arm1.svg",
-        "assets/character/base/arm2.svg"
+        "assets/character/base/arm1.svg",    // src0 (outline)
+        "assets/character/base/arm2.svg"     // src1 (base)
       ],
-      "options": {}
+      "options": {
+        "posX": 34,
+        "posY": 127.5,
+        "rotation": 0,
+        "scale": 1,
+        "skewX": 0,
+        "skewY": 0,
+        "flipX": false,
+        "flipY": false,
+        "width": null,
+        "height": null,
+        "opacity": 1,
+        "color": null
+      }
     },
     {
       "layerName": "Lengan bawah kiri",
       "src": [
-        "assets/character/base/hand1.svg",
-        "assets/character/base/hand2.svg"
+        "assets/character/base/hand1.svg",   // src0 (outline)
+        "assets/character/base/hand2.svg"    // src1 (base)
       ],
-      "options": {}
+      "options": {
+        "posX": 26.5,
+        "posY": 152,
+        "rotation": 0,
+        "scale": 1,
+        "skewX": 0,
+        "skewY": 0,
+        "flipX": false,
+        "flipY": false,
+        "width": null,
+        "height": null,
+        "opacity": 1,
+        "color": null
+      }
     },
     {
       "layerName": "Tangan kiri",
       "src": [
-        "assets/character/base/finger1.svg",
-        "assets/character/base/finger2.svg"
+        "assets/character/base/finger1.svg", // src0 (outline)
+        "assets/character/base/finger2.svg"  // src1 (base)
       ],
-      "options": {}
+      "options": {
+        "posX": 20,
+        "posY": 172,
+        "rotation": 0,
+        "scale": 1,
+        "skewX": 0,
+        "skewY": 0,
+        "flipX": false,
+        "flipY": false,
+        "width": null,
+        "height": null,
+        "opacity": 1,
+        "color": null
+      }
     },
   
-    // Kaki kiri
+    // ========== KAKI KIRI ==========
     {
       "layerName": "Paha atas kiri",
       "src": [
-        "assets/character/base/leg1.svg",
-        "assets/character/base/leg2.svg"
+        "assets/character/base/leg1.svg",    // src0 (outline)
+        "assets/character/base/leg2.svg"     // src1 (base)
       ],
-      "options": {}
+      "options": {
+        "posX": 0,
+        "posY": 0,
+        "rotation": 0,
+        "scale": 1,
+        "skewX": 0,
+        "skewY": 0,
+        "flipX": false,
+        "flipY": false,
+        "width": null,
+        "height": null,
+        "opacity": 1,
+        "color": null
+      }
     },
     {
       "layerName": "Kaki kiri",
       "src": [
-        "assets/character/base/foot1.svg",
-        "assets/character/base/foot2.svg"
+        "assets/character/base/foot1.svg",   // src0 (outline)
+        "assets/character/base/foot2.svg"    // src1 (base)
       ],
-      "options": {}
+      "options": {
+        "posX": 0,
+        "posY": 0,
+        "rotation": 0,
+        "scale": 1,
+        "skewX": 0,
+        "skewY": 0,
+        "flipX": false,
+        "flipY": false,
+        "width": null,
+        "height": null,
+        "opacity": 1,
+        "color": null
+      }
     }
-    // lapisan //
   ].map(createLayerFromObject);
 
 // Mendefinisikan koordinat awal ketika halaman dimuat
@@ -220,10 +405,17 @@ const skewXControl = document.getElementById('skewXControl');
 const skewXSlider = document.getElementById('skewXSlider');
 const skewYControl = document.getElementById('skewYControl');
 const skewYSlider = document.getElementById('skewYSlider');
-const splitter = document.getElementById('splitter');
-const panel1 = document.getElementById('panel1');
-const panel2 = document.getElementById('panel2');
-const splitterHeight = splitter.offsetHeight;
+
+// Store in window for cross-file access
+window.splitterInstance = document.getElementById('splitter');
+window.panel1Instance = document.getElementById('panel1');
+window.panel2Instance = document.getElementById('panel2');
+
+// Create local references
+const splitter = window.splitterInstance;
+const panel1 = window.panel1Instance;
+const panel2 = window.panel2Instance;
+const splitterHeight = splitter ? splitter.offsetHeight : 0;
 
 /**
  * @param {Event} e
@@ -320,6 +512,25 @@ document.addEventListener('DOMContentLoaded', function() {
         addLayerClickHandler(layer);
     }
 
+    // Initialize framework display di panel3
+    if (window.frameworkDisplay) {
+        window.frameworkDisplay.initialize(layers);
+    }
+
+    // Listen untuk selection perubahan di Panel2 (menulayer)
+    document.addEventListener('layerChildSelected', (e) => {
+        const layerData = e.detail.layerData;
+        const layerName = layerData?.name;
+        
+        if (layerName) {
+            // Cari layer dengan nama yang sama di array layers
+            const selectedLayer = layers.find(l => l.name === layerName);
+            if (selectedLayer) {
+                selectLayer(selectedLayer);
+            }
+        }
+    });
+
     // Hapus seleksi ketika user mengklik elemen yang bukan layer, splitter, atau panel tertentu
     document.addEventListener('click', function(e) {
         // Periksa apakah elemen yang diklik adalah splitter atau panel2
@@ -358,12 +569,83 @@ function addLayerClickHandler(layer) {
             } else {
                 layer.element.classList.add('selected');
             }
+            // Update visual feedback di panel3 dan panel2
+            if (window.frameworkDisplay) {
+                window.frameworkDisplay.updateSelectionVisuals();
+            }
+            // Update menulayer juga untuk multi-select
+            updateMenuLayerSelectionForMultiSelect();
             return;
         }
         
         // Jika selector tidak aktif, gunakan single selection biasa
         selectLayer(layer);
         e.stopPropagation();
+    });
+}
+
+/**
+ * Update menulayer selection untuk multi-select mode
+ */
+function updateMenuLayerSelectionForMultiSelect() {
+    if (!window.studioMenuLayer) return;
+    
+    const selectedElements = document.querySelectorAll('.layer.selected, .layer-group.selected');
+    const menuItems = document.querySelectorAll('.menulayer-item');
+    
+    // Clear semua selection di menulayer
+    menuItems.forEach(item => {
+        item.classList.remove('selected');
+    });
+    
+    // Tandai items yang match dengan selected elements
+    selectedElements.forEach(selectedEl => {
+        const layer = layers.find(l => l.element === selectedEl);
+        if (layer) {
+            for (const item of menuItems) {
+                const nameEl = item.querySelector('.menulayer-name');
+                if (nameEl && nameEl.textContent === layer.name) {
+                    item.classList.add('selected');
+                    break;
+                }
+            }
+        }
+    });
+    
+    // Sinkronisasi framework display untuk multi-select juga
+    syncMultiSelectToFramework();
+}
+
+/**
+ * Sinkronisasi multi-select state dengan framework display
+ */
+function syncMultiSelectToFramework() {
+    if (!window.frameworkDisplay) return;
+    
+    const selectedElements = document.querySelectorAll('.layer.selected, .layer-group.selected');
+    const frameworkCards = document.querySelectorAll('.framework-card');
+    
+    frameworkCards.forEach(card => {
+        const labelEl = card.querySelector('.framework-label');
+        if (!labelEl) return;
+        
+        const layerName = labelEl.textContent;
+        let isSelected = false;
+        
+        // Check apakah layer ini selected
+        for (const selectedEl of selectedElements) {
+            const layer = layers.find(l => l.element === selectedEl);
+            if (layer && layer.name === layerName) {
+                isSelected = true;
+                break;
+            }
+        }
+        
+        if (isSelected) {
+            card.classList.add('framework-card-selected');
+        } else {
+            card.classList.remove('framework-card-selected');
+        }
     });
 }
 
@@ -387,6 +669,51 @@ function selectLayer(layer) {
     flipHorizontal.checked = selected.isFlipX;
     flipVertical.checked = selected.isFlipY;
     rotationIndicator.innerText = selected.rotation;
+    
+    // Sinkronisasi selection di semua panel
+    syncLayerSelectionAcrossAllPanels(layer);
+}
+
+/**
+ * Sinkronisasi layer selection di Panel1, Panel2, dan Panel3
+ * @param {Layer} layer - Layer yang dipilih
+ */
+function syncLayerSelectionAcrossAllPanels(layer) {
+    if (!layer || !layer.element) return;
+    
+    // 1. Update Panel1 visual (layer element classes)
+    document.querySelectorAll('.layer.selected, .layer-group.selected').forEach(el => {
+        if (el !== layer.element) {
+            el.classList.remove('selected');
+        }
+    });
+    layer.element.classList.add('selected');
+    
+    // 2. Update Panel2 visual (menulayer)
+    if (window.studioMenuLayer) {
+        const menuItems = document.querySelectorAll('.menulayer-item');
+        const layerName = layer.name;
+        
+        // Remove selected dari semua items
+        menuItems.forEach(item => {
+            item.classList.remove('selected');
+        });
+        
+        // Find dan select item dengan nama yang sesuai
+        for (const item of menuItems) {
+            const nameEl = item.querySelector('.menulayer-name');
+            if (nameEl && nameEl.textContent === layerName) {
+                item.classList.add('selected');
+                window.studioMenuLayer.selectedLayer = item;
+                break;
+            }
+        }
+    }
+    
+    // 3. Update Panel3 visual (framework)
+    if (window.frameworkDisplay) {
+        window.frameworkDisplay.updateSelectionVisuals();
+    }
 }
 
 function handleLayerName(value) {
@@ -400,6 +727,45 @@ function deselectLayer() {
     if(!selected) return;
     selected.selected = false;
     selected = null;
+    
+    // Sinkronisasi deselect di semua panel
+    syncDeselectionAcrossAllPanels();
+}
+
+/**
+ * Sinkronisasi deselection di Panel1, Panel2, dan Panel3
+ */
+function syncDeselectionAcrossAllPanels() {
+    // 1. Clear Panel1 selection
+    document.querySelectorAll('.layer.selected, .layer-group.selected').forEach(el => {
+        el.classList.remove('selected');
+    });
+    
+    // 2. Clear Panel2 (menulayer) selection
+    if (window.studioMenuLayer) {
+        const menuItems = document.querySelectorAll('.menulayer-item.selected');
+        menuItems.forEach(item => {
+            item.classList.remove('selected');
+        });
+        window.studioMenuLayer.selectedLayer = null;
+    }
+    
+    // 3. Clear Panel3 (framework) selection
+    if (window.frameworkDisplay) {
+        const frameworkCards = document.querySelectorAll('.framework-card-selected');
+        frameworkCards.forEach(card => {
+            card.classList.remove('framework-card-selected');
+        });
+    }
+}
+
+/**
+ * Helper function untuk update framework display setelah modifikasi layers
+ */
+function updateFrameworkDisplay() {
+    if (window.frameworkDisplay) {
+        window.frameworkDisplay.update(layers);
+    }
 }
 
 function updateCoordInput() {
@@ -414,17 +780,41 @@ function updateCoordInput() {
 function handleXCoord(value) {
     if(!selected) return;
     selected.x = parseFloat(value);
+    // Record history
+    if (typeof window.HistoryManager !== 'undefined') {
+        window.HistoryManager.recordAction('move', {
+            layerName: selected.layerName || selected.name,
+            x: selected.x,
+            action: 'X Position changed'
+        });
+    }
 };
 
 function handleYCoord(value) {
     if(!selected) return;
     selected.y = parseFloat(value);
+    // Record history
+    if (typeof window.HistoryManager !== 'undefined') {
+        window.HistoryManager.recordAction('move', {
+            layerName: selected.layerName || selected.name,
+            y: selected.y,
+            action: 'Y Position changed'
+        });
+    }
 };
 
 function handleRotation(value) {
     if(!selected) return;
     selected.rotation = parseFloat(value);
     rotationIndicator.innerText = value;
+    // Record history
+    if (typeof window.HistoryManager !== 'undefined') {
+        window.HistoryManager.recordAction('rotate', {
+            layerName: selected.layerName || selected.name,
+            rotation: selected.rotation,
+            action: 'Rotated'
+        });
+    }
 }
 
 function handleSkewX(value) {
@@ -555,17 +945,19 @@ function renderLayer(layer) {
                 container.appendChild(l.element);
             }
         });
-        return;
-    }
+    } else {
+        if (layer.element.parentElement !== container) {
+            container.appendChild(layer.element);
+        }
 
-    if (layer.element.parentElement !== container) {
-        container.appendChild(layer.element);
+        // Ensure layer.element is attached to container if not already
+        if (!container.contains(layer.element)) {
+            container.appendChild(layer.element);
+        }
     }
-
-    // Ensure layer.element is attached to container if not already
-    if (!container.contains(layer.element)) {
-        container.appendChild(layer.element);
-    }
+    
+    // Update framework display otomatis setiap kali layer di-render
+    updateFrameworkDisplay();
 }
 
 // ------------------ Group / Duplicate / Copy / Delete helpers ------------------
@@ -873,10 +1265,19 @@ function ungroupSelectedLayer() {
 
 function deleteSelectedLayer() {
   if (!selected) return;
+  const layerName = selected.layerName || selected.name;
   const idx = layers.indexOf(selected);
   if (idx !== -1) layers.splice(idx, 1);
   selected.detach();
   selected = null;
+  
+  // Record history
+  if (typeof window.HistoryManager !== 'undefined') {
+    window.HistoryManager.recordAction('delete', {
+      layerName: layerName,
+      action: 'Layer deleted'
+    });
+  }
 }
 
 function duplicateSelectedLayers() {
@@ -899,6 +1300,15 @@ function duplicateSelectedLayers() {
   layers.push(newLayer);
   newLayer.attach(container, onlayerdragstart);
   renderLayer(newLayer);
+  
+  // Record history
+  if (typeof window.HistoryManager !== 'undefined') {
+    window.HistoryManager.recordAction('duplicate', {
+      layerName: newLayer.name,
+      originalName: selected.name,
+      action: 'Layer duplicated'
+    });
+  }
 }
 
 function copySelectedLayers() {
@@ -931,6 +1341,15 @@ function pasteCopiedLayers() {
     layers.push(newLayer);
     newLayer.attach(container, onlayerdragstart);
     renderLayer(newLayer); // Render the new layer
+    
+    // Record history
+    if (typeof window.HistoryManager !== 'undefined') {
+      window.HistoryManager.recordAction('paste', {
+        layerName: newLayer.name,
+        originalName: data.name,
+        action: 'Layer pasted'
+      });
+    }
   });
 }
 

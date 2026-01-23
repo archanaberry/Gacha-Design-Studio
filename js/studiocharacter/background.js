@@ -22,51 +22,44 @@
 // background.js
 
 function setBackground(panelId) {
-    const fileInput = document.getElementById(panelId === 'panel1' ? 'imageUpload1' : 'imageUpload2');
+    const fileInput = document.getElementById(panelId === 'panel1' ? 'imageUpload1' : panelId === 'panel2' ? 'imageUpload2' : 'imageUpload3');
     const file = fileInput.files[0];
+    
+    if (!file) {
+        console.error('Tidak ada file yang dipilih');
+        return;
+    }
+    
+    if (!file.type.startsWith('image/')) {
+        console.error('File harus berupa gambar');
+        return;
+    }
+    
     const reader = new FileReader();
 
     reader.onload = function(e) {
         const panel = document.getElementById(panelId);
-        panel.style.backgroundImage = `url('${e.target.result}')`;
-        saveConfig(panelId, e.target.result);
+        const imageUrl = e.target.result;
+        
+        panel.style.backgroundImage = `url('${imageUrl}')`;
+        
+        // Save configuration using bgconfig
+        if (typeof updateBgConfig === 'function') {
+            const currentOpacity = panel.style.opacity ? Math.round(parseFloat(panel.style.opacity) * 100) : 100;
+            updateBgConfig(panelId, imageUrl, currentOpacity);
+        }
+    }
+    
+    reader.onerror = function() {
+        console.error('Gagal membaca file');
     }
 
     reader.readAsDataURL(file);
 }
 
-function saveConfig(panelId, imageUrl) {
-    const config = {
-        panelId: panelId,
-        imageUrl: imageUrl
-    };
-
-    // Simpan konfigurasi ke file JSON
-    const jsonConfig = JSON.stringify(config);
-    localStorage.setItem('backgroundConfig', jsonConfig);
-
-    // Salin file gambar ke folder cache
-    const filename = imageUrl.split('/').pop();
-    const cacheFolder = '../.cache/';
-    fetch(imageUrl)
-        .then(response => response.blob())
-        .then(blob => {
-            const formData = new FormData();
-            formData.append('file', blob, filename);
-            fetch(cacheFolder + filename, {
-                method: 'POST',
-                body: formData
-            });
-        });
-
-}
-
-// Memeriksa jika ada konfigurasi latar belakang yang tersimpan
+// Load saved configurations on page load
 document.addEventListener('DOMContentLoaded', function() {
-    const jsonConfig = localStorage.getItem('backgroundConfig');
-    if (jsonConfig) {
-        const config = JSON.parse(jsonConfig);
-        const panel = document.getElementById(config.panelId);
-        panel.style.backgroundImage = `url('${config.imageUrl}')`;
+    if (typeof applyAllBgConfigs === 'function') {
+        applyAllBgConfigs();
     }
 });
