@@ -249,8 +249,10 @@ class Layer {
         }
     
         // Atur posisi dan ukuran elemen utama
-        this.element.style.left = this.#x + 'px'; // Posisi horizontal
-        this.element.style.top = this.#y + 'px'; // Posisi vertikal
+        const offsetX = window.originOffsetX || 0;
+        const offsetY = window.originOffsetY || 0;
+        this.element.style.left = (this.#x + offsetX) + 'px'; // Posisi horizontal
+        this.element.style.top = (this.#y + offsetY) + 'px'; // Posisi vertikal
         
         // Jika ini adalah grouped layer, hitung bounding box dari children
         if (this.#childLayers.length > 0) {
@@ -609,6 +611,11 @@ class Layer {
         }
         // Detach child layers
         this.#childLayers.forEach(child => child.detach());
+    }
+
+    // Public method untuk update element (dipanggil dari luar)
+    updateElement() {
+        this.#updateElement();
     }
 }
 

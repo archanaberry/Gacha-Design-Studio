@@ -122,6 +122,34 @@ function createLayerFromObject(layerObj) {
 
 const layers = [
     // ========== TANGAN KANAN ==========
+    // profile chibi //
+        {
+      "layerName": "Rambut",
+      "src": [
+        "assets/profilechibi/hair1.svg",    // src0 (outline)
+        "assets/profilechibi/hairl1.svg",   // src1 (light)
+        "assets/profilechibi/hairss1.svg",  // src2 (shade)
+        "assets/profilechibi/hairs1.svg",   // src3 (gradation light to shadow (shadow))
+        "assets/profilechibi/hairo1.svg"     // src4 (base)
+      ],
+      "options": {
+        "posX": 65,
+        "posY": 127,
+        "posX0": 75,
+        "posY0": 250,  
+        "rotation": 0,
+        "scale": 1,
+        "skewX": 0,
+        "skewY": 0,
+        "flipX": false,
+        "flipY": false,
+        "width": null,
+        "height": null,
+        "opacity": 1,
+        "color": null
+      }
+    },
+    // profile chibi //
     {
       "layerName": "Lengan atas kanan",
       "src": [
@@ -129,7 +157,7 @@ const layers = [
         "assets/character/base/arm2.svg"     // src1 (base)
       ],
       "options": {
-        "posX": 63,
+        "posX": 65,
         "posY": 127,
         "rotation": 0,
         "scale": 1,
@@ -150,7 +178,7 @@ const layers = [
         "assets/character/base/hand2.svg"    // src1 (base)
       ],
       "options": {
-        "posX": 67,
+        "posX": 73,
         "posY": 151,
         "rotation": 0,
         "scale": 1,
@@ -171,7 +199,7 @@ const layers = [
         "assets/character/base/finger4.svg"  // src1 (base)
       ],
       "options": {
-        "posX": 74,
+        "posX": 80,
         "posY": 170,
         "rotation": 0,
         "scale": 1,
@@ -194,8 +222,8 @@ const layers = [
         "assets/character/base/leg2.svg"     // src1 (base)
       ],
       "options": {
-        "posX": 0,
-        "posY": 0,
+        "posX": 65.5,
+        "posY": 178,
         "rotation": 0,
         "scale": 1,
         "skewX": 0,
@@ -215,13 +243,13 @@ const layers = [
         "assets/character/base/foot2.svg"    // src1 (base)
       ],
       "options": {
-        "posX": 0,
-        "posY": 0,
-        "rotation": 0,
+        "posX": 66.5,
+        "posY": 206,
+        "rotation": 352,
         "scale": 1,
         "skewX": 0,
         "skewY": 0,
-        "flipX": true,
+        "flipX": false,
         "flipY": false,
         "width": null,
         "height": null,
@@ -248,7 +276,7 @@ const layers = [
         "flipY": false,
         "width": null,
         "height": null,
-        "opacity": 0,
+        "opacity": 1,
         "color": null
       }
     },
@@ -284,7 +312,7 @@ const layers = [
         "assets/character/base/arm2.svg"     // src1 (base)
       ],
       "options": {
-        "posX": 34,
+        "posX": 34.5,
         "posY": 127.5,
         "rotation": 0,
         "scale": 1,
@@ -349,8 +377,8 @@ const layers = [
         "assets/character/base/leg2.svg"     // src1 (base)
       ],
       "options": {
-        "posX": 0,
-        "posY": 0,
+        "posX": 42.5,
+        "posY": 180.5,
         "rotation": 0,
         "scale": 1,
         "skewX": 0,
@@ -370,8 +398,8 @@ const layers = [
         "assets/character/base/foot2.svg"    // src1 (base)
       ],
       "options": {
-        "posX": 0,
-        "posY": 0,
+        "posX": 40.5,
+        "posY": 208,
         "rotation": 0,
         "scale": 1,
         "skewX": 0,
@@ -512,6 +540,16 @@ document.addEventListener('DOMContentLoaded', function() {
         addLayerClickHandler(layer);
     }
 
+    // Initialize zoom input
+    const zoomInput = document.getElementById('zoomInput');
+    const zoomSlider = document.getElementById('zoomSlider');
+    if (zoomInput) {
+        zoomInput.value = '100%';
+    }
+    if (zoomSlider) {
+        zoomSlider.value = 100;
+    }
+
     // Initialize framework display di panel3
     if (window.frameworkDisplay) {
         window.frameworkDisplay.initialize(layers);
@@ -549,6 +587,31 @@ document.addEventListener('DOMContentLoaded', function() {
         // Pastikan pointer-events tetap aktif saat panel2 penuh
         if (panel2.style.height === '100%') {
             panel2.style.pointerEvents = 'auto';
+        }
+    });
+
+    // Listen untuk message dari iframe
+    window.addEventListener('message', function(e) {
+        if (e.data && e.data.type === 'originChanged') {
+            console.log('Received originChanged message:', e.data);
+            const { centered } = e.data;
+            // Hitung offset berdasarkan panel1
+            const panel1 = document.getElementById('panel1');
+            if (panel1) {
+                const centerX = panel1.offsetWidth / 2;
+                const centerY = panel1.offsetHeight / 2;
+                window.originCentered = centered;
+                window.originOffsetX = centered ? centerX : 0;
+                window.originOffsetY = centered ? centerY : 0;
+                console.log('Offset set:', window.originOffsetX, window.originOffsetY);
+                
+                // Update semua layers
+                layers.forEach(layer => {
+                    if (layer.element && typeof layer.updateElement === 'function') {
+                        layer.updateElement();
+                    }
+                });
+            }
         }
     });
 });
@@ -660,6 +723,7 @@ function selectLayer(layer) {
 
     layer.selected = true;
     selected = layer;
+    window.selected = selected; // Make it globally accessible
     updateCoordInput();
     widthInput.value = selected.element.clientWidth;
     heightInput.value = selected.element.clientHeight;
@@ -672,6 +736,25 @@ function selectLayer(layer) {
     
     // Sinkronisasi selection di semua panel
     syncLayerSelectionAcrossAllPanels(layer);
+
+    // Sync textshape if available
+    if (window.textShapeManager && typeof window.textShapeManager.syncTextInputFromLayer === 'function') {
+        console.log('selectLayer: Checking if layer is text layer:', layer.name);
+        if (layer && window.textShapeManager.isTextLayer(layer)) {
+            console.log('selectLayer: Is text layer, syncing input');
+            window.textShapeManager.syncTextInputFromLayer(layer);
+        } else {
+            console.log('selectLayer: Not a text layer, resetting to create mode');
+            window.textShapeManager.resetToCreateMode();
+        }
+    } else {
+        console.warn('selectLayer: TextShapeManager not available');
+    }
+
+    // Dispatch event for textshape sync
+    setTimeout(() => {
+        document.dispatchEvent(new CustomEvent('layerSelected', { detail: { layer: layer } }));
+    }, 100);
 }
 
 /**
@@ -727,9 +810,20 @@ function deselectLayer() {
     if(!selected) return;
     selected.selected = false;
     selected = null;
+    window.selected = null; // Clear global reference
     
     // Sinkronisasi deselect di semua panel
     syncDeselectionAcrossAllPanels();
+
+    // Reset textshape if available
+    if (window.textShapeManager && typeof window.textShapeManager.resetToCreateMode === 'function') {
+        window.textShapeManager.resetToCreateMode();
+    }
+
+    // Dispatch event for textshape reset
+    setTimeout(() => {
+        document.dispatchEvent(new CustomEvent('layerDeselected'));
+    }, 100);
 }
 
 /**

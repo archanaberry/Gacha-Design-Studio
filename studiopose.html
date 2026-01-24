@@ -32,6 +32,9 @@
 <label for="sensitivitySlider">Sensitivitas:</label>
 <input type="range" id="sensitivitySlider" min="0.1" max="100" step="0.1" value="0.1" oninput="handleSensitivity(this.value)">
 <input type="text" id="sensitivityInput" readonly>
+<label for="zoomSlider">Zoom Panel1:</label>
+<input type="range" id="zoomSlider" min="0" max="10000" step="1" value="100" oninput="handleZoom(this.value)">
+<input type="text" id="zoomInput" oninput="handleZoomInput(this.value)">
 <button class="button" id="move-up" onmousedown="startMove('up')" ontouchstart="startMove('up')">🔼</button>
         <button class="button" id="move-down" onmousedown="startMove('down')" ontouchstart="startMove('down')">🔽</button>
         <button class="button" id="move-left" onmousedown="startMove('left')" ontouchstart="startMove('left')">◀️️</button>

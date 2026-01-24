@@ -157,11 +157,10 @@
             <!-- Panel bawah -->
             <div class="panel2 input-container" id="panel2">
         
-<!-- Checkbox untuk center layer -->
-<label for="centerLayerCheckbox">Ketengah Layer:</label>
-<input type="checkbox" id="centerLayerCheckbox" onchange="centerSelectedLayer()">
-
 <!-- Tombol arah -->
+<label for="zoomSlider">Zoom Panel1:</label>
+<input type="range" id="zoomSlider" min="0" max="10000" step="1" value="100" oninput="handleZoom(this.value)">
+<input type="text" id="zoomInput" oninput="handleZoomInput(this.value)">
 <label for="sensitivitySlider">Sensitivitas:</label>
 <input type="range" id="sensitivitySlider" min="0.1" max="100" step="0.1" value="0.1" oninput="handleSensitivity(this.value)">
 <input type="text" id="sensitivityInput" readonly>
@@ -193,6 +192,11 @@
         <label for="opacitySlider3">Opasitas Panel3 (Kerangka):</label>
         <input type="range" id="opacitySlider3" class="opacitySlider" min="0" max="100" value="100" oninput="setOpacity('panel3')">
         <input type="text" id="opacityInput3" class="opacityInput" readonly>
+
+        <label for="centerOriginToggle">
+            <input type="checkbox" id="centerOriginToggle" onchange="toggleCenterOrigin(this.checked)">
+            Pusatkan Origin (0,0) ke Tengah Layar
+        </label>
 
         <label for="layerName">Layer:</label>
         <input type="text" id="layerName" oninput="handleLayerName(this.value)">
@@ -276,6 +280,7 @@
     <script src="js/studiocharacter/historywindow.js"></script>
     <script src="js/studiocharacter/function.js"></script>
     <script src="js/studiocharacter/studiopose.js"></script>
+    <script src="js/studiocharacter/textshape.js"></script>
     <script src="js/studiocharacter/pausestudio.js"></script>
     <script src="js/studiocharacter/bgm.js"></script>
     <script src="js/studiocharacter/splitter.js"></script>
@@ -318,42 +323,6 @@
             // Allow panel1 to grow unlimited when panel3 is hidden
             panel1.style.minHeight = 'auto';
         }
-    }
-
-    // ========== CENTER LAYER FUNCTION ==========
-    function centerSelectedLayer() {
-        if (typeof selected === 'undefined' || !selected) {
-            console.warn('No layer selected');
-            return;
-        }
-        
-        const panel1 = document.getElementById('panel1');
-        if (!panel1) {
-            console.warn('Panel1 not found');
-            return;
-        }
-        
-        const panelRect = panel1.getBoundingClientRect();
-        const panelWidth = panelRect.width;
-        const panelHeight = panelRect.height;
-        
-        const layerWidth = selected.width || 100; // Default jika tidak ada
-        const layerHeight = selected.height || 100;
-        
-        const centerX = (panelWidth / 2) - (layerWidth / 2);
-        const centerY = (panelHeight / 2) - (layerHeight / 2);
-        
-        // Set posisi layer ke tengah
-        selected.x = centerX;
-        selected.y = centerY;
-        
-        // Update input fields jika ada
-        const xInput = document.getElementById('xCoord');
-        const yInput = document.getElementById('yCoord');
-        if (xInput) xInput.value = Math.round(centerX);
-        if (yInput) yInput.value = Math.round(centerY);
-        
-        console.log(`Layer centered at (${centerX}, ${centerY})`);
     }
 
     // Initialize splitter for panel3 (horizontal - left to right)
@@ -420,6 +389,51 @@
             }
         }
     });
+
+    // Update origin offset on resize if centered
+    window.addEventListener('resize', function() {
+        if (isOriginCentered) {
+            // Re-apply transform dengan ukuran baru
+            if (window.parent && window.parent.postMessage) {
+                window.parent.postMessage({
+                    type: 'originChanged',
+                    centered: true
+                }, '*');
+            }
+        }
+    });
+
+    // ========== CENTER ORIGIN TOGGLE ==========
+    let isOriginCentered = false;
+    let centerOffsetX = 0;
+    let centerOffsetY = 0;
+
+    function toggleCenterOrigin(checked) {
+        console.log('toggleCenterOrigin called with:', checked);
+        // Kirim pesan ke parent window untuk toggle transform
+        if (window.parent && window.parent.postMessage) {
+            window.parent.postMessage({
+                type: 'originChanged',
+                centered: checked
+            }, '*');
+        }
+        
+        isOriginCentered = checked;
+    }
+
+    // Update offset on resize if centered
+    window.addEventListener('resize', function() {
+        if (isOriginCentered) {
+            console.log('Resize detected, re-sending originChanged');
+            if (window.parent && window.parent.postMessage) {
+                window.parent.postMessage({
+                    type: 'originChanged',
+                    centered: true
+                }, '*');
+            }
+        }
+    });
+
     </script>
 </html>`;
 
@@ -439,6 +453,9 @@
     iframe.srcdoc = fullHTML;
 
     container.appendChild(iframe);
+
+    // Simpan referensi iframe untuk akses dari parent
+    window.studioIframe = iframe;
 
     const cleanup = () => {
       if (iframe.parentNode) iframe.remove();
