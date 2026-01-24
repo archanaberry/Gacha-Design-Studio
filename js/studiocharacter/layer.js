@@ -476,6 +476,34 @@ class Layer {
         return this.#src;
     }
 
+    set src(newSrc) {
+        // Allow updating src array
+        this.#src = Array.isArray(newSrc) ? newSrc : [newSrc];
+        // Update DOM elements if they exist
+        if (this.element) {
+            // Update existing img elements or recreate them
+            const imgElements = this.element.querySelectorAll('.src-item');
+            this.#src.forEach((src, index) => {
+                if (imgElements[index]) {
+                    imgElements[index].src = src;
+                } else {
+                    // If img element doesn't exist, create it
+                    const imgElement = document.createElement('img');
+                    imgElement.draggable = false;
+                    imgElement.classList.add('src-item');
+                    imgElement.dataset.index = index;
+                    imgElement.style.zIndex = index;
+                    imgElement.src = src;
+                    this.element.appendChild(imgElement);
+                    imgElement.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        this.#selectImage(index);
+                    });
+                }
+            });
+        }
+    }
+
     get width() {
         return this.#width;
     }
@@ -519,27 +547,59 @@ class Layer {
     }
 
     set width(value) {
-    this.#width = value;
+        this.#width = value;
 
-    // Perbarui ukuran untuk elemen src yang dipilih
-    const selectedImg = this.element.querySelector('.src-item.src-selected');
-    if (selectedImg) {
-        selectedImg.style.width = `${value}px`;
-    } else {
-        this.#updateElement(); // Perbarui seluruh elemen jika tidak ada seleksi spesifik
+        // If value is null, allow auto-detection when image loads
+        if (value === null && this.element) {
+            // Re-trigger image loading for auto-dimension detection
+            const imgElements = this.element.querySelectorAll('.src-item');
+            imgElements.forEach((img, index) => {
+                const newImg = new Image();
+                newImg.onload = () => {
+                    if (!this.#width) {
+                        this.#width = newImg.naturalWidth;
+                        this.#updateElement();
+                    }
+                };
+                newImg.src = img.src;
+            });
+        } else {
+            // Perbarui ukuran untuk elemen src yang dipilih
+            const selectedImg = this.element.querySelector('.src-item.src-selected');
+            if (selectedImg) {
+                selectedImg.style.width = `${value}px`;
+            } else if (this.element) {
+                this.#updateElement(); // Perbarui seluruh elemen jika tidak ada seleksi spesifik
+            }
+        }
     }
-}
 
     set height(value) {
-    this.#height = value;
+        this.#height = value;
 
-    const selectedImg = this.element.querySelector('.src-item.src-selected');
-    if (selectedImg) {
-        selectedImg.style.height = `${value}px`;
-    } else {
-        this.#updateElement();
+        // If value is null, allow auto-detection when image loads
+        if (value === null && this.element) {
+            // Re-trigger image loading for auto-dimension detection
+            const imgElements = this.element.querySelectorAll('.src-item');
+            imgElements.forEach((img, index) => {
+                const newImg = new Image();
+                newImg.onload = () => {
+                    if (!this.#height) {
+                        this.#height = newImg.naturalHeight;
+                        this.#updateElement();
+                    }
+                };
+                newImg.src = img.src;
+            });
+        } else {
+            const selectedImg = this.element.querySelector('.src-item.src-selected');
+            if (selectedImg) {
+                selectedImg.style.height = `${value}px`;
+            } else if (this.element) {
+                this.#updateElement();
+            }
+        }
     }
-}
 
 
     set selected(value) {

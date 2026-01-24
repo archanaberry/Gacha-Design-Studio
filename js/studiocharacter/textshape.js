@@ -260,16 +260,13 @@ class TextShapeManager {
         // Create new SVG
         const newSvgText = this.createSVGText(text, fontSize, selectedFont, textColor, hasOutline, outlineWidth, outlineColor);
 
-        // Update layer - update the SVG URL in the first img element
-        if (this.editingLayer.element) {
-            const imgElement = this.editingLayer.element.querySelector('img');
-            if (imgElement) {
-                imgElement.src = newSvgText;
-                console.log('✓ Updated text layer SVG');
-            } else {
-                console.warn('No img element found to update');
-            }
-        }
+        // Update layer - directly update the src array (this will trigger the setter)
+        this.editingLayer.src = [newSvgText];
+        
+        // Reset width/height to null so layer will auto-detect from new SVG
+        // This allows the SVG to dynamically resize based on new text/font size
+        this.editingLayer.width = null;
+        this.editingLayer.height = null;
         
         // Update layer name
         this.editingLayer.name = text;
