@@ -1,0 +1,81 @@
+// QUICK FIX SUMMARY - Per-Src Color Properties
+// ==============================================
+
+ISSUE: SVG colors di src0, src1, src2, dst masih tidak berubah
+
+ROOT CAUSE:
+-----------
+1. #parseSrcProperties() tidak meparse color property
+   - Hanya meparse 11 properties, color TIDAK termasuk
+   
+2. #getColorForSrc() hanya cek backward compat storage (#srcColors)
+   - Tidak cek storage baru (#srcProperties) 
+   - Jadi color dari #parseSrcProperties tidak pernah digunakan
+   
+3. SVG fetch condition terlalu ketat
+   - if (src.endsWith('.svg') && colorForThis) ← TIDAK fetch jika no color
+
+FIXES APPLIED:
+--------------
+
+✅ In #parseSrcProperties() - line 127:
+   Added 'color' to srcPropertyNames array
+   Before: ['posX', 'posY', 'opacity', ..., 'height']
+   After:  ['posX', 'posY', 'opacity', ..., 'height', 'color']
+   
+   Result: color0, color1, color2, dst akan di-parse ke #srcProperties[i]['color']
+
+✅ In #getColorForSrc() - line 169:
+   Updated precedence logic:
+   - Check #srcProperties[index]['color'] FIRST (NEW)
+   - Then #srcColors[index] (backward compat)
+   - Then this.#color (global color)
+   
+   Result: color0 dari options akan digunakan
+
+✅ In SVG fetch - line 254:
+   Changed condition from:
+   if (src.endsWith('.svg') && colorForThis)
+   
+   To:
+   if (src.endsWith('.svg'))
+   
+   Reason: Fetch SVG SELALU, terapkan color hanya jika ada
+   Result: SVG yang tidak punya color juga bisa di-render
+
+HOW TO USE:
+-----------
+
+In studiopose.js, define layer dengan color per-src:
+
+{
+  "layerName": "Rambut",
+  "src": ["hair1.svg", "hairl1.svg", "hairss1.svg", "hairs1.svg", "hairo1.svg"],
+  "options": {
+    "color0": "#1A1A1A",    // outline - hitam
+    "color1": "#FFFFFF",    // light - putih
+    "color2": "#B39DDB",    // shade - ungu
+    "color3": "#6A4C93",    // shadow - ungu gelap
+    "color4": "#9C6FB1",    // base - ungu medium
+    // OR dengan global color sebagai default:
+    "color": "#808080",     // fallback untuk color5, color6, dst
+    "posX": 65, "posY": 127
+  }
+}
+
+VERIFICATION:
+--------------
+
+Open browser console, seharusnya tampil:
+  [Layer: Rambut] Applying color #1A1A1A to SVG src0
+  [Layer: Rambut] Applying color #FFFFFF to SVG src1
+  [Layer: Rambut] Applying color #B39DDB to SVG src2
+  [Layer: Rambut] Applying color #6A4C93 to SVG src3
+  [Layer: Rambut] Applying color #9C6FB1 to SVG src4
+
+Jika ada color ✓ → SVG akan di-recolor
+Jika tidak ada color ℹ → Log "No color for SVG src0, using original"
+
+TEST FILE:
+-----------
+TEST_PER_SRC_COLOR.html - Interactive test dengan 3 test cases

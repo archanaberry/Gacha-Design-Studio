@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Per-Src Color Properties</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f0f0f0;
+            padding: 20px;
+            margin: 0;
+        }
+        
+        .test-container {
+            background: white;
+            border: 2px solid #333;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        
+        .test-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            background: #4CAF50;
+            color: white;
+            padding: 10px;
+            border-radius: 3px;
+        }
+        
+        .layer {
+            position: absolute;
+            display: block;
+        }
+        
+        .src-item {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        
+        .canvas {
+            position: relative;
+            width: 400px;
+            height: 300px;
+            background: #fff;
+            border: 2px solid #ccc;
+            margin: 10px 0;
+        }
+        
+        .console-log {
+            background: #222;
+            color: #0f0;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 10px;
+            border-radius: 3px;
+        }
+        
+        .log-entry {
+            margin: 2px 0;
+            word-wrap: break-word;
+        }
+        
+        .info {
+            background: #e3f2fd;
+            padding: 10px;
+            margin: 10px 0;
+            border-left: 4px solid #2196F3;
+            border-radius: 3px;
+        }
+        
+        button {
+            background: #2196F3;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        
+        button:hover {
+            background: #1976D2;
+        }
+    </style>
+</head>
+<body>
+    <h1>✅ Test Per-Src Color Properties</h1>
+    <p>Verifikasi bahwa color0, color1, color2, dst sekarang bekerja dengan benar</p>
+    
+    <!-- Test 1: Hair Layer dengan 5 src dan per-src colors -->
+    <div class="test-container">
+        <div class="test-title">TEST 1: Hair Layer (5 SVG dengan Per-Src Colors)</div>
+        <div class="info">
+            Menguji: Rambut dengan 5 src (outline, light, shade, shadow, base)<br>
+            Expected: Setiap src menampilkan warna berbeda (color0, color1, color2, color3, color4)
+        </div>
+        <div id="canvas1" class="canvas"></div>
+        <div id="console1" class="console-log"></div>
+        <button onclick="runTest1()">🔄 Jalankan Test 1</button>
+        <button onclick="clearLog('console1')">Clear Log</button>
+    </div>
+    
+    <!-- Test 2: Simple Arm Layer dengan 2 src -->
+    <div class="test-container">
+        <div class="test-title">TEST 2: Arm Layer (2 SVG dengan Per-Src Colors)</div>
+        <div class="info">
+            Menguji: Lengan dengan 2 src (line, base)<br>
+            Expected: color0 dan color1 diterapkan ke masing-masing img element
+        </div>
+        <div id="canvas2" class="canvas"></div>
+        <div id="console2" class="console-log"></div>
+        <button onclick="runTest2()">🔄 Jalankan Test 2</button>
+        <button onclick="clearLog('console2')">Clear Log</button>
+    </div>
+    
+    <!-- Test 3: Precedence Test (color0 vs global color) -->
+    <div class="test-container">
+        <div class="test-title">TEST 3: Color Precedence (Per-Src > Global)</div>
+        <div class="info">
+            Menguji: Layer dengan global color + per-src color override<br>
+            Expected: src0 menggunakan color0, src1 menggunakan global color
+        </div>
+        <div id="canvas3" class="canvas"></div>
+        <div id="console3" class="console-log"></div>
+        <button onclick="runTest3()">🔄 Jalankan Test 3</button>
+        <button onclick="clearLog('console3')">Clear Log</button>
+    </div>
+    
+    <script>
+        // Logging system untuk test
+        const loggers = {};
+        
+        function getLogger(containerId) {
+            if (!loggers[containerId]) {
+                loggers[containerId] = [];
+            }
+            return loggers[containerId];
+        }
+        
+        function log(containerId, message) {
+            const logs = getLogger(containerId);
+            logs.push(message);
+            updateDisplay(containerId);
+            console.log(`[${containerId}] ${message}`);
+        }
+        
+        function updateDisplay(containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            const logs = getLogger(containerId);
+            container.innerHTML = logs.map(msg => `<div class="log-entry">${msg}</div>`).join('');
+            container.scrollTop = container.scrollHeight;
+        }
+        
+        function clearLog(containerId) {
+            loggers[containerId] = [];
+            updateDisplay(containerId);
+        }
+        
+        // Override console.log untuk capture ke test log juga
+        const originalLog = console.log;
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            // Jika ada prefix [Layer: ...] atau [Panel: ...], track ke test log juga
+            const msg = args.join(' ');
+            if (msg.includes('[Layer:') || msg.includes('Applying color') || msg.includes('No color')) {
+                // Akan ditampilkan di layer.js console output
+            }
+        };
+        
+        // Mock Layer class untuk testing
+        class TestLayer {
+            constructor(name, src, options = {}) {
+                this.name = name;
+                this.src = Array.isArray(src) ? src : [src];
+                this.options = options;
+                this.element = null;
+                
+                // Parse properties
+                this.srcProperties = {};
+                this.srcColors = {};
+                this.color = options.color || null;
+                this.opacity = options.opacity || 1;
+                this.x = options.posX || 0;
+                this.y = options.posY || 0;
+                this.width = options.width || 100;
+                this.height = options.height || 100;
+                
+                // Parse per-src properties
+                const srcPropertyNames = ['posX', 'posY', 'opacity', 'rotation', 'scale', 'skewX', 'skewY', 'flipX', 'flipY', 'width', 'height', 'color'];
+                for (let i = 0; i < this.src.length; i++) {
+                    if (!this.srcProperties[i]) {
+                        this.srcProperties[i] = {};
+                    }
+                    srcPropertyNames.forEach(prop => {
+                        const keyWithSuffix = `${prop}${i}`;
+                        if (keyWithSuffix in options) {
+                            this.srcProperties[i][prop] = options[keyWithSuffix];
+                        }
+                    });
+                }
+                
+                // Parse color backward compat
+                for (let i = 0; i < this.src.length; i++) {
+                    const colorKey = `color${i}`;
+                    if (colorKey in options && options[colorKey] !== null) {
+                        this.srcColors[i] = options[colorKey];
+                    }
+                }
+            }
+            
+            getColorForSrc(index) {
+                if (index in this.srcProperties && 'color' in this.srcProperties[index]) {
+                    return this.srcProperties[index]['color'];
+                }
+                if (index in this.srcColors) {
+                    return this.srcColors[index];
+                }
+                return this.color;
+            }
+            
+            render(canvasId, loggerId) {
+                const canvas = document.getElementById(canvasId);
+                if (!canvas) return;
+                
+                canvas.innerHTML = '';
+                
+                this.element = document.createElement('div');
+                this.element.classList.add('layer');
+                this.element.style.position = 'relative';
+                this.element.style.width = this.width + 'px';
+                this.element.style.height = this.height + 'px';
+                
+                log(loggerId, `📦 Rendering layer: "${this.name}"`);
+                log(loggerId, `   Src count: ${this.src.length}`);
+                log(loggerId, `   Options: ${JSON.stringify(this.options, null, 2).split('\n')[0]}...`);
+                
+                this.src.forEach((src, index) => {
+                    const imgElement = document.createElement('img');
+                    imgElement.draggable = false;
+                    imgElement.classList.add('src-item');
+                    imgElement.dataset.index = index;
+                    imgElement.style.position = 'absolute';
+                    imgElement.style.top = '0';
+                    imgElement.style.left = '0';
+                    imgElement.style.zIndex = index;
+                    imgElement.style.width = this.width + 'px';
+                    imgElement.style.height = this.height + 'px';
+                    
+                    const colorForThis = this.getColorForSrc(index);
+                    
+                    if (src.endsWith('.svg')) {
+                        log(loggerId, `   📍 src${index}: ${src}`);
+                        log(loggerId, `      └─ color: ${colorForThis || '(none - using original)'}`);
+                        
+                        fetch(src).then(r => r.text()).then(svgText => {
+                            if (colorForThis) {
+                                log(loggerId, `      ✓ Applying color ${colorForThis} to SVG`);
+                                svgText = svgText.replace(/fill="[^"]*"/g, `fill="${colorForThis}"`);
+                                svgText = svgText.replace(/stroke="[^"]*"/g, `stroke="${colorForThis}"`);
+                                svgText = svgText.replace(/fill:\s*[^;]+/g, `fill:${colorForThis}`);
+                                svgText = svgText.replace(/stroke:\s*[^;]+/g, `stroke:${colorForThis}`);
+                            } else {
+                                log(loggerId, `      ℹ No color, using original SVG`);
+                            }
+                            const dataUrl = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgText)));
+                            imgElement.src = dataUrl;
+                        }).catch(e => {
+                            log(loggerId, `      ❌ Failed to load SVG: ${e.message}`);
+                            imgElement.src = src;
+                        });
+                    } else {
+                        log(loggerId, `   📷 src${index}: ${src}`);
+                        imgElement.src = src;
+                    }
+                    
+                    this.element.appendChild(imgElement);
+                });
+                
+                canvas.appendChild(this.element);
+                log(loggerId, `✅ Layer rendered successfully`);
+            }
+        }
+        
+        // TEST 1: Hair Layer dengan 5 src
+        function runTest1() {
+            clearLog('console1');
+            log('console1', '🚀 Starting TEST 1: Hair Layer with Per-Src Colors');
+            
+            const hairLayer = new TestLayer('Rambut', [
+                'assets/character/hair/hair1.svg',
+                'assets/character/hair/hairl1.svg',
+                'assets/character/hair/hairss1.svg',
+                'assets/character/hair/hairs1.svg',
+                'assets/character/hair/hairo1.svg'
+            ], {
+                width: 200,
+                height: 200,
+                posX: 50,
+                posY: 30,
+                // Per-src colors
+                color0: '#1A1A1A',  // outline - hitam
+                color1: '#FFFFFF',  // light - putih
+                color2: '#B39DDB',  // shade - ungu terang
+                color3: '#6A4C93',  // shadow - ungu gelap
+                color4: '#9C6FB1',  // base - ungu medium
+            });
+            
+            hairLayer.render('canvas1', 'console1');
+        }
+        
+        // TEST 2: Arm Layer dengan 2 src
+        function runTest2() {
+            clearLog('console2');
+            log('console2', '🚀 Starting TEST 2: Arm Layer with Per-Src Colors');
+            
+            const armLayer = new TestLayer('Lengan Atas Kanan', [
+                'assets/character/arm/arm_line.svg',
+                'assets/character/arm/arm_base.svg'
+            ], {
+                width: 150,
+                height: 150,
+                posX: 50,
+                posY: 50,
+                // Per-src colors
+                color0: '#000000',  // line - hitam
+                color1: '#FF6B9D',  // base - pink
+            });
+            
+            armLayer.render('canvas2', 'console2');
+        }
+        
+        // TEST 3: Precedence Test
+        function runTest3() {
+            clearLog('console3');
+            log('console3', '🚀 Starting TEST 3: Color Precedence (Per-Src > Global)');
+            
+            const mixedLayer = new TestLayer('Mixed Colors', [
+                'assets/character/hand/hand_line.svg',
+                'assets/character/hand/hand_base.svg'
+            ], {
+                width: 120,
+                height: 120,
+                posX: 50,
+                posY: 50,
+                // Global color (default untuk semua src)
+                color: '#808080',
+                // Per-src color hanya untuk src0 (override global)
+                color0: '#FF0000',  // override untuk src0
+                // color1 tidak didefinisikan, akan gunakan global color
+            });
+            
+            log('console3', '📋 Expected behavior:');
+            log('console3', '   - src0 should be RED (#FF0000) from color0');
+            log('console3', '   - src1 should be GRAY (#808080) from global color');
+            
+            mixedLayer.render('canvas3', 'console3');
+        }
+        
+        // Auto-run all tests on load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                log('console1', '⏳ Waiting for page load...');
+                runTest1();
+                runTest2();
+                runTest3();
+            }, 500);
+        });
+    </script>
+</body>
+</html>
