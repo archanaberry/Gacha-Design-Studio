@@ -65,9 +65,7 @@ class Layer {
             }
         });
 
-        this.#initElement();
-
-        // Set initial options
+        // Set initial options SEBELUM initElement agar color dan per-src properties siap
         if (options) {
             // Simpan options untuk referensi eksternal (selected.options dll.)
             this.options = options;
@@ -106,6 +104,9 @@ class Layer {
                 this.#opacity = Number(val) || 0;
             }
         }
+
+        // Initialize element SETELAH semua options sudah di-parse
+        this.#initElement();
         this.#updateElement();
     }
 
@@ -254,15 +255,27 @@ class Layer {
             if (src.endsWith('.svg')) {
                 // Always fetch SVG to potentially recolor
                 fetch(src).then(r => r.text()).then(svgText => {
-                    // Jika ada warna untuk src ini, aplikasikan ke SVG
+                    // Jika ada warna untuk src ini, aplikasikan ke SVG menggunakan DOM parsing
                     if (colorForThis) {
-                        console.log(`[Layer: ${this.#name}] Applying color ${colorForThis} to SVG src${index}`);
-                        svgText = svgText.replace(/fill="[^"]*"/g, `fill="${colorForThis}"`);
-                        svgText = svgText.replace(/stroke="[^"]*"/g, `stroke="${colorForThis}"`);
-                        svgText = svgText.replace(/fill:\s*[^;]+/g, `fill:${colorForThis}`);
-                        svgText = svgText.replace(/stroke:\s*[^;]+/g, `stroke:${colorForThis}`);
+                        console.log(`[Layer: ${this.#name}] src${index} - Applying color ${colorForThis}`);
+                        
+                        // Debug: tampilkan SVG sebelum di-ubah
+                        const beforeFills = (svgText.match(/fill\s*[:=]/gi) || []).length;
+                        const beforeStrokes = (svgText.match(/stroke\s*[:=]/gi) || []).length;
+                        const beforeStopColors = (svgText.match(/stop-color\s*[:=]/gi) || []).length;
+                        console.log(`[Layer: ${this.#name}] src${index} BEFORE - Fill: ${beforeFills}, Stroke: ${beforeStrokes}, StopColor: ${beforeStopColors}`);
+                        
+                        const recoloredSVG = this.#recolorSVG(svgText, colorForThis);
+                        
+                        // Debug: count setelah perubahan
+                        const afterFills = (recoloredSVG.match(/fill\s*[:=]/gi) || []).length;
+                        const afterStrokes = (recoloredSVG.match(/stroke\s*[:=]/gi) || []).length;
+                        const afterStopColors = (recoloredSVG.match(/stop-color\s*[:=]/gi) || []).length;
+                        console.log(`[Layer: ${this.#name}] src${index} AFTER - Fill: ${afterFills}, Stroke: ${afterStrokes}, StopColor: ${afterStopColors}`);
+                        
+                        svgText = recoloredSVG;
                     } else {
-                        console.log(`[Layer: ${this.#name}] No color for SVG src${index}, using original`);
+                        console.warn(`[Layer: ${this.#name}] src${index} - No color defined, using original`);
                     }
                     const dataUrl = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgText)));
                     imgElement.src = dataUrl;
@@ -788,6 +801,44 @@ class Layer {
     // Public method untuk update element (dipanggil dari luar)
     updateElement() {
         this.#updateElement();
+    }
+
+    /**
+     * Recolor SVG dengan mengubah fill/stroke ke warna baru
+     * Menggunakan approach: parse + selective replace + smart regex
+     * @param {string} svgText - SVG text content
+     * @param {string} newColor - Warna baru hex (#RRGGBB atau #RRGGBBAA)
+     * @returns {string} - Modified SVG text
+     */
+    #recolorSVG(svgText, newColor) {
+        try {
+            // APPROACH 1: Smart regex replacement untuk solid colors di fill/stroke
+            // Pattern: cari fill="COLOR" atau stroke="COLOR" tapi SKIP url(#...) references
+            
+            let modified = svgText;
+            
+            // 1. Replace fill attributes yang bukan reference (url)
+            modified = modified.replace(/fill="(?!url|none|currentColor)([^"]*)"/gi, `fill="${newColor}"`);
+            
+            // 2. Replace stroke attributes yang bukan reference (url)  
+            modified = modified.replace(/stroke="(?!url|none|currentColor)([^"]*)"/gi, `stroke="${newColor}"`);
+            
+            // 3. Replace fill dalam inline styles
+            modified = modified.replace(/fill:\s*(?!url|none|currentColor)([^;]+)/gi, `fill: ${newColor}`);
+            
+            // 4. Replace stroke dalam inline styles
+            modified = modified.replace(/stroke:\s*(?!url|none|currentColor)([^;]+)/gi, `stroke: ${newColor}`);
+            
+            // 5. Replace stop-color untuk gradasi
+            modified = modified.replace(/stop-color="(?!url|none|currentColor)([^"]*)"/gi, `stop-color="${newColor}"`);
+            modified = modified.replace(/stop-color:\s*(?!url|none|currentColor)([^;]+)/gi, `stop-color: ${newColor}`);
+            
+            console.log(`[Layer: ${this.#name}] SVG recolored with regex approach - target color ${newColor}`);
+            return modified;
+        } catch (error) {
+            console.error(`Error recoloring SVG for layer "${this.#name}":`, error);
+            return svgText; // Return original jika ada error
+        }
     }
 }
 

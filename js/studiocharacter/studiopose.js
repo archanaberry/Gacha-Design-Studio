@@ -111,9 +111,21 @@ function createLayerFromObject(layerObj) {
  *   
  *   // WARNA (untuk SVG)
  *   "color": null,    // Warna global
- *   "color0": null,   // Warna src[0]
- *   "color1": null    // Warna src[1]
+ *   "color0": null,   // Warna src[0] - format: #RRGGBB atau #RRGGBBAA (dengan alpha)
+ *   "color1": null,   // Warna src[1] - format: #RRGGBB atau #RRGGBBAA
+ *   
+ *   // GRADASI (untuk SVG dengan gradient)
+ *   "color0g0": null,    // Warna gradasi pertama di src[0], gradient index 0
+ *   "color0g0pX": 0,     // Posisi X gradient pertama di src[0]
+ *   "color0g0pY": 0,     // Posisi Y gradient pertama di src[0]
+ *   "color0g1": null,    // Warna gradasi kedua di src[0], gradient index 1
+ *   "color0g1pX": 0,     // Posisi X gradient kedua di src[0]
+ *   "color0g1pY": 0      // Posisi Y gradient kedua di src[0]
  * }
+ * 
+ * FORMAT WARNA:
+ * - #RRGGBB     - Solid color (red, green, blue)
+ * - #RRGGBBAA   - Color dengan alpha/transparency (AA = 00 transparent hingga FF opaque)
  * 
  * CATATAN: Setiap layer siap di-customize di panel2 secara real-time
  * Refer: LAYER_OPTIONS_STRUCTURE.md untuk dokumentasi lengkap
@@ -123,6 +135,7 @@ function createLayerFromObject(layerObj) {
  * - Properties global (posX, posY, rotation, scale, dll) diterapkan ke semua src
  * - Properties per-src (posX0, posY1, color2, opacity3, dst) override global
  * - Semua properties bersifat OPSIONAL - hanya define yang dibutuhkan
+ * - Gradient support: color0g0, color0g1, dll untuk setiap gradient stop
  * ============================================================
  */
 
