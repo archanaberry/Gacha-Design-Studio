@@ -37,9 +37,13 @@ class Layer {
     #ondragstart = null;
     #color = null;
     #srcColors = {}; // Warna spesifik untuk setiap src (color0, color1, color2, dst)
+    #srcProperties = {}; // Per-src properties (posX0, posY1, rotation2, opacity3, dst)
     #parentLayer = null; // Reference ke parent layer jika ini adalah child
+    #opacity = 1; // 0-1
+    options = {};
 
     constructor(name, src, options = {}, childLayers = []) {
+        this.options = options || {};
         this.#name = name;
         this.#src = Array.isArray(src) ? src : [src];
         this.#x = 0; // Posisi awal x
@@ -65,6 +69,8 @@ class Layer {
 
         // Set initial options
         if (options) {
+            // Simpan options untuk referensi eksternal (selected.options dll.)
+            this.options = options;
             // Posisi default
             if ('posX' in options) this.#x = options.posX;
             if ('x' in options) this.#x = options.x; // Backward compatibility
@@ -88,6 +94,17 @@ class Layer {
             
             // Warna - parse color0, color1, color2, dst
             this.#parseColorOptions(options);
+            
+            // Per-src properties - parse posX0, posY1, opacity2, dst
+            this.#parseSrcProperties(options);
+            
+            // Opacity
+            if ('opacity' in options) {
+                // Expect value 0-1; if user provided 0-100, normalize
+                let val = options.opacity;
+                if (val > 1) val = Math.min(100, val) / 100;
+                this.#opacity = Number(val) || 0;
+            }
         }
         this.#updateElement();
     }
@@ -107,11 +124,63 @@ class Layer {
         }
     }
 
+    #parseSrcProperties(options) {
+        /**
+         * Parse per-src properties dari options
+         * Mendukung: posX0, posY0, opacity0, rotation0, scale0, skewX0, skewY0, flipX0, flipY0, width0, height0, color0
+         * dst untuk src1, src2, src3, ... src9
+         */
+        const srcPropertyNames = ['posX', 'posY', 'opacity', 'rotation', 'scale', 'skewX', 'skewY', 'flipX', 'flipY', 'width', 'height', 'color'];
+        
+        for (let i = 0; i < this.#src.length; i++) {
+            if (!this.#srcProperties[i]) {
+                this.#srcProperties[i] = {};
+            }
+            
+            // Parse setiap property dengan suffix nomor src
+            srcPropertyNames.forEach(prop => {
+                const keyWithSuffix = `${prop}${i}`;
+                if (keyWithSuffix in options) {
+                    this.#srcProperties[i][prop] = options[keyWithSuffix];
+                }
+            });
+        }
+    }
+
+    #getPropertyForSrc(propertyName, srcIndex, globalValue, defaultValue) {
+        /**
+         * Get value untuk src tertentu dengan precedence:
+         * Per-Src Value > Global Value > Default Value
+         */
+        // Check per-src value dulu
+        if (srcIndex in this.#srcProperties && propertyName in this.#srcProperties[srcIndex]) {
+            return this.#srcProperties[srcIndex][propertyName];
+        }
+        
+        // Jika tidak ada per-src, gunakan global
+        if (globalValue !== undefined && globalValue !== null) {
+            return globalValue;
+        }
+        
+        // Terakhir gunakan default
+        return defaultValue;
+    }
+
     #getColorForSrc(index) {
-        // Return warna spesifik untuk src, atau warna layer umum, atau null
+        // Return warna spesifik untuk src, dengan precedence:
+        // Per-Src Color (#srcProperties) > Per-Src Color (#srcColors) > Global Color
+        
+        // Check di #srcProperties dulu (hasil dari #parseSrcProperties)
+        if (index in this.#srcProperties && 'color' in this.#srcProperties[index]) {
+            return this.#srcProperties[index]['color'];
+        }
+        
+        // Lalu check #srcColors (hasil dari #parseColorOptions - backward compat)
         if (index in this.#srcColors) {
             return this.#srcColors[index];
         }
+        
+        // Terakhir gunakan global color
         return this.#color;
     }
 
@@ -182,17 +251,24 @@ class Layer {
             };
             
             const colorForThis = this.#getColorForSrc(index);
-            if (src.endsWith('.svg') && colorForThis) {
+            if (src.endsWith('.svg')) {
+                // Always fetch SVG to potentially recolor
                 fetch(src).then(r => r.text()).then(svgText => {
-                    svgText = svgText.replace(/fill="[^"]*"/g, `fill="${colorForThis}"`);
-                    svgText = svgText.replace(/stroke="[^"]*"/g, `stroke="${colorForThis}"`);
-                    svgText = svgText.replace(/fill:\s*[^;]+/g, `fill:${colorForThis}`);
-                    svgText = svgText.replace(/stroke:\s*[^;]+/g, `stroke:${colorForThis}`);
+                    // Jika ada warna untuk src ini, aplikasikan ke SVG
+                    if (colorForThis) {
+                        console.log(`[Layer: ${this.#name}] Applying color ${colorForThis} to SVG src${index}`);
+                        svgText = svgText.replace(/fill="[^"]*"/g, `fill="${colorForThis}"`);
+                        svgText = svgText.replace(/stroke="[^"]*"/g, `stroke="${colorForThis}"`);
+                        svgText = svgText.replace(/fill:\s*[^;]+/g, `fill:${colorForThis}`);
+                        svgText = svgText.replace(/stroke:\s*[^;]+/g, `stroke:${colorForThis}`);
+                    } else {
+                        console.log(`[Layer: ${this.#name}] No color for SVG src${index}, using original`);
+                    }
                     const dataUrl = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgText)));
                     imgElement.src = dataUrl;
                     img.src = dataUrl; // Also load for dimensions
                 }).catch(e => {
-                    console.error('Failed to load SVG', e);
+                    console.error(`Failed to load SVG for layer "${this.#name}" src${index}:`, e);
                     imgElement.src = src;
                     img.src = src;
                 });
@@ -203,17 +279,62 @@ class Layer {
             
             this.element.appendChild(imgElement);
             
+            // Terapkan per-src properties pada img element
+            this.#applySrcProperties(imgElement, index);
+            
             // Tambahkan event listener untuk seleksi
             imgElement.addEventListener('click', (e) => {
                 e.stopPropagation(); // Hindari seleksi layer utama
                 this.#selectImage(index);
             });
+            // Terapkan opacity per src pada saat inisialisasi
+            const opacityForSrc = this.#getPropertyForSrc('opacity', index, this.#opacity, 1);
+            imgElement.style.opacity = opacityForSrc;
         });
     
         // Inisialisasi child layers
         this.#childLayers.forEach(child => child.attach(this.element));
     }    
     //
+    
+    //
+    #applySrcProperties(imgElement, srcIndex) {
+        /**
+         * Terapkan per-src styling ke img element
+         * Ini memungkinkan setiap src punya positioning, scale, opacity berbeda
+         */
+        if (!imgElement || srcIndex === undefined) return;
+        
+        // Create transform untuk src ini jika ada per-src properties
+        const transforms = [];
+        
+        // Check per-src transform properties
+        const scaleForSrc = this.#getPropertyForSrc('scale', srcIndex, null, 1);
+        const rotationForSrc = this.#getPropertyForSrc('rotation', srcIndex, null, 0);
+        const skewXForSrc = this.#getPropertyForSrc('skewX', srcIndex, null, 0);
+        const skewYForSrc = this.#getPropertyForSrc('skewY', srcIndex, null, 0);
+        const flipXForSrc = this.#getPropertyForSrc('flipX', srcIndex, null, false);
+        const flipYForSrc = this.#getPropertyForSrc('flipY', srcIndex, null, false);
+        
+        if (rotationForSrc !== 0) transforms.push(`rotate(${rotationForSrc}deg)`);
+        if (scaleForSrc !== 1) transforms.push(`scale(${scaleForSrc})`);
+        if (flipXForSrc) transforms.push('scaleX(-1)');
+        if (flipYForSrc) transforms.push('scaleY(-1)');
+        if (skewXForSrc !== 0) transforms.push(`skewX(${skewXForSrc}deg)`);
+        if (skewYForSrc !== 0) transforms.push(`skewY(${skewYForSrc}deg)`);
+        
+        if (transforms.length > 0) {
+            imgElement.style.transform = transforms.join(' ');
+        }
+        
+        // Per-src positioning dengan offset
+        const posXForSrc = this.#getPropertyForSrc('posX', srcIndex, null, null);
+        const posYForSrc = this.#getPropertyForSrc('posY', srcIndex, null, null);
+        
+        // Store per-src offset untuk digunakan di #updateElement
+        imgElement.dataset.posXOffset = posXForSrc ?? 0;
+        imgElement.dataset.posYOffset = posYForSrc ?? 0;
+    }
     
     //
     #selectSrc(imgElement, index) {
@@ -235,8 +356,10 @@ class Layer {
         }
     
         // Atur posisi dan ukuran elemen utama
-        this.element.style.left = this.#x + 'px'; // Posisi horizontal
-        this.element.style.top = this.#y + 'px'; // Posisi vertikal
+        const offsetX = window.originOffsetX || 0;
+        const offsetY = window.originOffsetY || 0;
+        this.element.style.left = (this.#x + offsetX) + 'px'; // Posisi horizontal
+        this.element.style.top = (this.#y + offsetY) + 'px'; // Posisi vertikal
         
         // Jika ini adalah grouped layer, hitung bounding box dari children
         if (this.#childLayers.length > 0) {
@@ -256,18 +379,26 @@ class Layer {
     
         // Cari elemen gambar di dalam elemen utama (hanya untuk non-grouped layers)
         if (this.#childLayers.length === 0) {
-            const imgElement = this.element.querySelector('img');
+            const imgElements = this.element.querySelectorAll('img.src-item');
         
-            // Periksa keberadaan imgElement sebelum mengakses style-nya
-            if (imgElement) {
-                if (this.#width) imgElement.style.width = this.#width + 'px';
-                if (this.#height) imgElement.style.height = this.#height + 'px';
+            // Periksa keberadaan imgElements sebelum mengakses style-nya
+            if (imgElements && imgElements.length > 0) {
+                imgElements.forEach((imgElement, index) => {
+                    if (this.#width) imgElement.style.width = this.#width + 'px';
+                    if (this.#height) imgElement.style.height = this.#height + 'px';
+                    
+                    // Update per-src properties jika ada perubahan
+                    this.#applySrcProperties(imgElement, index);
+                });
             } else {
                 console.warn('Image element not found in layer:', this.#name);
             }
         }
     
         // Terapkan transformasi (rotasi, skala, flip, skew)
+        // Terapkan opacity
+        this.element.style.opacity = this.#opacity;
+
         const transforms = [
             `rotate(${this.#rotation}deg)`,
             `scale(${this.#scale})`,
@@ -457,6 +588,34 @@ class Layer {
         return this.#src;
     }
 
+    set src(newSrc) {
+        // Allow updating src array
+        this.#src = Array.isArray(newSrc) ? newSrc : [newSrc];
+        // Update DOM elements if they exist
+        if (this.element) {
+            // Update existing img elements or recreate them
+            const imgElements = this.element.querySelectorAll('.src-item');
+            this.#src.forEach((src, index) => {
+                if (imgElements[index]) {
+                    imgElements[index].src = src;
+                } else {
+                    // If img element doesn't exist, create it
+                    const imgElement = document.createElement('img');
+                    imgElement.draggable = false;
+                    imgElement.classList.add('src-item');
+                    imgElement.dataset.index = index;
+                    imgElement.style.zIndex = index;
+                    imgElement.src = src;
+                    this.element.appendChild(imgElement);
+                    imgElement.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        this.#selectImage(index);
+                    });
+                }
+            });
+        }
+    }
+
     get width() {
         return this.#width;
     }
@@ -478,28 +637,81 @@ class Layer {
         this.#updateElement();
     }
 
-    set width(value) {
-    this.#width = value;
-
-    // Perbarui ukuran untuk elemen src yang dipilih
-    const selectedImg = this.element.querySelector('.src-item.src-selected');
-    if (selectedImg) {
-        selectedImg.style.width = `${value}px`;
-    } else {
-        this.#updateElement(); // Perbarui seluruh elemen jika tidak ada seleksi spesifik
+    get opacity() {
+        return this.#opacity;
     }
-}
+
+    set opacity(value) {
+        // Accept 0-1 or 0-100
+        let v = Number(value);
+        if (isNaN(v)) return;
+        if (v > 1) v = Math.min(100, v) / 100;
+        this.#opacity = v;
+        // Simpan ke options agar history/function lain bisa baca
+        this.options = this.options || {};
+        this.options.opacity = v;
+        // Terapkan ke elemen utama
+        if (this.element) this.element.style.opacity = v;
+        // Terapkan ke semua src images
+        this.element && this.element.querySelectorAll('.src-item').forEach(img => {
+            img.style.opacity = v;
+        });
+    }
+
+    set width(value) {
+        this.#width = value;
+
+        // If value is null, allow auto-detection when image loads
+        if (value === null && this.element) {
+            // Re-trigger image loading for auto-dimension detection
+            const imgElements = this.element.querySelectorAll('.src-item');
+            imgElements.forEach((img, index) => {
+                const newImg = new Image();
+                newImg.onload = () => {
+                    if (!this.#width) {
+                        this.#width = newImg.naturalWidth;
+                        this.#updateElement();
+                    }
+                };
+                newImg.src = img.src;
+            });
+        } else {
+            // Perbarui ukuran untuk elemen src yang dipilih
+            const selectedImg = this.element.querySelector('.src-item.src-selected');
+            if (selectedImg) {
+                selectedImg.style.width = `${value}px`;
+            } else if (this.element) {
+                this.#updateElement(); // Perbarui seluruh elemen jika tidak ada seleksi spesifik
+            }
+        }
+    }
 
     set height(value) {
-    this.#height = value;
+        this.#height = value;
 
-    const selectedImg = this.element.querySelector('.src-item.src-selected');
-    if (selectedImg) {
-        selectedImg.style.height = `${value}px`;
-    } else {
-        this.#updateElement();
+        // If value is null, allow auto-detection when image loads
+        if (value === null && this.element) {
+            // Re-trigger image loading for auto-dimension detection
+            const imgElements = this.element.querySelectorAll('.src-item');
+            imgElements.forEach((img, index) => {
+                const newImg = new Image();
+                newImg.onload = () => {
+                    if (!this.#height) {
+                        this.#height = newImg.naturalHeight;
+                        this.#updateElement();
+                    }
+                };
+                newImg.src = img.src;
+            });
+        } else {
+            const selectedImg = this.element.querySelector('.src-item.src-selected');
+            if (selectedImg) {
+                selectedImg.style.height = `${value}px`;
+            } else if (this.element) {
+                this.#updateElement();
+            }
+        }
     }
-}
 
 
     set selected(value) {
@@ -571,6 +783,11 @@ class Layer {
         }
         // Detach child layers
         this.#childLayers.forEach(child => child.detach());
+    }
+
+    // Public method untuk update element (dipanggil dari luar)
+    updateElement() {
+        this.#updateElement();
     }
 }
 

@@ -122,6 +122,12 @@
         panel.style.transform = `scale(${newScale})`;
         console.log('Zoom in: ' + Math.round(newScale * 100) + '%');
         
+        // Update zoom slider and input
+        const zoomSlider = document.getElementById('zoomSlider');
+        const zoomInput = document.getElementById('zoomInput');
+        if (zoomSlider) zoomSlider.value = Math.round(newScale * 100);
+        if (zoomInput) zoomInput.value = Math.round(newScale * 100) + '%';
+        
         // Record history
         if (typeof window.HistoryManager !== 'undefined') {
           window.HistoryManager.recordAction('zoom', {
@@ -145,6 +151,12 @@
         panel.dataset.scale = newScale;
         panel.style.transform = `scale(${newScale})`;
         console.log('Zoom out: ' + Math.round(newScale * 100) + '%');
+        
+        // Update zoom slider and input
+        const zoomSlider = document.getElementById('zoomSlider');
+        const zoomInput = document.getElementById('zoomInput');
+        if (zoomSlider) zoomSlider.value = Math.round(newScale * 100);
+        if (zoomInput) zoomInput.value = Math.round(newScale * 100) + '%';
         
         // Record history
         if (typeof window.HistoryManager !== 'undefined') {

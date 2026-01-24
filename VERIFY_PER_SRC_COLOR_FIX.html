@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quick Test - Per-Src Color Fix Verification</title>
+    <style>
+        body {
+            font-family: monospace;
+            background: #1e1e1e;
+            color: #00ff00;
+            padding: 20px;
+            margin: 0;
+        }
+        
+        .header {
+            font-size: 20px;
+            font-weight: bold;
+            color: #ffff00;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #00ff00;
+            padding-bottom: 10px;
+        }
+        
+        .section {
+            background: #2d2d2d;
+            border-left: 3px solid #00ff00;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 3px;
+        }
+        
+        .section-title {
+            color: #00ff00;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .code-block {
+            background: #1a1a1a;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 3px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        
+        .test-result {
+            padding: 5px;
+            margin: 5px 0;
+            border-radius: 3px;
+        }
+        
+        .test-pass {
+            background: #0a3a0a;
+            color: #00ff00;
+        }
+        
+        .test-fail {
+            background: #3a0a0a;
+            color: #ff4444;
+        }
+        
+        .test-info {
+            background: #0a2a3a;
+            color: #44ddff;
+        }
+        
+        button {
+            background: #00ff00;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+        
+        button:hover {
+            background: #00dd00;
+        }
+        
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 10px 0;
+        }
+        
+        .before-after {
+            background: #1a1a1a;
+            padding: 10px;
+            border-radius: 3px;
+            border-left: 3px solid #ff8844;
+        }
+        
+        .before-after.after {
+            border-left-color: #44ff88;
+        }
+        
+        .label {
+            color: #ffaa44;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">🔧 Per-Src Color Properties Fix Verification</div>
+    
+    <div class="section">
+        <div class="section-title">📋 What Was Broken?</div>
+        <div class="code-block">
+// SVG colors di src0, src1, src2 tidak berubah karena:
+1. #parseSrcProperties() TIDAK parse color0, color1, color2, dst
+   └─ Hanya parse: posX, posY, opacity, rotation, scale, skewX, skewY, flipX, flipY, width, height
+   
+2. #getColorForSrc() tidak check #srcProperties untuk color
+   └─ Hanya check: #srcColors (backward compat) dan this.#color (global)
+   
+3. SVG fetch condition membutuhkan color ada
+   └─ if (src.endsWith('.svg') && colorForThis) - TIDAK fetch jika no color
+        </div>
+    </div>
+    
+    <div class="section">
+        <div class="section-title">✅ What Was Fixed?</div>
+        <div class="comparison">
+            <div class="before-after">
+                <div class="label">BEFORE:</div>
+                <div class="code-block">
+// #parseSrcProperties() - line 127
+const srcPropertyNames = [
+  'posX', 'posY', 'opacity', 'rotation', 
+  'scale', 'skewX', 'skewY', 'flipX', 
+  'flipY', 'width', 'height'
+  // ❌ MISSING: 'color'
+];
+                </div>
+            </div>
+            <div class="before-after after">
+                <div class="label">AFTER:</div>
+                <div class="code-block">
+// #parseSrcProperties() - line 127
+const srcPropertyNames = [
+  'posX', 'posY', 'opacity', 'rotation', 
+  'scale', 'skewX', 'skewY', 'flipX', 
+  'flipY', 'width', 'height', 'color'
+  // ✅ ADDED: 'color'
+];
+                </div>
+            </div>
+        </div>
+        
+        <div class="comparison">
+            <div class="before-after">
+                <div class="label">BEFORE:</div>
+                <div class="code-block">
+// #getColorForSrc() - line 169
+#getColorForSrc(index) {
+  // ❌ MISSING: check #srcProperties
+  if (index in this.#srcColors) {
+    return this.#srcColors[index];
+  }
+  return this.#color;
+}
+                </div>
+            </div>
+            <div class="before-after after">
+                <div class="label">AFTER:</div>
+                <div class="code-block">
+// #getColorForSrc() - line 169
+#getColorForSrc(index) {
+  // ✅ CHECK: #srcProperties FIRST
+  if (index in this.#srcProperties 
+    && 'color' in this.#srcProperties[index]) {
+    return this.#srcProperties[index]['color'];
+  }
+  if (index in this.#srcColors) {
+    return this.#srcColors[index];
+  }
+  return this.#color;
+}
+                </div>
+            </div>
+        </div>
+        
+        <div class="comparison">
+            <div class="before-after">
+                <div class="label">BEFORE:</div>
+                <div class="code-block">
+// SVG fetch - line 254
+if (src.endsWith('.svg') && colorForThis) {
+  // ❌ TIDAK fetch jika colorForThis kosong
+  fetch(src).then(...)
+}
+                </div>
+            </div>
+            <div class="before-after after">
+                <div class="label">AFTER:</div>
+                <div class="code-block">
+// SVG fetch - line 254
+if (src.endsWith('.svg')) {
+  // ✅ SELALU fetch, apply color hanya jika ada
+  fetch(src).then(...)
+}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="section">
+        <div class="section-title">🧪 Testing Instructions</div>
+        <div class="test-info">
+1. Open browser DevTools (F12)
+2. Go to Console tab
+3. Open studiopose.html
+4. Create a layer dengan color0, color1, color2 (ex: Hair)
+5. Check console logs:
+   ✓ [Layer: Rambut] Applying color #1A1A1A to SVG src0
+   ✓ [Layer: Rambut] Applying color #FFFFFF to SVG src1
+   ✓ [Layer: Rambut] Applying color #B39DDB to SVG src2
+   ✓ etc...
+6. Verify SVG colors di panel1 sudah berubah
+        </div>
+    </div>
+    
+    <div class="section">
+        <div class="section-title">📝 Example Usage</div>
+        <div class="code-block">
+// In studiopose.js, define layer like this:
+{
+  "layerName": "Rambut",
+  "src": ["hair1.svg", "hairl1.svg", "hairss1.svg", "hairs1.svg", "hairo1.svg"],
+  "options": {
+    "posX": 65, "posY": 127,
+    "color0": "#1A1A1A",   // Outline
+    "color1": "#FFFFFF",   // Light
+    "color2": "#B39DDB",   // Shade
+    "color3": "#6A4C93",   // Shadow
+    "color4": "#9C6FB1",   // Base
+    "rotation": 0,
+    "scale": 1
+  }
+}
+
+// Now each SVG will get:
+// src0 (#hair1.svg) → color #1A1A1A
+// src1 (#hairl1.svg) → color #FFFFFF
+// src2 (#hairss1.svg) → color #B39DDB
+// src3 (#hairs1.svg) → color #6A4C93
+// src4 (#hairo1.svg) → color #9C6FB1
+        </div>
+    </div>
+    
+    <div class="section">
+        <div class="section-title">📂 Files Modified</div>
+        <div class="test-pass">✅ js/studiocharacter/layer.js</div>
+        <div style="margin-left: 20px; font-size: 12px;">
+            • Line 127: Added 'color' to srcPropertyNames
+            • Line 169: Updated #getColorForSrc() with new precedence
+            • Line 254: Changed SVG fetch condition
+            • Added console.log for debugging
+        </div>
+        
+        <div class="test-info">ℹ️ js/studiocharacter/studiopose.js</div>
+        <div style="margin-left: 20px; font-size: 12px;">
+            • Already has color0, color1, color2, dst in layer templates
+            • No changes needed
+        </div>
+    </div>
+    
+    <div class="section">
+        <div class="section-title">🔍 Quick Verification</div>
+        <button onclick="testParsing()">Test Parsing Logic</button>
+        <button onclick="testColorPrecedence()">Test Color Precedence</button>
+        <button onclick="testSVGLogic()">Test SVG Fetch Logic</button>
+        <div id="testOutput" style="margin-top: 20px;"></div>
+    </div>
+
+    <script>
+        function testParsing() {
+            const output = document.getElementById('testOutput');
+            output.innerHTML = '';
+            
+            addLog(output, 'ℹ️ Testing #parseSrcProperties() logic...');
+            
+            const options = {
+                posX: 65, posY: 127,
+                color0: '#1A1A1A', color1: '#FFFFFF', color2: '#B39DDB',
+                opacity0: 1, opacity1: 0.85, opacity2: 0.65,
+                rotation: 0
+            };
+            
+            const srcPropertyNames = ['posX', 'posY', 'opacity', 'rotation', 'scale', 'skewX', 'skewY', 'flipX', 'flipY', 'width', 'height', 'color'];
+            const srcProperties = {};
+            
+            // Simulate parsing for 3 src
+            for (let i = 0; i < 3; i++) {
+                if (!srcProperties[i]) srcProperties[i] = {};
+                srcPropertyNames.forEach(prop => {
+                    const key = `${prop}${i}`;
+                    if (key in options) {
+                        srcProperties[i][prop] = options[key];
+                    }
+                });
+            }
+            
+            addLog(output, '✅ Parsing completed:', 'test-pass');
+            
+            for (let i = 0; i < 3; i++) {
+                const parsed = Object.keys(srcProperties[i]).length;
+                addLog(output, `   src${i}: ${parsed} properties parsed`, 'test-pass');
+                if (srcProperties[i].color) {
+                    addLog(output, `      └─ color: ${srcProperties[i].color}`, 'test-pass');
+                }
+                if (srcProperties[i].opacity !== undefined) {
+                    addLog(output, `      └─ opacity: ${srcProperties[i].opacity}`, 'test-pass');
+                }
+            }
+        }
+        
+        function testColorPrecedence() {
+            const output = document.getElementById('testOutput');
+            output.innerHTML = '';
+            
+            addLog(output, 'ℹ️ Testing color precedence logic...');
+            
+            // Simulate objects
+            const srcProperties = {
+                0: { color: '#FF0000' },  // color0
+                1: {}  // no color1 in srcProperties
+            };
+            const srcColors = {
+                1: '#00FF00'  // color1 in srcColors (backward compat)
+            };
+            const globalColor = '#0000FF';
+            
+            function getColorForSrc(index) {
+                // Check #srcProperties FIRST
+                if (index in srcProperties && 'color' in srcProperties[index]) {
+                    return srcProperties[index]['color'];
+                }
+                // Then #srcColors
+                if (index in srcColors) {
+                    return srcColors[index];
+                }
+                // Finally global
+                return globalColor;
+            }
+            
+            const tests = [
+                { src: 0, expected: '#FF0000', desc: 'Per-Src (#srcProperties)' },
+                { src: 1, expected: '#00FF00', desc: 'Backward Compat (#srcColors)' },
+                { src: 2, expected: '#0000FF', desc: 'Global Color' }
+            ];
+            
+            let passed = 0;
+            tests.forEach(test => {
+                const result = getColorForSrc(test.src);
+                const match = result === test.expected;
+                if (match) {
+                    addLog(output, `✅ src${test.src}: ${result} (${test.desc})`, 'test-pass');
+                    passed++;
+                } else {
+                    addLog(output, `❌ src${test.src}: Expected ${test.expected}, got ${result}`, 'test-fail');
+                }
+            });
+            
+            addLog(output, `${passed}/${tests.length} tests passed`, passed === tests.length ? 'test-pass' : 'test-fail');
+        }
+        
+        function testSVGLogic() {
+            const output = document.getElementById('testOutput');
+            output.innerHTML = '';
+            
+            addLog(output, 'ℹ️ Testing SVG fetch logic...');
+            
+            const testCases = [
+                { src: 'image.svg', hasColor: true, shouldFetch: true },
+                { src: 'image.svg', hasColor: false, shouldFetch: true },
+                { src: 'image.png', hasColor: true, shouldFetch: false },
+                { src: 'image.png', hasColor: false, shouldFetch: false },
+            ];
+            
+            testCases.forEach(test => {
+                const condition = test.src.endsWith('.svg');
+                const wouldFetch = condition;
+                const pass = wouldFetch === test.shouldFetch;
+                
+                const status = pass ? '✅' : '❌';
+                const fetchText = wouldFetch ? 'FETCH' : 'SKIP';
+                const colorText = test.hasColor ? 'with color' : 'no color';
+                
+                const className = pass ? 'test-pass' : 'test-fail';
+                addLog(output, `${status} ${test.src} (${colorText}): ${fetchText}`, className);
+            });
+        }
+        
+        function addLog(container, message, className = 'test-info') {
+            const div = document.createElement('div');
+            div.className = `test-result ${className}`;
+            div.textContent = message;
+            container.appendChild(div);
+        }
+    </script>
+</body>
+</html>

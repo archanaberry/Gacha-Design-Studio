@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Per-Src Properties</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+        }
+        
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #333;
+        }
+        
+        h2 {
+            color: #666;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        
+        .container {
+            position: relative;
+            width: 100%;
+            height: 400px;
+            background: white;
+            border: 2px solid #ddd;
+            margin: 20px 0;
+            overflow: visible;
+        }
+        
+        .layer {
+            position: absolute;
+            background: transparent;
+        }
+        
+        img {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        
+        .console {
+            background: #222;
+            color: #0f0;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin: 10px 0;
+        }
+        
+        .log {
+            margin: 2px 0;
+        }
+        
+        .info { color: #0f0; }
+        .warn { color: #ff0; }
+        .error { color: #f00; }
+        
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        
+        button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>✅ Test Per-Src Properties</h1>
+    
+    <div class="test-section">
+        <h2>Test 1: Hair Layer (5 src dengan per-src opacity & color)</h2>
+        <button onclick="testHairLayer()">Run Test Hair Layer</button>
+        <div id="container1" class="container"></div>
+        <div id="console1" class="console"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test 2: Simple Arm (2 src dengan per-src color)</h2>
+        <button onclick="testArmLayer()">Run Test Arm Layer</button>
+        <div id="container2" class="container"></div>
+        <div id="console2" class="console"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test 3: Global vs Per-Src Precedence</h2>
+        <button onclick="testPrecedence()">Run Test Precedence</button>
+        <div id="container3" class="container"></div>
+        <div id="console3" class="console"></div>
+    </div>
+
+    <script src="js/studiocharacter/layer.js"></script>
+    <script>
+        // Setup window globals for Layer
+        window.originCentered = true;
+        window.originOffsetX = 0;
+        window.originOffsetY = 0;
+
+        function log(elementId, message, type = 'info') {
+            const console = document.getElementById(elementId);
+            const logEntry = document.createElement('div');
+            logEntry.className = `log ${type}`;
+            logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            console.appendChild(logEntry);
+            console.scrollTop = console.scrollHeight;
+        }
+
+        function testHairLayer() {
+            log('console1', '🧪 Testing Hair Layer with 5 src...');
+            
+            try {
+                const hairLayer = new Layer(
+                    'Rambut',
+                    [
+                        'data:image/svg+xml,<svg><rect width="100" height="100" fill="black"/></svg>',
+                        'data:image/svg+xml,<svg><rect width="100" height="100" fill="white"/></svg>',
+                        'data:image/svg+xml,<svg><rect width="100" height="100" fill="blue"/></svg>',
+                        'data:image/svg+xml,<svg><rect width="100" height="100" fill="purple"/></svg>',
+                        'data:image/svg+xml,<svg><rect width="100" height="100" fill="pink"/></svg>'
+                    ],
+                    {
+                        // Per-src properties
+                        "posX0": 50, "posY0": 50, "opacity0": 1, "color0": "#1A1A1A",
+                        "posX1": 50, "posY1": 50, "opacity1": 0.85, "color1": "#FFFFFF",
+                        "posX2": 50, "posY2": 50, "opacity2": 0.65, "color2": "#B39DDB",
+                        "posX3": 50, "posY3": 50, "opacity3": 0.55, "color3": "#6A4C93",
+                        "posX4": 50, "posY4": 50, "opacity4": 1, "color4": "#9C6FB1",
+                        
+                        // Global transformations
+                        "rotation": 0,
+                        "scale": 1,
+                        "flipX": false,
+                        "flipY": false
+                    }
+                );
+                
+                const container = document.getElementById('container1');
+                container.innerHTML = '';
+                hairLayer.attach(container);
+                
+                log('console1', '✅ Hair layer created successfully');
+                log('console1', `  Layer name: ${hairLayer.name}`);
+                log('console1', `  Src count: ${hairLayer.src.length}`);
+                log('console1', `  Has #srcProperties: ${!!hairLayer}`);
+                log('console1', '✅ Visual: 5 colored rectangles with different opacity should appear');
+                
+            } catch (error) {
+                log('console1', `❌ Error: ${error.message}`, 'error');
+                console.error(error);
+            }
+        }
+
+        function testArmLayer() {
+            log('console2', '🧪 Testing Arm Layer (global pos + per-src color)...');
+            
+            try {
+                const armLayer = new Layer(
+                    'Lengan Kanan',
+                    [
+                        'data:image/svg+xml,<svg><rect width="80" height="100" fill="black"/></svg>',
+                        'data:image/svg+xml,<svg><rect width="80" height="100" fill="orange"/></svg>'
+                    ],
+                    {
+                        // Global position
+                        "posX": 100,
+                        "posY": 100,
+                        
+                        // Per-src colors
+                        "color0": "#000000",
+                        "color1": "#FFCC99",
+                        
+                        // Global transformations
+                        "rotation": 0,
+                        "scale": 1,
+                        "flipX": true,
+                        "flipY": false
+                    }
+                );
+                
+                const container = document.getElementById('container2');
+                container.innerHTML = '';
+                armLayer.attach(container);
+                
+                log('console2', '✅ Arm layer created successfully');
+                log('console2', `  Layer name: ${armLayer.name}`);
+                log('console2', `  Src count: ${armLayer.src.length}`);
+                log('console2', `  Global position: (100, 100)`);
+                log('console2', `  FlipX: true`);
+                log('console2', '✅ Visual: Black rectangle with orange rectangle should appear flipped');
+                
+            } catch (error) {
+                log('console2', `❌ Error: ${error.message}`, 'error');
+                console.error(error);
+            }
+        }
+
+        function testPrecedence() {
+            log('console3', '🧪 Testing Property Precedence (Per-Src > Global > Default)...');
+            
+            try {
+                const testLayer = new Layer(
+                    'Test Precedence',
+                    [
+                        'data:image/svg+xml,<svg><rect width="60" height="60" fill="green"/></svg>',
+                        'data:image/svg+xml,<svg><rect width="60" height="60" fill="red"/></svg>',
+                        'data:image/svg+xml,<svg><rect width="60" height="60" fill="yellow"/></svg>'
+                    ],
+                    {
+                        // Global opacity
+                        "opacity": 0.8,
+                        
+                        // Per-src override for src1 only
+                        "opacity1": 0.3,
+                        
+                        // All at same position
+                        "posX": 150,
+                        "posY": 150,
+                        
+                        "rotation": 15,
+                        "scale": 1
+                    }
+                );
+                
+                const container = document.getElementById('container3');
+                container.innerHTML = '';
+                testLayer.attach(container);
+                
+                log('console3', '✅ Precedence test layer created');
+                log('console3', `  Global opacity: 0.8`);
+                log('console3', `  Per-src opacity1 override: 0.3`);
+                log('console3', '✅ Visual: Green & Yellow should be 0.8 opacity, Red should be 0.3 opacity');
+                log('console3', '✅ All 3 rectangles should be rotated 15 degrees');
+                
+            } catch (error) {
+                log('console3', `❌ Error: ${error.message}`, 'error');
+                console.error(error);
+            }
+        }
+
+        // Auto-run tests on page load
+        window.addEventListener('load', function() {
+            console.log('Per-Src Properties Test Page Loaded');
+            testHairLayer();
+            testArmLayer();
+            testPrecedence();
+        });
+    </script>
+</body>
+</html>

@@ -116,73 +116,142 @@ function createLayerFromObject(layerObj) {
  * }
  * 
  * CATATAN: Setiap layer siap di-customize di panel2 secara real-time
- * Refer: CHARACTER_TEMPLATE_GUIDE.md untuk dokumentasi lengkap
+ * Refer: LAYER_OPTIONS_STRUCTURE.md untuk dokumentasi lengkap
+ * Refer: LAYER_TEMPLATE_EXAMPLES.js untuk contoh implementasi
+ * 
+ * STRUKTUR OPTIONS BARU:
+ * - Properties global (posX, posY, rotation, scale, dll) diterapkan ke semua src
+ * - Properties per-src (posX0, posY1, color2, opacity3, dst) override global
+ * - Semua properties bersifat OPSIONAL - hanya define yang dibutuhkan
  * ============================================================
  */
 
 const layers = [
-    // ========== TANGAN KANAN ==========
+    // ========== RAMBUT (Hair) - 5 src dengan styling lengkap per-src ==========
+    {
+      "layerName": "Rambut",
+      "src": [
+        "assets/profilechibi/hair1.svg",     // src0 - outline
+        "assets/profilechibi/hairl1.svg",    // src1 - light/highlight
+        "assets/profilechibi/hairss1.svg",   // src2 - shade
+        "assets/profilechibi/hairs1.svg",    // src3 - shadow/gradation
+        "assets/profilechibi/hairo1.svg"     // src4 - base color
+      ],
+      "options": {
+        // ---- src0: Outline (stroke) ----
+        "posX0": 65,
+        "posY0": 127,
+        "opacity0": 1,
+        "color0": "#1A1A1A",
+        
+        // ---- src1: Light/Highlight ----
+        "posX1": 65,
+        "posY1": 127,
+        "opacity1": 0.85,
+        "color1": "#FFFFFF",
+        
+        // ---- src2: Shade (gradasi tengah) ----
+        "posX2": 65,
+        "posY2": 127,
+        "opacity2": 0.65,
+        "color2": "#B39DDB",
+        
+        // ---- src3: Shadow (gradasi gelap) ----
+        "posX3": 65,
+        "posY3": 127,
+        "opacity3": 0.55,
+        "color3": "#6A4C93",
+        
+        // ---- src4: Base Color (warna utama) ----
+        "posX4": 65,
+        "posY4": 127,
+        "opacity4": 1,
+        "color4": "#9C6FB1",
+        
+        // Global transformations
+        "rotation": 0,
+        "scale": 1,
+        "skewX": 0,
+        "skewY": 0,
+        "flipX": false,
+        "flipY": false,
+        "width": null,
+        "height": null
+      }
+    },
+    // ========== LENGAN ATAS KANAN ==========
     {
       "layerName": "Lengan atas kanan",
       "src": [
-        "assets/character/base/arm1.svg",    // src0 (outline)
-        "assets/character/base/arm2.svg"     // src1 (base)
+        "assets/character/base/arm1.svg",    // src0 - outline
+        "assets/character/base/arm2.svg"     // src1 - base color
       ],
       "options": {
-        "posX": 63,
+        // Global position
+        "posX": 65,
         "posY": 127,
+        
+        // Per-src colors
+        "color0": "#000000",                 // Outline hitam
+        "color1": "#FFCC99",                 // Skin tone
+        
+        // Global transformations
         "rotation": 0,
         "scale": 1,
+        "flipX": true,                       // Flip untuk kanan
+        "flipY": false,
         "skewX": 0,
         "skewY": 0,
-        "flipX": true,
-        "flipY": false,
         "width": null,
         "height": null,
-        "opacity": 1,
-        "color": null
+        "opacity": 1
       }
     },
+    // ========== LENGAN BAWAH KANAN ==========
     {
       "layerName": "Lengan bawah kanan",
       "src": [
-        "assets/character/base/hand1.svg",   // src0 (outline)
-        "assets/character/base/hand2.svg"    // src1 (base)
+        "assets/character/base/hand1.svg",   // src0 - outline
+        "assets/character/base/hand2.svg"    // src1 - base
       ],
       "options": {
-        "posX": 67,
+        "posX": 73,
         "posY": 151,
+        "color0": "#000000",
+        "color1": "#FFCC99",
         "rotation": 0,
         "scale": 1,
-        "skewX": 0,
-        "skewY": 0,
         "flipX": true,
         "flipY": false,
+        "skewX": 0,
+        "skewY": 0,
         "width": null,
         "height": null,
-        "opacity": 1,
-        "color": null
+        "opacity": 1
       }
     },
+    // ========== TANGAN KANAN ==========
     {
       "layerName": "Tangan kanan",
       "src": [
-        "assets/character/base/finger3.svg", // src0 (outline)
-        "assets/character/base/finger4.svg"  // src1 (base)
+        "assets/character/base/finger3.svg", // src0 - outline
+        "assets/character/base/finger4.svg"  // src1 - base
       ],
       "options": {
-        "posX": 74,
+        "posX": 80,
         "posY": 170,
+        "color0": "#000000",
+        "color1": "#FFCC99",
+        "opacity0": 1,
+        "opacity1": 0.95,
         "rotation": 0,
         "scale": 1,
-        "skewX": 0,
-        "skewY": 0,
         "flipX": true,
         "flipY": false,
+        "skewX": 0,
+        "skewY": 0,
         "width": null,
-        "height": null,
-        "opacity": 1,
-        "color": null
+        "height": null
       }
     },
   
@@ -190,43 +259,45 @@ const layers = [
     {
       "layerName": "Paha atas kanan",
       "src": [
-        "assets/character/base/leg1.svg",    // src0 (outline)
-        "assets/character/base/leg2.svg"     // src1 (base)
+        "assets/character/base/leg1.svg",    // src0 - outline
+        "assets/character/base/leg2.svg"     // src1 - base
       ],
       "options": {
-        "posX": 0,
-        "posY": 0,
+        "posX": 65.5,
+        "posY": 178,
+        "color0": "#000000",
+        "color1": "#FFCC99",
         "rotation": 0,
         "scale": 1,
-        "skewX": 0,
-        "skewY": 0,
         "flipX": true,
         "flipY": false,
+        "skewX": 0,
+        "skewY": 0,
         "width": null,
         "height": null,
-        "opacity": 1,
-        "color": null
+        "opacity": 1
       }
     },
     {
       "layerName": "Kaki kanan",
       "src": [
-        "assets/character/base/foot1.svg",   // src0 (outline)
-        "assets/character/base/foot2.svg"    // src1 (base)
+        "assets/character/base/foot1.svg",   // src0 - outline
+        "assets/character/base/foot2.svg"    // src1 - base
       ],
       "options": {
-        "posX": 0,
-        "posY": 0,
-        "rotation": 0,
+        "posX": 66.5,
+        "posY": 206,
+        "color0": "#000000",
+        "color1": "#FFCC99",
+        "rotation": 352,
         "scale": 1,
+        "flipX": false,
+        "flipY": false,
         "skewX": 0,
         "skewY": 0,
-        "flipX": true,
-        "flipY": false,
         "width": null,
         "height": null,
-        "opacity": 1,
-        "color": null
+        "opacity": 1
       }
     },
   
@@ -234,22 +305,24 @@ const layers = [
     {
       "layerName": "Badan",
       "src": [
-        "assets/character/base/body1.svg",   // src0 (outline)
-        "assets/character/base/body2.svg"    // src1 (base)
+        "assets/character/base/body1.svg",   // src0 - outline
+        "assets/character/base/body2.svg"    // src1 - base color
       ],
       "options": {
         "posX": 44,
         "posY": 112,
+        "color0": "#000000",
+        "color1": "#FF69B4",                 // Pink untuk baju
+        "opacity0": 1,
+        "opacity1": 1,
         "rotation": 0,
         "scale": 1,
-        "skewX": 0,
-        "skewY": 0,
         "flipX": false,
         "flipY": false,
+        "skewX": 0,
+        "skewY": 0,
         "width": null,
-        "height": null,
-        "opacity": 0,
-        "color": null
+        "height": null
       }
     },
   
@@ -257,87 +330,92 @@ const layers = [
     {
       "layerName": "Kepala",
       "src": [
-        "assets/character/base/head1.svg",   // src0 (outline)
-        "assets/character/base/head2.svg"    // src1 (base)
+        "assets/character/base/head1.svg",   // src0 - outline
+        "assets/character/base/head2.svg"    // src1 - base
       ],
       "options": {
         "posX": 0,
         "posY": 0,
+        "color0": "#000000",
+        "color1": "#FFCC99",
+        "opacity": 1,
         "rotation": 0,
         "scale": 1,
-        "skewX": 0,
-        "skewY": 0,
         "flipX": false,
         "flipY": false,
+        "skewX": 0,
+        "skewY": 0,
         "width": null,
-        "height": null,
-        "opacity": 1,
-        "color": null
+        "height": null
       }
     },
   
-    // ========== TANGAN KIRI ==========
+    // ========== LENGAN ATAS KIRI ==========
     {
       "layerName": "Lengan atas kiri",
       "src": [
-        "assets/character/base/arm1.svg",    // src0 (outline)
-        "assets/character/base/arm2.svg"     // src1 (base)
+        "assets/character/base/arm1.svg",    // src0 - outline
+        "assets/character/base/arm2.svg"     // src1 - base
       ],
       "options": {
-        "posX": 34,
+        "posX": 34.5,
         "posY": 127.5,
+        "color0": "#000000",
+        "color1": "#FFCC99",
         "rotation": 0,
         "scale": 1,
-        "skewX": 0,
-        "skewY": 0,
         "flipX": false,
         "flipY": false,
+        "skewX": 0,
+        "skewY": 0,
         "width": null,
         "height": null,
-        "opacity": 1,
-        "color": null
+        "opacity": 1
       }
     },
     {
       "layerName": "Lengan bawah kiri",
       "src": [
-        "assets/character/base/hand1.svg",   // src0 (outline)
-        "assets/character/base/hand2.svg"    // src1 (base)
+        "assets/character/base/hand1.svg",   // src0 - outline
+        "assets/character/base/hand2.svg"    // src1 - base
       ],
       "options": {
         "posX": 26.5,
         "posY": 152,
+        "color0": "#000000",
+        "color1": "#FFCC99",
         "rotation": 0,
         "scale": 1,
-        "skewX": 0,
-        "skewY": 0,
         "flipX": false,
         "flipY": false,
+        "skewX": 0,
+        "skewY": 0,
         "width": null,
         "height": null,
-        "opacity": 1,
-        "color": null
+        "opacity": 1
       }
     },
     {
       "layerName": "Tangan kiri",
       "src": [
-        "assets/character/base/finger1.svg", // src0 (outline)
-        "assets/character/base/finger2.svg"  // src1 (base)
+        "assets/character/base/finger1.svg", // src0 - outline
+        "assets/character/base/finger2.svg"  // src1 - base
       ],
       "options": {
         "posX": 20,
         "posY": 172,
+        "color0": "#000000",
+        "color1": "#FFCC99",
+        "opacity0": 1,
+        "opacity1": 0.95,
         "rotation": 0,
         "scale": 1,
-        "skewX": 0,
-        "skewY": 0,
         "flipX": false,
         "flipY": false,
+        "skewX": 0,
+        "skewY": 0,
         "width": null,
-        "height": null,
-        "opacity": 1,
-        "color": null
+        "height": null
       }
     },
   
@@ -345,45 +423,68 @@ const layers = [
     {
       "layerName": "Paha atas kiri",
       "src": [
-        "assets/character/base/leg1.svg",    // src0 (outline)
-        "assets/character/base/leg2.svg"     // src1 (base)
+        "assets/character/base/leg1.svg",    // src0 - outline
+        "assets/character/base/leg2.svg"     // src1 - base
       ],
       "options": {
-        "posX": 0,
-        "posY": 0,
+        "posX": 42.5,
+        "posY": 180.5,
+        "color0": "#000000",
+        "color1": "#FFCC99",
         "rotation": 0,
         "scale": 1,
-        "skewX": 0,
-        "skewY": 0,
         "flipX": false,
         "flipY": false,
+        "skewX": 0,
+        "skewY": 0,
         "width": null,
         "height": null,
-        "opacity": 1,
-        "color": null
+        "opacity": 1
       }
     },
     {
       "layerName": "Kaki kiri",
       "src": [
-        "assets/character/base/foot1.svg",   // src0 (outline)
-        "assets/character/base/foot2.svg"    // src1 (base)
+        "assets/character/base/foot1.svg",   // src0 - outline
+        "assets/character/base/foot2.svg"    // src1 - base
       ],
       "options": {
-        "posX": 0,
-        "posY": 0,
+        "posX": 40.5,
+        "posY": 208,
+        "color0": "#000000",
+        "color1": "#FFCC99",
         "rotation": 0,
         "scale": 1,
-        "skewX": 0,
-        "skewY": 0,
         "flipX": false,
         "flipY": false,
+        "skewX": 0,
+        "skewY": 0,
         "width": null,
         "height": null,
-        "opacity": 1,
-        "color": null
+        "opacity": 1
       }
-    }
+    },
+
+    // ========== CONTOH TEXT LAYER (Opsional - Gunakan jika ada feature teks) ==========
+     {
+       "layerName": "Nama Karakter",
+       "src": ["text://characterName"],
+       "isTextLayer": true,
+       "options": {
+         "posX0": 50,
+         "posY0": 300,
+         "fontFamily0": "Arial",
+         "fontSize0": 28,
+         "fontWeight0": "bold",
+         "color0": "#000000",
+         "textAlign0": "center",
+         "textStroke0": true,
+         "textStrokeColor0": "#000000",
+         "textStrokeWidth0": 2,
+         "opacity0": 1,
+         "width0": 200
+       }
+     }
   ].map(createLayerFromObject);
 
 // Mendefinisikan koordinat awal ketika halaman dimuat
@@ -512,6 +613,16 @@ document.addEventListener('DOMContentLoaded', function() {
         addLayerClickHandler(layer);
     }
 
+    // Initialize zoom input
+    const zoomInput = document.getElementById('zoomInput');
+    const zoomSlider = document.getElementById('zoomSlider');
+    if (zoomInput) {
+        zoomInput.value = '100%';
+    }
+    if (zoomSlider) {
+        zoomSlider.value = 100;
+    }
+
     // Initialize framework display di panel3
     if (window.frameworkDisplay) {
         window.frameworkDisplay.initialize(layers);
@@ -549,6 +660,31 @@ document.addEventListener('DOMContentLoaded', function() {
         // Pastikan pointer-events tetap aktif saat panel2 penuh
         if (panel2.style.height === '100%') {
             panel2.style.pointerEvents = 'auto';
+        }
+    });
+
+    // Listen untuk message dari iframe
+    window.addEventListener('message', function(e) {
+        if (e.data && e.data.type === 'originChanged') {
+            console.log('Received originChanged message:', e.data);
+            const { centered } = e.data;
+            // Hitung offset berdasarkan panel1
+            const panel1 = document.getElementById('panel1');
+            if (panel1) {
+                const centerX = panel1.offsetWidth / 2;
+                const centerY = panel1.offsetHeight / 2;
+                window.originCentered = centered;
+                window.originOffsetX = centered ? centerX : 0;
+                window.originOffsetY = centered ? centerY : 0;
+                console.log('Offset set:', window.originOffsetX, window.originOffsetY);
+                
+                // Update semua layers
+                layers.forEach(layer => {
+                    if (layer.element && typeof layer.updateElement === 'function') {
+                        layer.updateElement();
+                    }
+                });
+            }
         }
     });
 });
@@ -660,6 +796,7 @@ function selectLayer(layer) {
 
     layer.selected = true;
     selected = layer;
+    window.selected = selected; // Make it globally accessible
     updateCoordInput();
     widthInput.value = selected.element.clientWidth;
     heightInput.value = selected.element.clientHeight;
@@ -672,6 +809,25 @@ function selectLayer(layer) {
     
     // Sinkronisasi selection di semua panel
     syncLayerSelectionAcrossAllPanels(layer);
+
+    // Sync textshape if available
+    if (window.textShapeManager && typeof window.textShapeManager.syncTextInputFromLayer === 'function') {
+        console.log('selectLayer: Checking if layer is text layer:', layer.name);
+        if (layer && window.textShapeManager.isTextLayer(layer)) {
+            console.log('selectLayer: Is text layer, syncing input');
+            window.textShapeManager.syncTextInputFromLayer(layer);
+        } else {
+            console.log('selectLayer: Not a text layer, resetting to create mode');
+            window.textShapeManager.resetToCreateMode();
+        }
+    } else {
+        console.warn('selectLayer: TextShapeManager not available');
+    }
+
+    // Dispatch event for textshape sync
+    setTimeout(() => {
+        document.dispatchEvent(new CustomEvent('layerSelected', { detail: { layer: layer } }));
+    }, 100);
 }
 
 /**
@@ -727,9 +883,20 @@ function deselectLayer() {
     if(!selected) return;
     selected.selected = false;
     selected = null;
+    window.selected = null; // Clear global reference
     
     // Sinkronisasi deselect di semua panel
     syncDeselectionAcrossAllPanels();
+
+    // Reset textshape if available
+    if (window.textShapeManager && typeof window.textShapeManager.resetToCreateMode === 'function') {
+        window.textShapeManager.resetToCreateMode();
+    }
+
+    // Dispatch event for textshape reset
+    setTimeout(() => {
+        document.dispatchEvent(new CustomEvent('layerDeselected'));
+    }, 100);
 }
 
 /**

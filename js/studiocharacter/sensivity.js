@@ -27,3 +27,48 @@ function handleSensitivity(value) {
     sensitivity = parseFloat(value);
     document.getElementById('sensitivityInput').value = sensitivity;
 }
+
+function handleZoom(value) {
+    const zoomValue = parseFloat(value);
+    const panel = document.getElementById('panel1');
+    if (panel) {
+        const scale = zoomValue / 100; // 100% = scale 1
+        panel.dataset.scale = scale;
+        panel.style.transform = `scale(${scale})`;
+        document.getElementById('zoomInput').value = zoomValue + '%';
+        
+        // Record history
+        if (typeof window.HistoryManager !== 'undefined') {
+          window.HistoryManager.recordAction('zoom', {
+            scale: scale,
+            action: 'Zoom via slider'
+          });
+        }
+    }
+}
+
+function handleZoomInput(value) {
+    // Remove '%' if present
+    let zoomValue = parseFloat(value.replace('%', ''));
+    if (isNaN(zoomValue)) return;
+    
+    // Clamp to 0-10000
+    zoomValue = Math.max(0, Math.min(10000, zoomValue));
+    
+    const panel = document.getElementById('panel1');
+    if (panel) {
+        const scale = zoomValue / 100; // 100% = scale 1
+        panel.dataset.scale = scale;
+        panel.style.transform = `scale(${scale})`;
+        document.getElementById('zoomSlider').value = zoomValue;
+        document.getElementById('zoomInput').value = zoomValue + '%';
+        
+        // Record history
+        if (typeof window.HistoryManager !== 'undefined') {
+          window.HistoryManager.recordAction('zoom', {
+            scale: scale,
+            action: 'Zoom via input'
+          });
+        }
+    }
+}
