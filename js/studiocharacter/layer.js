@@ -40,6 +40,9 @@ class Layer {
     #srcProperties = {}; // Per-src properties (posX0, posY1, rotation2, opacity3, dst)
     #parentLayer = null; // Reference ke parent layer jika ini adalah child
     #opacity = 1; // 0-1
+    #cachedBoundingBox = null; // Cache bounding box untuk outline selection yang stabil
+    #srcDimensions = []; // Simpan semua dimensi src untuk backup/fallback
+    #srcLoadPromises = []; // Array dari Promise untuk track ketika setiap src image selesai load
     options = {};
 
     constructor(name, src, options = {}, childLayers = []) {
@@ -213,7 +216,9 @@ class Layer {
 
     //
     #initElement() {
-        console.log(`Initializing element for layer "${this.#name}"`);
+        console.log(`%c[Layer: ${this.#name}] === INITIALIZING ELEMENT ===`, 'color: #FFB6C1; font-weight: bold; font-size: 12px');
+        console.log(`%c  Total src count: ${this.#src.length}`, 'color: #FFD700; font-size: 11px');
+        
         this.element = document.createElement('div');
         this.element.classList.add('layer');
         
@@ -224,6 +229,7 @@ class Layer {
         
         let maxWidth = 0, maxHeight = 0;
         let imageDimensions = [];
+        let totalImagesLoaded = 0;
         
         this.#src.forEach((src, index) => {
             const imgElement = document.createElement('img');
@@ -235,62 +241,92 @@ class Layer {
             // src0 (index 0) = z-index 0, src1 (index 1) = z-index 1, dst
             imgElement.style.zIndex = index;
             
-            // Load image to get dimensions
-            const img = new Image();
-            img.onload = () => {
-                imageDimensions[index] = { width: img.naturalWidth, height: img.naturalHeight };
-                if (img.naturalWidth > maxWidth || img.naturalHeight > maxHeight) {
-                    maxWidth = Math.max(maxWidth, img.naturalWidth);
-                    maxHeight = Math.max(maxHeight, img.naturalHeight);
-                    // Auto-set layer dimensions ke largest image jika belum ada
-                    if (!this.#width) this.#width = maxWidth;
-                    if (!this.#height) this.#height = maxHeight;
-                }
-            };
-            img.onerror = () => {
-                console.warn(`Failed to load image: ${src}`);
-            };
-            
-            const colorForThis = this.#getColorForSrc(index);
-            if (src.endsWith('.svg')) {
-                // Always fetch SVG to potentially recolor
-                fetch(src).then(r => r.text()).then(svgText => {
-                    // Jika ada warna untuk src ini, aplikasikan ke SVG menggunakan DOM parsing
-                    if (colorForThis) {
-                        console.log(`[Layer: ${this.#name}] src${index} - Applying color ${colorForThis}`);
-                        
-                        // Debug: tampilkan SVG sebelum di-ubah
-                        const beforeFills = (svgText.match(/fill\s*[:=]/gi) || []).length;
-                        const beforeStrokes = (svgText.match(/stroke\s*[:=]/gi) || []).length;
-                        const beforeStopColors = (svgText.match(/stop-color\s*[:=]/gi) || []).length;
-                        console.log(`[Layer: ${this.#name}] src${index} BEFORE - Fill: ${beforeFills}, Stroke: ${beforeStrokes}, StopColor: ${beforeStopColors}`);
-                        
-                        const recoloredSVG = this.#recolorSVG(svgText, colorForThis);
-                        
-                        // Debug: count setelah perubahan
-                        const afterFills = (recoloredSVG.match(/fill\s*[:=]/gi) || []).length;
-                        const afterStrokes = (recoloredSVG.match(/stroke\s*[:=]/gi) || []).length;
-                        const afterStopColors = (recoloredSVG.match(/stop-color\s*[:=]/gi) || []).length;
-                        console.log(`[Layer: ${this.#name}] src${index} AFTER - Fill: ${afterFills}, Stroke: ${afterStrokes}, StopColor: ${afterStopColors}`);
-                        
-                        svgText = recoloredSVG;
-                    } else {
-                        console.warn(`[Layer: ${this.#name}] src${index} - No color defined, using original`);
+            // PENTING: Buat Promise untuk tracking kapan image ini sudah load
+            // Ini memungkinkan kita menunggu SEMUA image load tanpa timeout
+            const loadPromise = new Promise((resolve, reject) => {
+                // Load image to get dimensions
+                const img = new Image();
+                img.onload = () => {
+                    imageDimensions[index] = { width: img.naturalWidth, height: img.naturalHeight };
+                    totalImagesLoaded++;
+                    
+                    // Calculate max dimensions untuk layer container
+                    if (img.naturalWidth > maxWidth || img.naturalHeight > maxHeight) {
+                        maxWidth = Math.max(maxWidth, img.naturalWidth);
+                        maxHeight = Math.max(maxHeight, img.naturalHeight);
                     }
-                    const dataUrl = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgText)));
-                    imgElement.src = dataUrl;
-                    img.src = dataUrl; // Also load for dimensions
-                }).catch(e => {
-                    console.error(`Failed to load SVG for layer "${this.#name}" src${index}:`, e);
+                    
+                    // Set layer dimensions HANYA pada image pertama yang loaded, atau gunakan yang sudah ada
+                    if (totalImagesLoaded === 1 && !this.#width) {
+                        this.#width = img.naturalWidth;
+                        this.#height = img.naturalHeight;
+                        console.log(`[Layer: ${this.#name}] Initial dimensions set from src0: ${this.#width}x${this.#height}`);
+                    }
+                    
+                    // Store natural dimensions di dataset agar bisa diakses nanti
+                    imgElement.dataset.naturalWidth = img.naturalWidth;
+                    imgElement.dataset.naturalHeight = img.naturalHeight;
+                    
+                    // JUGA simpan di private array untuk backup/fallback
+                    this.#srcDimensions[index] = { width: img.naturalWidth, height: img.naturalHeight };
+                    console.log(`%c[Layer: ${this.#name}] src${index} loaded: ${img.naturalWidth}x${img.naturalHeight}`, 'color: #98D8C8; font-size: 10px');
+                    
+                    // RESOLVE Promise - sinyal bahwa image ini sudah load
+                    resolve({ index, width: img.naturalWidth, height: img.naturalHeight });
+                };
+                img.onerror = () => {
+                    console.warn(`Failed to load image: ${src}`);
+                    totalImagesLoaded++;
+                    
+                    // REJECT atau resolve dengan fallback dimension
+                    reject(new Error(`Failed to load src${index}`));
+                };
+                
+                const colorForThis = this.#getColorForSrc(index);
+                if (src.endsWith('.svg')) {
+                    // Always fetch SVG to potentially recolor
+                    fetch(src).then(r => r.text()).then(svgText => {
+                        // Jika ada warna untuk src ini, aplikasikan ke SVG menggunakan DOM parsing
+                        if (colorForThis) {
+                            console.log(`[Layer: ${this.#name}] src${index} - Applying color ${colorForThis}`);
+                            
+                            // Debug: tampilkan SVG sebelum di-ubah
+                            const beforeFills = (svgText.match(/fill\s*[:=]/gi) || []).length;
+                            const beforeStrokes = (svgText.match(/stroke\s*[:=]/gi) || []).length;
+                            const beforeStopColors = (svgText.match(/stop-color\s*[:=]/gi) || []).length;
+                            console.log(`[Layer: ${this.#name}] src${index} BEFORE - Fill: ${beforeFills}, Stroke: ${beforeStrokes}, StopColor: ${beforeStopColors}`);
+                            
+                            const recoloredSVG = this.#recolorSVG(svgText, colorForThis);
+                            
+                            // Debug: count setelah perubahan
+                            const afterFills = (recoloredSVG.match(/fill\s*[:=]/gi) || []).length;
+                            const afterStrokes = (recoloredSVG.match(/stroke\s*[:=]/gi) || []).length;
+                            const afterStopColors = (recoloredSVG.match(/stop-color\s*[:=]/gi) || []).length;
+                            console.log(`[Layer: ${this.#name}] src${index} AFTER - Fill: ${afterFills}, Stroke: ${afterStrokes}, StopColor: ${afterStopColors}`);
+                            
+                            svgText = recoloredSVG;
+                        } else {
+                            console.warn(`[Layer: ${this.#name}] src${index} - No color defined, using original`);
+                        }
+                        const dataUrl = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgText)));
+                        imgElement.src = dataUrl;
+                        img.src = dataUrl; // Trigger img.onload
+                    }).catch(e => {
+                        console.error(`Failed to load SVG for layer "${this.#name}" src${index}:`, e);
+                        imgElement.src = src;
+                        img.src = src; // Trigger img.onload
+                    });
+                } else {
                     imgElement.src = src;
-                    img.src = src;
-                });
-            } else {
-                imgElement.src = src;
-                img.src = src; // Load untuk get dimensions
-            }
+                    img.src = src; // Load untuk get dimensions - trigger img.onload
+                }
+            }); // END Promise constructor
+            
+            // SIMPAN Promise ke array agar bisa di-wait kemudian
+            this.#srcLoadPromises[index] = loadPromise;
             
             this.element.appendChild(imgElement);
+            console.log(`%c[Layer: ${this.#name}] src${index} img element appended to DOM`, 'color: #A8E6CF; font-size: 10px');
             
             // Terapkan per-src properties pada img element
             this.#applySrcProperties(imgElement, index);
@@ -397,8 +433,24 @@ class Layer {
             // Periksa keberadaan imgElements sebelum mengakses style-nya
             if (imgElements && imgElements.length > 0) {
                 imgElements.forEach((imgElement, index) => {
-                    if (this.#width) imgElement.style.width = this.#width + 'px';
-                    if (this.#height) imgElement.style.height = this.#height + 'px';
+                    // PENTING: Setiap img harus menggunakan ukuran INDIVIDUALNYA, bukan ukuran layer
+                    // Jika ada per-src width/height, gunakan itu
+                    const widthForSrc = this.#getPropertyForSrc('width', index, null, null);
+                    const heightForSrc = this.#getPropertyForSrc('height', index, null, null);
+                    
+                    // Gunakan per-src dimensions, atau natural dimensions dari img
+                    const naturalWidth = parseInt(imgElement.dataset.naturalWidth) || this.#width;
+                    const naturalHeight = parseInt(imgElement.dataset.naturalHeight) || this.#height;
+                    
+                    const finalWidth = widthForSrc || naturalWidth || this.#width;
+                    const finalHeight = heightForSrc || naturalHeight || this.#height;
+                    
+                    if (finalWidth) imgElement.style.width = finalWidth + 'px';
+                    if (finalHeight) imgElement.style.height = finalHeight + 'px';
+                    
+                    // Pastikan img tetap pada ukuran natural-nya jika tidak ada override
+                    imgElement.style.objectFit = 'contain'; // Pertahankan aspect ratio
+                    imgElement.style.objectPosition = 'center'; // Posisikan di center
                     
                     // Update per-src properties jika ada perubahan
                     this.#applySrcProperties(imgElement, index);
@@ -429,6 +481,83 @@ class Layer {
         }
     }
     
+    /**
+     * Hitung bounding box actual dari semua img elements yang di-render
+     * Ini digunakan untuk outline selection agar mencakup semua src images
+     */
+    #calculateRealBoundingBox() {
+        if (this.#childLayers.length > 0) {
+            // Untuk group layers, gunakan calculateGroupBounds
+            return this.#calculateGroupBounds();
+        }
+
+        // Untuk non-group layers, hitung dari SEMUA img elements
+        // PENTING: Gunakan kombinasi dataset + #srcDimensions array untuk memastikan SEMUA src tercakup
+        const imgElements = this.element?.querySelectorAll('img.src-item') || [];
+        let totalMaxWidth = 0, totalMaxHeight = 0;
+        let foundSrcCount = 0;
+
+        console.group(`%c[Layer: ${this.#name}] === BOUNDING BOX CALCULATION (Dataset + Backup Array) ===`, 'color: #FF6B6B; font-weight: bold; font-size: 14px');
+        console.log(`%cTotal src images found in DOM: ${imgElements.length}`, 'color: #4ECDC4; font-weight: bold');
+        console.log(`%cTotal src stored in #srcDimensions: ${this.#srcDimensions.length}`, 'color: #4ECDC4; font-weight: bold');
+
+        imgElements.forEach((img, idx) => {
+            const index = parseInt(img.dataset.index);
+            
+            console.group(`%csrc${index} - Dimension Lookup`, 'color: #95E1D3; font-weight: bold');
+            
+            // PRIMARY: Coba ambil dari dataset (sudah diset saat load)
+            let naturalWidth = img.dataset.naturalWidth ? parseInt(img.dataset.naturalWidth) : null;
+            let naturalHeight = img.dataset.naturalHeight ? parseInt(img.dataset.naturalHeight) : null;
+            
+            console.log(`%cFrom dataset:`, 'color: #FFD93D; font-weight: bold');
+            console.log(`  - naturalWidth: ${naturalWidth}px`);
+            console.log(`  - naturalHeight: ${naturalHeight}px`);
+            
+            // FALLBACK: Jika dataset kosong/0, cek #srcDimensions array
+            if (!naturalWidth || naturalWidth <= 0 || !naturalHeight || naturalHeight <= 0) {
+                if (this.#srcDimensions[index]) {
+                    naturalWidth = this.#srcDimensions[index].width;
+                    naturalHeight = this.#srcDimensions[index].height;
+                    console.log(`%c📌 Using #srcDimensions backup: ${naturalWidth}x${naturalHeight}`, 'color: #FF9900; font-weight: bold');
+                }
+            }
+            
+            // Gunakan dimensi jika valid
+            if (naturalWidth > 0 && naturalHeight > 0) {
+                totalMaxWidth = Math.max(totalMaxWidth, naturalWidth);
+                totalMaxHeight = Math.max(totalMaxHeight, naturalHeight);
+                foundSrcCount++;
+                console.log(`%c✅ ADDED: w=${naturalWidth}, h=${naturalHeight}`, 'color: #52B788; font-weight: bold');
+            } else {
+                console.log(`%c❌ SKIPPED: No valid dimensions available`, 'color: #FF6B6B; font-weight: bold');
+            }
+            
+            console.log(`%cAccumulated Max so far: ${totalMaxWidth}x${totalMaxHeight}`, 'color: #F38181; font-weight: bold');
+            console.groupEnd();
+        });
+
+        console.log(`%c═══════════════════════════════════`, 'color: #AA96DA');
+        console.log(`%cFinal Bounding Box: ${totalMaxWidth}x${totalMaxHeight}`, 'color: #AA96DA; font-weight: bold; font-size: 13px');
+        console.log(`%c✅ Srcs included: ${foundSrcCount}/${imgElements.length}`, 'color: #AA96DA');
+        console.log(`%c═══════════════════════════════════`, 'color: #AA96DA');
+        console.groupEnd();
+
+        return {
+            x: 0,
+            y: 0,
+            width: totalMaxWidth,
+            height: totalMaxHeight
+        };
+    }
+
+    #notifyParentUpdate() {
+        // Jika ini adalah child layer, beritahu parent untuk update bounds
+        if (this.#parentLayer) {
+            this.#parentLayer.#updateElement();
+        }
+    }
+
     #calculateGroupBounds() {
         // Hitung bounding box dari semua child layers
         let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -457,13 +586,6 @@ class Layer {
             width: Math.max(maxX - minX, 20), // Minimum width 20px
             height: Math.max(maxY - minY, 20) // Minimum height 20px
         };
-    }
-
-    #notifyParentUpdate() {
-        // Jika ini adalah child layer, beritahu parent untuk update bounds
-        if (this.#parentLayer) {
-            this.#parentLayer.#updateElement();
-        }
     }   
     
     #selectImage(index) {
@@ -496,8 +618,60 @@ class Layer {
     
         if (value) {
             this.element.classList.add('selected');
+            
+            // PENTING: Ketika layer di-select, hitung bounding box actual dari SEMUA img elements SEKALI SAJA
+            // Untuk outline selection agar mencakup semua src yang ada
+            if (this.#childLayers.length === 0) {
+                // Untuk non-group layers, calculate real bounding box dari semua src
+                // HANYA SATU KALI - JANGAN pernah recalculate sampai deselect
+                // Cache ini akan digunakan untuk stable outline saat layer bergerak
+                
+                const calculateAndCacheBoundsOnce = async () => {
+                    // Check jika sudah ada cache, jangan recalculate
+                    if (this.#cachedBoundingBox) {
+                        console.log(`%c[Layer: ${this.#name}] ℹ️  Using CACHED bounding box: ${this.#cachedBoundingBox.width}x${this.#cachedBoundingBox.height}`, 'color: #90EE90; font-size: 11px');
+                        return;
+                    }
+                    
+                    console.log(`%c[Layer: ${this.#name}] ⏳ WAITING for ALL src to load...`, 'color: #FFB84D; font-weight: bold; font-size: 12px');
+                    console.log(`%c   Total Promise pending: ${this.#srcLoadPromises.length}`, 'color: #FFB84D; font-size: 11px');
+                    
+                    // NATIVE APPROACH: Tunggu SEMUA Promise load sebelum hitung bounding box
+                    // Promise.allSettled untuk tidak error jika ada src yang gagal load
+                    try {
+                        await Promise.allSettled(this.#srcLoadPromises);
+                        console.log(`%c[Layer: ${this.#name}] ✅ ALL SRC LOADED - Now calculating bounding box...`, 'color: #6BCB77; font-weight: bold; font-size: 12px');
+                    } catch (e) {
+                        console.warn(`%c[Layer: ${this.#name}] ⚠️  Some src failed to load:`, 'color: #FFB84D; font-size: 11px', e);
+                    }
+                    
+                    const bounds = this.#calculateRealBoundingBox();
+                    
+                    // Cache bounding box agar TIDAK PERNAH BERUBAH LAGI
+                    this.#cachedBoundingBox = bounds;
+                    
+                    // Set element width/height ke bounding box max untuk outline
+                    // HANYA untuk styling outline selection, bukan mengubah actual width/height
+                    if (bounds.width > 0 && bounds.height > 0) {
+                        this.element.style.width = bounds.width + 'px';
+                        this.element.style.height = bounds.height + 'px';
+                        console.log(`%c[Layer: ${this.#name}] ✅ BOUNDING BOX LOCKED: ${bounds.width}x${bounds.height} (STABIL - tidak akan berubah)`, 'color: #4D96FF; font-weight: bold; font-size: 12px');
+                    } else {
+                        console.warn(`%c[Layer: ${this.#name}] ⚠️  Invalid bounds (0 dimensions): ${bounds.width}x${bounds.height}`, 'color: #FFB84D; font-weight: bold; font-size: 12px');
+                    }
+                };
+                
+                // Jalankan calculation dengan async/await - NATIVE, TIDAK ADA TIMEOUT!
+                calculateAndCacheBoundsOnce();
+            }
         } else {
             this.element.classList.remove('selected');
+            // Kembalikan ke width/height normal ketika deselect
+            this.element.style.width = this.#width + 'px';
+            this.element.style.height = this.#height + 'px';
+            // Clear cache ketika deselect
+            console.log(`%c[Layer: ${this.#name}] 🟢 DESELECTED - Cache cleared, ready for next selection`, 'color: #FF6B9D; font-size: 11px');
+            this.#cachedBoundingBox = null;
             this.#resetInputs(); // Panggil fungsi untuk membersihkan input
         }
     }
