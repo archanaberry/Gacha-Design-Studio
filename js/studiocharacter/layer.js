@@ -422,7 +422,7 @@ class Layer {
         } else {
             this.element.style.width = this.#width + 'px'; // Lebar
             this.element.style.height = this.#height + 'px'; // Tinggi
-            this.element.style.border = 'none';
+            // Jangan set border di sini, biarkan CSS .layer.selected yang mengatur outline/border
             this.element.style.pointerEvents = 'auto';
         }
     
