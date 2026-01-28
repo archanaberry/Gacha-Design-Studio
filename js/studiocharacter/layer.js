@@ -422,7 +422,7 @@ class Layer {
         } else {
             this.element.style.width = this.#width + 'px'; // Lebar
             this.element.style.height = this.#height + 'px'; // Tinggi
-            this.element.style.border = 'none';
+            // Jangan set border di sini, biarkan CSS .layer.selected yang mengatur outline/border
             this.element.style.pointerEvents = 'auto';
         }
     
@@ -944,8 +944,8 @@ class Layer {
                 ondragstart(e, this);
             };
 
-            this.element.addEventListener('mousedown', this.#ondragstart);
-            this.element.addEventListener('touchstart', this.#ondragstart);
+            this.element.addEventListener('mousedown', this.#ondragstart, { passive: false });
+            this.element.addEventListener('touchstart', this.#ondragstart, { passive: false });
         }
 
         // Add click handler untuk multi-select (jika function tersedia)

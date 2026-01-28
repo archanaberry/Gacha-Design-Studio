@@ -535,176 +535,117 @@ const splitterHeight = splitter ? splitter.offsetHeight : 0;
 // MULTI-TOUCH HANDLER UNTUK DRAG LAYER
 // ============================================================
 // Support unlimited touches (10+ jari) untuk mobile multidrag
-// Menggunakan centroid dari semua touch points untuk efisiensi maksimal
+// Setiap pointer (mouse/touch) berdiri sendiri, tidak saling mengganggu
 
-class LayerMultiTouchHandler {
-    constructor() {
-        this.activeTouches = new Map(); // Map<touchId, {x, y}>
-        this.dragStartCentroid = null;
-        this.isDragging = false;
-        this.activeFingerCount = 0;
+// Global drag state per pointer - Map<pointerId, {layer, lastX, lastY}>
+const multiDragState = new Map();
+
+/**
+ * Pointer down handler - start drag untuk pointer tertentu
+ * Setiap jari/pointer independent, bisa drag layer berbeda sekaligus
+ * @param {PointerEvent} e
+ * @param {Layer} layer
+ */
+function onlayerpointerdown(e, layer) {
+    // Abaikan right click atau middle click
+    if (e.button !== undefined && e.button !== 0) return;
+    
+    e.preventDefault();
+    
+    // Simpan drag state untuk pointer ini - independent per pointer
+    const pointerId = e.pointerId;
+    multiDragState.set(pointerId, {
+      layer: layer,
+      lastX: e.clientX,
+      lastY: e.clientY
+    });
+
+    // Visual feedback: tambah dragging class ke layer ini
+    if (layer.element) {
+      layer.element.classList.add('dragging');
+      // Saat drag, layer langsung menjadi selected (multi-select)
+      layer.element.classList.add('selected');
     }
+    // Multi-select: biarkan lebih dari satu layer bisa selected saat multidrag
+    // Jangan deselect layer lain di sini
+    // Click handler tetap handle single select jika tidak drag
+}
 
-    calculateCentroid() {
-        if (this.activeTouches.size === 0) return null;
-        
-        let sumX = 0, sumY = 0;
-        for (const pos of this.activeTouches.values()) {
-            sumX += pos.x;
-            sumY += pos.y;
-        }
-        
-        const count = this.activeTouches.size;
-        return {
-            x: sumX / count,
-            y: sumY / count,
-            touchCount: count
-        };
-    }
-
-    start(e, layer) {
-        this.activeTouches.clear();
-        this.isDragging = true;
-        
-        // Tangkap semua touches yang aktif
-        if (e.touches) {
-            for (let i = 0; i < e.touches.length; i++) {
-                const touch = e.touches[i];
-                const touchId = `touch_${touch.identifier}`;
-                this.activeTouches.set(touchId, {
-                    x: touch.clientX,
-                    y: touch.clientY
-                });
-            }
-        } else if (e.type === 'mousedown') {
-            // Mouse fallback
-            this.activeTouches.set('mouse_primary', {
-                x: e.clientX,
-                y: e.clientY
-            });
-        }
-        
-        this.dragStartCentroid = this.calculateCentroid();
-        if (!this.dragStartCentroid) return false;
-        
-        this.activeFingerCount = this.activeTouches.size;
-        selectLayer(layer);
-        return true;
-    }
-
-    move(e) {
-        if (!this.isDragging || !this.dragStartCentroid) return false;
-
-        // Update positions dari touches yang aktif
-        if (e.touches) {
-            for (let i = 0; i < e.touches.length; i++) {
-                const touch = e.touches[i];
-                const touchId = `touch_${touch.identifier}`;
-                if (this.activeTouches.has(touchId)) {
-                    this.activeTouches.set(touchId, {
-                        x: touch.clientX,
-                        y: touch.clientY
-                    });
-                }
-            }
-        } else if (e.type === 'mousemove') {
-            this.activeTouches.set('mouse_primary', {
-                x: e.clientX,
-                y: e.clientY
-            });
-        }
-
-        const currentCentroid = this.calculateCentroid();
-        if (!currentCentroid) return false;
-
-        // Hitung delta dari start centroid
-        const dx = currentCentroid.x - this.dragStartCentroid.x;
-        const dy = currentCentroid.y - this.dragStartCentroid.y;
-
-        if (selected) {
-            selected.x += dx;
-            selected.y += dy;
-            updateCoordInput();
-            
-            // Update start centroid untuk next delta calculation
-            this.dragStartCentroid = currentCentroid;
-        }
-
-        return true;
-    }
-
-    end(e) {
-        if (!this.isDragging) return;
-        
-        // Remove touches yang berakhir
-        if (e.changedTouches) {
-            for (let i = 0; i < e.changedTouches.length; i++) {
-                const touch = e.changedTouches[i];
-                const touchId = `touch_${touch.identifier}`;
-                this.activeTouches.delete(touchId);
-            }
-        } else {
-            this.activeTouches.delete('mouse_primary');
-        }
-
-        // Jika semua touches selesai
-        if (this.activeTouches.size === 0) {
-            this.isDragging = false;
-            this.dragStartCentroid = null;
-            this.activeFingerCount = 0;
-        }
-
-        return !this.isDragging;
-    }
-
-    getTouchCount() {
-        return this.activeTouches.size;
-    }
-
-    cancel() {
-        this.activeTouches.clear();
-        this.isDragging = false;
-        this.dragStartCentroid = null;
-        this.activeFingerCount = 0;
+/**
+ * Pointer move handler - update position untuk pointer tertentu
+ * Berjalan di window agar bisa track pointer di luar layer
+ */
+function onlayerpointermove(e) {
+    const pointerId = e.pointerId;
+    
+    // Skip jika pointer ini tidak sedang drag
+    if (!multiDragState.has(pointerId)) return;
+    
+    const dragInfo = multiDragState.get(pointerId);
+    const { layer, lastX, lastY } = dragInfo;
+    
+    // Hitung delta pergerakan
+    const dx = e.clientX - lastX;
+    const dy = e.clientY - lastY;
+    
+    // Update position layer
+    layer.x += dx;
+    layer.y += dy;
+    
+    // Update last position untuk next move event
+    dragInfo.lastX = e.clientX;
+    dragInfo.lastY = e.clientY;
+    
+    // Update coordinate input jika layer ini yang selected
+    if (selected === layer) {
+        updateCoordInput?.();
     }
 }
 
-// Create instance
-const layerTouchHandler = new LayerMultiTouchHandler();
+/**
+ * Pointer up/cancel handler - end drag untuk pointer tertentu
+ */
+function onlayerpointerup(e) {
+    const pointerId = e.pointerId;
+    
+    // Skip jika pointer ini tidak sedang drag
+    if (!multiDragState.has(pointerId)) return;
+    
+    const dragInfo = multiDragState.get(pointerId);
+    
+    // Remove dragging class
+    if (dragInfo.layer.element) {
+      dragInfo.layer.element.classList.remove('dragging');
+      // Cek apakah masih ada pointer lain yang drag layer ini
+      const stillDragging = Array.from(multiDragState.values()).some(state => state.layer === dragInfo.layer);
+      if (!stillDragging) {
+        // Hanya hapus selected jika tidak ada pointer lain yang drag layer ini
+        dragInfo.layer.element.classList.remove('selected');
+      }
+    }
+    // Delete drag state untuk pointer ini
+    multiDragState.delete(pointerId);
+}
 
 /**
+ * @deprecated - diganti dengan pointer event yang support 10+ touches
  * @param {Event} e
  * @param {Layer} layer 
  */
 function onlayerdragstart(e, layer) {
-    // Mulai multi-touch tracking
-    if (!layerTouchHandler.start(e, layer)) return;
-
-    // Attach event listeners untuk tracking semua touches
-    document.addEventListener('mousemove', onlayerdrag, { passive: false });
-    document.addEventListener('mouseup', onlayerdragend, { passive: false });
-    document.addEventListener('touchmove', onlayerdrag, { passive: false });
-    document.addEventListener('touchend', onlayerdragend, { passive: false });
-    document.addEventListener('touchcancel', onlayerdragend, { passive: false });
-    
-    e.preventDefault?.();
+    // Backward compatibility: panggil pointer handler untuk mouse/touch
+    // Pointer event API otomatis handle mouse, touch, pen dengan pointerId
+    onlayerpointerdown(e, layer);
 }
 
 function onlayerdrag(e) {
-    layerTouchHandler.move(e);
-    e.preventDefault?.();
+    // Backward compatibility
+    onlayerpointermove(e);
 }
 
 function onlayerdragend(e) {
-    // Jika masih ada touches aktif, jangan cleanup
-    if (!layerTouchHandler.end(e)) return;
-
-    // Cleanup event listeners hanya ketika semua touches selesai
-    document.removeEventListener('mousemove', onlayerdrag);
-    document.removeEventListener('mouseup', onlayerdragend);
-    document.removeEventListener('touchmove', onlayerdrag);
-    document.removeEventListener('touchend', onlayerdragend);
-    document.removeEventListener('touchcancel', onlayerdragend);
+    // Backward compatibility
+    onlayerpointerup(e);
 }
 
 
@@ -740,10 +681,28 @@ document.addEventListener('DOMContentLoaded', function() {
     // Pasang layer ke container ketika halaman selesai dimuat
     const container = document.getElementById('panel1') || document.querySelector('.container');
     for (const layer of layers) {
-        layer.attach(container, onlayerdragstart);
+        layer.attach(container, null); // Jangan pasang drag handler di attach, pasang manual di bawah
+        
+        // Pasang pointer event handler untuk multi-drag support (10+ jari)
+        if (layer.element) {
+            // Set touch-action: none untuk prevent default browser behavior
+            layer.element.style.touchAction = 'none';
+            
+            // Pointer down handler - bisa mouse/touch/pen dengan pointerId
+            layer.element.addEventListener('pointerdown', function(e) {
+                onlayerpointerdown(e, layer);
+            }, { passive: false });
+        }
+        
         // Tambah click handler untuk multi-select support
         addLayerClickHandler(layer);
     }
+    
+    // Pasang window-level pointer event handler untuk tracking movement dan release
+    // Ini berjalan di document level agar bisa track pointer di luar layer
+    window.addEventListener('pointermove', onlayerpointermove, { passive: false });
+    window.addEventListener('pointerup', onlayerpointerup, { passive: false });
+    window.addEventListener('pointercancel', onlayerpointerup, { passive: false });
 
     // Initialize zoom input
     const zoomInput = document.getElementById('zoomInput');
@@ -949,6 +908,38 @@ function selectLayer(layer) {
             console.log('selectLayer: Is text layer, syncing input');
             window.textShapeManager.syncTextInputFromLayer(layer);
         } else {
+    // Tambahkan drag support pada item di panel2 (menulayer)
+    // Agar drag pada teks/shape di panel2 tetap menggerakkan layer aslinya di panel1
+    const menulayerContainer = document.getElementById('menulayerContainer');
+    if (menulayerContainer) {
+      menulayerContainer.addEventListener('pointerdown', function(e) {
+        // Cari item yang diklik
+        const item = e.target.closest('.menulayer-item');
+        if (!item) return;
+        // Cari nama layer dari item
+        const nameEl = item.querySelector('.menulayer-name');
+        if (!nameEl) return;
+        const layerName = nameEl.textContent;
+        // Temukan layer aslinya
+        const layer = layers.find(l => l.name === layerName);
+        if (!layer) return;
+        // Forward drag ke layer aslinya di panel1
+        // Buat event pointerdown baru di posisi mouse/touch user
+        const pointerEvent = new PointerEvent('pointerdown', {
+          pointerId: e.pointerId,
+          clientX: e.clientX,
+          clientY: e.clientY,
+          button: e.button,
+          buttons: e.buttons,
+          pointerType: e.pointerType,
+          bubbles: true,
+          cancelable: true
+        });
+        layer.element.dispatchEvent(pointerEvent);
+        // Prevent default agar tidak bentrok dengan seleksi
+        e.preventDefault();
+      }, { passive: false });
+    }
             console.log('selectLayer: Not a text layer, resetting to create mode');
             window.textShapeManager.resetToCreateMode();
         }

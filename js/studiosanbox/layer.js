@@ -338,8 +338,8 @@ class Layer {
                 ondragstart(e, this);
             };
 
-            this.element.addEventListener('mousedown', this.#ondragstart);
-            this.element.addEventListener('touchstart', this.#ondragstart);
+            this.element.addEventListener('mousedown', this.#ondragstart, { passive: false });
+            this.element.addEventListener('touchstart', this.#ondragstart, { passive: false });
         }
 
         // Inisialisasi child layers
