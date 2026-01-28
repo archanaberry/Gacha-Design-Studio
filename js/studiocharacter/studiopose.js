@@ -543,38 +543,48 @@ class LayerMultiTouchHandler {
         this.dragStartCentroid = null;
         this.isDragging = false;
         this.activeFingerCount = 0;
+        this.lastValidCentroid = null;
     }
 
     calculateCentroid() {
         if (this.activeTouches.size === 0) return null;
         
         let sumX = 0, sumY = 0;
+        let validCount = 0;
+        
         for (const pos of this.activeTouches.values()) {
-            sumX += pos.x;
-            sumY += pos.y;
+            if (pos && typeof pos.x === 'number' && typeof pos.y === 'number') {
+                sumX += pos.x;
+                sumY += pos.y;
+                validCount++;
+            }
         }
         
-        const count = this.activeTouches.size;
+        if (validCount === 0) return null;
+        
         return {
-            x: sumX / count,
-            y: sumY / count,
-            touchCount: count
+            x: sumX / validCount,
+            y: sumY / validCount,
+            touchCount: validCount
         };
     }
 
     start(e, layer) {
+        // Clear old touches jika ada
         this.activeTouches.clear();
         this.isDragging = true;
         
-        // Tangkap semua touches yang aktif
-        if (e.touches) {
+        // Tangkap SEMUA touches yang aktif saat ini
+        if (e.touches && e.touches.length > 0) {
             for (let i = 0; i < e.touches.length; i++) {
                 const touch = e.touches[i];
-                const touchId = `touch_${touch.identifier}`;
-                this.activeTouches.set(touchId, {
-                    x: touch.clientX,
-                    y: touch.clientY
-                });
+                if (touch && touch.identifier !== undefined) {
+                    const touchId = `touch_${touch.identifier}`;
+                    this.activeTouches.set(touchId, {
+                        x: touch.clientX,
+                        y: touch.clientY
+                    });
+                }
             }
         } else if (e.type === 'mousedown') {
             // Mouse fallback
@@ -585,7 +595,12 @@ class LayerMultiTouchHandler {
         }
         
         this.dragStartCentroid = this.calculateCentroid();
-        if (!this.dragStartCentroid) return false;
+        this.lastValidCentroid = this.dragStartCentroid ? { ...this.dragStartCentroid } : null;
+        
+        if (!this.dragStartCentroid) {
+            this.isDragging = false;
+            return false;
+        }
         
         this.activeFingerCount = this.activeTouches.size;
         selectLayer(layer);
@@ -595,12 +610,13 @@ class LayerMultiTouchHandler {
     move(e) {
         if (!this.isDragging || !this.dragStartCentroid) return false;
 
-        // Update positions dari touches yang aktif
-        if (e.touches) {
+        // Update positions dari SEMUA touches yang aktif
+        if (e.touches && e.touches.length > 0) {
+            // Update existing touches dan tambah touches baru
             for (let i = 0; i < e.touches.length; i++) {
                 const touch = e.touches[i];
-                const touchId = `touch_${touch.identifier}`;
-                if (this.activeTouches.has(touchId)) {
+                if (touch && touch.identifier !== undefined) {
+                    const touchId = `touch_${touch.identifier}`;
                     this.activeTouches.set(touchId, {
                         x: touch.clientX,
                         y: touch.clientY
@@ -617,44 +633,57 @@ class LayerMultiTouchHandler {
         const currentCentroid = this.calculateCentroid();
         if (!currentCentroid) return false;
 
-        // Hitung delta dari start centroid
-        const dx = currentCentroid.x - this.dragStartCentroid.x;
-        const dy = currentCentroid.y - this.dragStartCentroid.y;
+        // Hitung delta dari last valid centroid (bukan dari start)
+        const dx = currentCentroid.x - this.lastValidCentroid.x;
+        const dy = currentCentroid.y - this.lastValidCentroid.y;
 
+        // Update layer position
         if (selected) {
             selected.x += dx;
             selected.y += dy;
-            updateCoordInput();
-            
-            // Update start centroid untuk next delta calculation
-            this.dragStartCentroid = currentCentroid;
+            updateCoordInput?.();
         }
-
+        
+        // Update last valid centroid untuk next move event
+        this.lastValidCentroid = { ...currentCentroid };
+        
         return true;
     }
 
     end(e) {
-        if (!this.isDragging) return;
+        if (!this.isDragging) return true;
         
         // Remove touches yang berakhir
-        if (e.changedTouches) {
+        if (e.changedTouches && e.changedTouches.length > 0) {
             for (let i = 0; i < e.changedTouches.length; i++) {
                 const touch = e.changedTouches[i];
-                const touchId = `touch_${touch.identifier}`;
-                this.activeTouches.delete(touchId);
+                if (touch && touch.identifier !== undefined) {
+                    const touchId = `touch_${touch.identifier}`;
+                    this.activeTouches.delete(touchId);
+                }
             }
-        } else {
+        } else if (e.type === 'mouseup') {
             this.activeTouches.delete('mouse_primary');
         }
 
-        // Jika semua touches selesai
-        if (this.activeTouches.size === 0) {
-            this.isDragging = false;
-            this.dragStartCentroid = null;
-            this.activeFingerCount = 0;
+        // Jika masih ada touches aktif, continue drag
+        if (this.activeTouches.size > 0) {
+            // Update centroid dengan touches yang tersisa
+            const remaining = this.calculateCentroid();
+            if (remaining) {
+                this.dragStartCentroid = { ...remaining };
+                this.lastValidCentroid = { ...remaining };
+            }
+            return false; // Masih dragging
         }
 
-        return !this.isDragging;
+        // Semua touches selesai - cleanup
+        this.isDragging = false;
+        this.dragStartCentroid = null;
+        this.lastValidCentroid = null;
+        this.activeFingerCount = 0;
+
+        return true; // Drag selesai
     }
 
     getTouchCount() {
@@ -665,6 +694,7 @@ class LayerMultiTouchHandler {
         this.activeTouches.clear();
         this.isDragging = false;
         this.dragStartCentroid = null;
+        this.lastValidCentroid = null;
         this.activeFingerCount = 0;
     }
 }
@@ -677,25 +707,34 @@ const layerTouchHandler = new LayerMultiTouchHandler();
  * @param {Layer} layer 
  */
 function onlayerdragstart(e, layer) {
+    // PENTING: preventDefault harus di awal untuk touchstart
+    if (e.type === 'touchstart' || e.touches) {
+        e.preventDefault?.();
+    }
+    
     // Mulai multi-touch tracking
     if (!layerTouchHandler.start(e, layer)) return;
 
-    // Attach event listeners untuk tracking semua touches
-    document.addEventListener('mousemove', onlayerdrag, { passive: false });
-    document.addEventListener('mouseup', onlayerdragend, { passive: false });
-    document.addEventListener('touchmove', onlayerdrag, { passive: false });
-    document.addEventListener('touchend', onlayerdragend, { passive: false });
-    document.addEventListener('touchcancel', onlayerdragend, { passive: false });
-    
-    e.preventDefault?.();
+    // Attach event listeners untuk tracking semua touches dengan passive: false
+    document.addEventListener('mousemove', onlayerdrag, { passive: false, capture: false });
+    document.addEventListener('mouseup', onlayerdragend, { passive: false, capture: false });
+    document.addEventListener('touchmove', onlayerdrag, { passive: false, capture: false });
+    document.addEventListener('touchend', onlayerdragend, { passive: false, capture: false });
+    document.addEventListener('touchcancel', onlayerdragend, { passive: false, capture: false });
 }
 
 function onlayerdrag(e) {
+    if (e.type === 'touchmove' || e.touches) {
+        e.preventDefault?.();
+    }
     layerTouchHandler.move(e);
-    e.preventDefault?.();
 }
 
 function onlayerdragend(e) {
+    if (e.type === 'touchend' || e.type === 'touchcancel' || e.changedTouches) {
+        e.preventDefault?.();
+    }
+    
     // Jika masih ada touches aktif, jangan cleanup
     if (!layerTouchHandler.end(e)) return;
 
