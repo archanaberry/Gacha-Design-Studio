@@ -47,6 +47,8 @@ if (!window.splitterInstance) {
 if (splitterEl && panel1El && panel2El) {
     const splitterHeight = splitterEl.offsetHeight;
     let isDragging = false;
+    // track touch identifier untuk multi-touch support
+    let splitterTouchId = null;
 
     function resizePanel(pointerY) {
         let newHeight = (pointerY - splitterHeight / 2) / window.innerHeight * 100;
@@ -70,8 +72,20 @@ if (splitterEl && panel1El && panel2El) {
      */
     function onTouchMove(e) {
         if (!isDragging) return;
-        if (e.touches && e.touches.length > 0) {
-            resizePanel(e.touches[0].clientY);
+        // cari touch dengan identifier yang memulai drag (fallback ke first touch)
+        let touch = null;
+        if (splitterTouchId !== null && e.touches) {
+            for (let i = 0; i < e.touches.length; i++) {
+                if (e.touches[i].identifier === splitterTouchId) {
+                    touch = e.touches[i];
+                    break;
+                }
+            }
+        }
+        if (!touch && e.touches && e.touches.length > 0) touch = e.touches[0];
+        if (touch) {
+            resizePanel(touch.clientY);
+            e.preventDefault();
         }
     }
 
@@ -97,16 +111,44 @@ if (splitterEl && panel1El && panel2El) {
      * @param {TouchEvent} e 
      */
     function onTouchEnd(e) {
+        // Hanya hentikan jika touch yang berakhir adalah yang memulai drag
+        if (e && e.changedTouches && e.changedTouches.length > 0 && splitterTouchId !== null) {
+            let matched = false;
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                if (e.changedTouches[i].identifier === splitterTouchId) {
+                    matched = true;
+                    break;
+                }
+            }
+            if (!matched) return; // ignore
+        }
+
         isDragging = false;
+        splitterTouchId = null;
         document.removeEventListener('touchmove', onTouchMove);
         document.removeEventListener('touchend', onTouchEnd);
+        document.removeEventListener('touchcancel', onTouchEnd);
     }
 
     // Event listener untuk mengatur perangkat sentuh
     splitterEl.addEventListener('touchstart', function(e) {
+        // If layer-drag is active, do not start splitter drag with another touch
+        let startId = null;
+        if (e.changedTouches && e.changedTouches.length > 0) startId = e.changedTouches[0].identifier;
+        if (startId !== null && window.touchDragActive && window.touchDragId !== null && window.touchDragId !== startId) {
+            return; // ignore
+        }
+
         isDragging = true;
+        // simpan touch identifier
+        if (e.changedTouches && e.changedTouches.length > 0) {
+            splitterTouchId = e.changedTouches[0].identifier;
+        } else {
+            splitterTouchId = null;
+        }
         document.addEventListener('touchmove', onTouchMove, { passive: false });
         document.addEventListener('touchend', onTouchEnd);
+        document.addEventListener('touchcancel', onTouchEnd);
     });
 
     // Event listener untuk mouse

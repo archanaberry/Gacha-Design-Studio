@@ -213,14 +213,7 @@ class TextShapeManager {
         // Attach to panel1
         const container = document.getElementById('panel1') || document.querySelector('.container');
         if (container) {
-            // Attach pointer event handler agar textshape bisa didrag
-            if (typeof onlayerdragstart === 'function') {
-                textLayer.attach(container, onlayerdragstart);
-            } else if (window.onlayerdragstart) {
-                textLayer.attach(container, window.onlayerdragstart);
-            } else {
-                textLayer.attach(container, null);
-            }
+            textLayer.attach(container, window.onlayerdragstart || null);
             // Add click handler if available
             if (typeof addLayerClickHandler === 'function') {
                 addLayerClickHandler(textLayer);

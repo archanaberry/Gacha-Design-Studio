@@ -53,10 +53,80 @@
         });
       }
     }
-  // Pastikan History tersedia
-  if (typeof window.HistoryManager === 'undefined') {
-    console.warn('HistoryManager not loaded yet');
-  }
+
+  // Global click handler (install once) - handle ctrl+click toggle, single select, and deselect outside panels
+  document.addEventListener('click', function(e) {
+    const isCtrl = e.ctrlKey || e.metaKey;
+    const panel1 = document.getElementById('panel1');
+    const panel2 = document.getElementById('panel2');
+    const panel3 = document.getElementById('panel3');
+    const splitter = document.getElementById('splitter');
+
+    // If click is inside panel1
+    if (panel1 && panel1.contains(e.target)) {
+      const layerEl = e.target.closest('.layer');
+
+      if (layerEl) {
+        // Layer clicked
+        const layer = typeof layers !== 'undefined' ? layers.find(l => l.element === layerEl) : null;
+        if (!layer) return;
+
+        if (isCtrl) {
+          // Toggle selection (multi-select)
+          toggleLayerSelection(layer);
+
+          // Update global selected reference - set to last toggled-on layer
+          if (layer.element.classList.contains('selected')) {
+            window.selected = layer;
+          } else if (window.selected === layer) {
+            // If we just untoggled the active selected, fallback to another selected or null
+            const remaining = document.querySelector('.layer.selected, .layer-group.selected');
+            if (remaining) {
+              const remainingLayer = layers.find(l => l.element === remaining);
+              window.selected = remainingLayer || null;
+            } else {
+              window.selected = null;
+            }
+          }
+
+          // Sync menu/framework visuals for multi-select if helpers exist
+          if (typeof updateMenuLayerSelectionForMultiSelect === 'function') updateMenuLayerSelectionForMultiSelect();
+          if (typeof syncMultiSelectToFramework === 'function') syncMultiSelectToFramework();
+
+          // Update layerName input to reflect new multi-selection
+          if (typeof window.updateLayerNameInputFromSelection === 'function') window.updateLayerNameInputFromSelection();
+
+          e.stopPropagation();
+          return;
+        } else {
+          // Single select - use existing selectLayer logic to keep consistency
+          if (typeof selectLayer === 'function') selectLayer(layer);
+          // Update layerName input after selecting
+          if (typeof window.updateLayerNameInputFromSelection === 'function') window.updateLayerNameInputFromSelection();
+          e.stopPropagation();
+          return;
+        }
+      } else {
+        // Click on empty area inside panel1 => deselect all
+        if (typeof deselectAllLayers === 'function') deselectAllLayers();
+        if (typeof syncDeselectionAcrossAllPanels === 'function') syncDeselectionAcrossAllPanels();        if (typeof window.updateLayerNameInputFromSelection === 'function') window.updateLayerNameInputFromSelection();        e.stopPropagation();
+        return;
+      }
+    }
+
+    // Click outside panel1/panel2/panel3/splitter => deselect
+    if (
+      !(panel1 && panel1.contains(e.target)) &&
+      !(panel2 && panel2.contains(e.target)) &&
+      !(panel3 && panel3.contains(e.target)) &&
+      !(splitter && splitter.contains(e.target))
+    ) {
+      if (typeof deselectAllLayers === 'function') deselectAllLayers();
+      if (typeof syncDeselectionAcrossAllPanels === 'function') syncDeselectionAcrossAllPanels();
+      if (typeof window.updateLayerNameInputFromSelection === 'function') window.updateLayerNameInputFromSelection();
+      return;
+    }
+  }, false);
 
   // Handle all keyboard shortcuts
   document.addEventListener('keydown', function(e) {
@@ -74,58 +144,7 @@
       selectAllLayers();
       return;
     }
-      // Multi-select via ctrl+click di panel1
-      document.addEventListener('click', function(e) {
-        const isCtrl = e.ctrlKey || e.metaKey;
-        const panel1 = document.getElementById('panel1');
-        const panel2 = document.getElementById('panel2');
-        const panel3 = document.getElementById('panel3');
-        const splitter = document.getElementById('splitter');
-        // Jika klik di layer di panel1 dan ctrl, toggle selection
-        if (panel1 && panel1.contains(e.target)) {
-          const layerEl = e.target.closest('.layer');
-          if (layerEl && isCtrl) {
-            // Cari layer dari element
-            if (typeof layers !== 'undefined') {
-              const layer = layers.find(l => l.element === layerEl);
-              toggleLayerSelection(layer);
-            }
-            e.stopPropagation();
-            return;
-          }
-          // Jika klik di layer tanpa ctrl, single select
-          if (layerEl && !isCtrl) {
-            if (typeof layers !== 'undefined') {
-              layers.forEach(l => {
-                if (l.element === layerEl) {
-                  l.element.classList.add('selected');
-                  l.selected = true;
-                } else {
-                  l.element.classList.remove('selected');
-                  l.selected = false;
-                }
-              });
-            }
-            e.stopPropagation();
-            return;
-          }
-          // Jika klik di panel1 tapi bukan layer, deselect all
-          if (!layerEl) {
-            deselectAllLayers();
-            e.stopPropagation();
-            return;
-          }
-        }
-        // Jika klik di luar panel1, panel2, panel3, splitter, deselect all
-        if (
-          !(panel1 && panel1.contains(e.target)) &&
-          !(panel2 && panel2.contains(e.target)) &&
-          !(panel3 && panel3.contains(e.target)) &&
-          !(splitter && splitter.contains(e.target))
-        ) {
-          deselectAllLayers();
-        }
-      }, true);
+
     
     // ============================================
     // Ctrl+Z: Undo
@@ -259,6 +278,34 @@
         }
       }
       return;
+    }
+
+    // ============================================
+    // Delete / Ctrl+Del / Ctrl+Shift+Del handling
+    // ============================================
+    if (!isInput && e.key === 'Delete') {
+      e.preventDefault();
+      // Ctrl+Shift+Del => ungroup inner children (ungroupSelectedLayer)
+      if (isCtrl && e.shiftKey) {
+        if (typeof ungroupSelectedLayer === 'function') {
+          ungroupSelectedLayer();
+        }
+        return;
+      }
+      // Ctrl+Del => ungroup src into separate layers
+      if (isCtrl && !e.shiftKey) {
+        if (typeof ungroupSrcLayers === 'function') {
+          ungroupSrcLayers();
+        }
+        return;
+      }
+      // Just Delete => remove selected
+      if (!isCtrl && !e.shiftKey) {
+        if (typeof deleteSelectedLayer === 'function') {
+          deleteSelectedLayer();
+        }
+        return;
+      }
     }
 
     // ============================================

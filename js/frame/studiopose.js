@@ -332,6 +332,8 @@
         const panel1 = document.getElementById('panel1');
         const mainContainer = document.getElementById('mainContainer');
         let isDraggingH = false;
+        // Track touch identifier to support multi-touch devices (multiple fingers)
+        let currentTouchId = null;
 
         if (splitterH && mainContainer) {
             splitterH.addEventListener('mousedown', function(e) {
@@ -342,8 +344,15 @@
 
             splitterH.addEventListener('touchstart', function(e) {
                 isDraggingH = true;
+                // store the touch identifier that started the drag so we can follow it
+                if (e.changedTouches && e.changedTouches.length > 0) {
+                    currentTouchId = e.changedTouches[0].identifier;
+                } else {
+                    currentTouchId = null;
+                }
                 document.addEventListener('touchmove', handleHorizontalDrag, { passive: false });
                 document.addEventListener('touchend', stopHorizontalDrag);
+                document.addEventListener('touchcancel', stopHorizontalDrag);
             });
 
             function handleHorizontalDrag(e) {
@@ -351,8 +360,22 @@
                 
                 let clientX;
                 if (e.touches && e.touches.length > 0) {
-                    clientX = e.touches[0].clientX;
-                } else if (e.clientX) {
+                    // find the touch that matches the one that started the drag (by identifier)
+                    let touch = null;
+                    if (currentTouchId !== null) {
+                        for (let i = 0; i < e.touches.length; i++) {
+                            if (e.touches[i].identifier === currentTouchId) {
+                                touch = e.touches[i];
+                                break;
+                            }
+                        }
+                    }
+                    // fallback to first touch if the original id isn't present
+                    if (!touch) touch = e.touches[0];
+                    clientX = touch.clientX;
+                    // prevent scrolling while dragging on touch devices
+                    e.preventDefault();
+                } else if (e.clientX != null) {
                     clientX = e.clientX;
                 } else {
                     return;
@@ -372,12 +395,26 @@
                 }
             }
 
-            function stopHorizontalDrag() {
+            function stopHorizontalDrag(e) {
+                // Jika ini touchend, pastikan menyangkut touch yang memulai drag
+                if (e && e.changedTouches && e.changedTouches.length > 0 && currentTouchId !== null) {
+                    let matched = false;
+                    for (let i = 0; i < e.changedTouches.length; i++) {
+                        if (e.changedTouches[i].identifier === currentTouchId) {
+                            matched = true;
+                            break;
+                        }
+                    }
+                    if (!matched) return; // ignore touchend from other fingers
+                }
+
                 isDraggingH = false;
+                currentTouchId = null;
                 document.removeEventListener('mousemove', handleHorizontalDrag);
                 document.removeEventListener('mouseup', stopHorizontalDrag);
                 document.removeEventListener('touchmove', handleHorizontalDrag);
                 document.removeEventListener('touchend', stopHorizontalDrag);
+                document.removeEventListener('touchcancel', stopHorizontalDrag);
                 
                 // If panel3 width is 0, hide it completely
                 if (panel3.offsetWidth < 10) {
@@ -386,6 +423,84 @@
                     // Allow panel1 to grow unlimited when panel3 is completely hidden
                     panel1.style.minHeight = 'auto';
                 }
+            }
+        }
+    });
+
+    // ========== LISTEN FOR PARENT MESSAGES (UPDATE INPUTS) ==========
+    window.addEventListener('message', function(event) {
+        console.log('🔔 Message received in iframe:', event.data?.type || 'unknown', event.data);
+        
+        if (event.data && event.data.type === 'updateLayerInputs') {
+            const data = event.data;
+            console.log('📥 Received updateLayerInputs from parent:', data);
+            
+            // Update layer name input
+            const layerNameInput = document.getElementById('layerName');
+            console.log('layerNameInput element:', layerNameInput ? '✓ found' : '✗ NOT FOUND');
+            if (layerNameInput && data.layerName !== undefined) {
+                layerNameInput.value = data.layerName;
+                console.log('✓ Updated layerName to:', data.layerName);
+            } else {
+                console.log('✗ Failed: layerNameInput=' + (layerNameInput ? 'ok' : 'null') + ', data.layerName=' + data.layerName);
+            }
+            
+            // Update coordinate inputs
+            const xCoordInput = document.getElementById('xCoord');
+            if (xCoordInput && data.xCoord !== undefined) {
+                xCoordInput.value = data.xCoord;
+            }
+            
+            const yCoordInput = document.getElementById('yCoord');
+            if (yCoordInput && data.yCoord !== undefined) {
+                yCoordInput.value = data.yCoord;
+            }
+            
+            // Update size inputs
+            const widthInput = document.getElementById('width');
+            console.log('widthInput element:', widthInput ? '✓ found' : '✗ NOT FOUND', 'value:', data.width);
+            if (widthInput && data.width !== undefined) {
+                widthInput.value = data.width;
+                console.log('✓ Updated width to:', data.width);
+            }
+            
+            const heightInput = document.getElementById('height');
+            console.log('heightInput element:', heightInput ? '✓ found' : '✗ NOT FOUND', 'value:', data.height);
+            if (heightInput && data.height !== undefined) {
+                heightInput.value = data.height;
+                console.log('✓ Updated height to:', data.height);
+            }
+            
+            // Update scale input
+            const scaleInput = document.getElementById('scale');
+            console.log('scaleInput element:', scaleInput ? '✓ found' : '✗ NOT FOUND', 'value:', data.scale);
+            if (scaleInput && data.scale !== undefined) {
+                scaleInput.value = data.scale;
+                console.log('✓ Updated scale to:', data.scale);
+            }
+            
+            // Update rotation
+            const rotationControl = document.getElementById('rotationControl');
+            if (rotationControl && data.rotation !== undefined) {
+                rotationControl.value = data.rotation;
+                console.log('✓ Updated rotation to:', data.rotation);
+            }
+            
+            // Update skew inputs
+            const skewXControl = document.getElementById('skewXControl');
+            const skewXSlider = document.getElementById('skewXSlider');
+            if (data.skewX !== undefined) {
+                if (skewXControl) skewXControl.value = data.skewX;
+                if (skewXSlider) skewXSlider.value = data.skewX;
+                console.log('✓ Updated skewX to:', data.skewX);
+            }
+            
+            const skewYControl = document.getElementById('skewYControl');
+            const skewYSlider = document.getElementById('skewYSlider');
+            if (data.skewY !== undefined) {
+                if (skewYControl) skewYControl.value = data.skewY;
+                if (skewYSlider) skewYSlider.value = data.skewY;
+                console.log('✓ Updated skewY to:', data.skewY);
             }
         }
     });
