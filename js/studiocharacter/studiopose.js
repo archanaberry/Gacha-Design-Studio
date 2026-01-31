@@ -1973,16 +1973,27 @@ function resetStudio() {
 }
 
 /**
- * Konfirmasi reset studio - refresh halaman
+ * Konfirmasi reset studio - reset center origin, kemudian refresh halaman
  */
 function confirmResetStudio() {
-  console.log('Resetting studio...');
+  console.log('🔄 Resetting studio...');
+  
+  // Reset center origin dulu sebelum reload
+  if (typeof resetCenterOrigin === 'function') {
+    resetCenterOrigin();
+    console.log('✅ Center origin reset before reload');
+  }
+  
   // Close the dialog window
   if (window.__resetWindowId) {
     window.closeWindow(window.__resetWindowId);
   }
-  // Refresh halaman untuk re-init semua
-  window.location.reload();
+  
+  // Small delay to ensure reset completes
+  setTimeout(() => {
+    // Refresh halaman untuk re-init semua
+    window.location.reload();
+  }, 100);
 }
 
 /**

@@ -107,14 +107,17 @@ function handleZoom(value) {
         const scale = zoomValue / 100; // 100% = scale 1
         layerContainer.dataset.scale = scale;
         
+        // FIXED: Always maintain translate(-50%, -50%) for proper centering
         // Preserve center origin translate jika aktif
         const isCenterOriginActive = layerContainer.dataset.centerOriginActive === 'true';
         if (isCenterOriginActive) {
             const centerOffsetX = parseFloat(layerContainer.dataset.centerOffsetX) || 0;
             const centerOffsetY = parseFloat(layerContainer.dataset.centerOffsetY) || 0;
-            layerContainer.style.transform = `translate(-${centerOffsetX}px, -${centerOffsetY}px) scale(${scale})`;
+            // FIXED: Combine center positioning with center origin offset
+            layerContainer.style.transform = `translate(calc(-50% - ${centerOffsetX}px), calc(-50% - ${centerOffsetY}px)) scale(${scale})`;
         } else {
-            layerContainer.style.transform = `scale(${scale})`;
+            // FIXED: ALWAYS use translate(-50%, -50%) for robust centering
+            layerContainer.style.transform = `translate(-50%, -50%) scale(${scale})`;
         }
         
         // Gambar guide canvas jika zoom <100%
@@ -145,14 +148,17 @@ function handleZoomInput(value) {
         const scale = zoomValue / 100; // 100% = scale 1
         layerContainer.dataset.scale = scale;
         
+        // FIXED: Always maintain translate(-50%, -50%) for proper centering
         // Preserve center origin translate jika aktif
         const isCenterOriginActive = layerContainer.dataset.centerOriginActive === 'true';
         if (isCenterOriginActive) {
             const centerOffsetX = parseFloat(layerContainer.dataset.centerOffsetX) || 0;
             const centerOffsetY = parseFloat(layerContainer.dataset.centerOffsetY) || 0;
-            layerContainer.style.transform = `translate(-${centerOffsetX}px, -${centerOffsetY}px) scale(${scale})`;
+            // FIXED: Combine center positioning with center origin offset
+            layerContainer.style.transform = `translate(calc(-50% - ${centerOffsetX}px), calc(-50% - ${centerOffsetY}px)) scale(${scale})`;
         } else {
-            layerContainer.style.transform = `scale(${scale})`;
+            // FIXED: ALWAYS use translate(-50%, -50%) for robust centering
+            layerContainer.style.transform = `translate(-50%, -50%) scale(${scale})`;
         }
         
         // Gambar guide canvas jika zoom <100%
@@ -169,4 +175,62 @@ function handleZoomInput(value) {
           });
         }
     }
+}
+/**
+ * FIXED: Auto-recenter panel1-layercontainer saat window resize atau orientation change
+ * Pastikan panel tetap centered setelah window size berubah
+ */
+function initPanelResponsiveness() {
+    const layerContainer = document.getElementById('panel1-layercontainer');
+    if (!layerContainer) return;
+    
+    // Handler untuk window resize
+    const handleResize = () => {
+        // Trigger redraw guide canvas dan maintain centering
+        const scale = parseFloat(layerContainer.dataset.scale) || 1;
+        
+        // Re-apply zoom untuk memastikan centering saat resize
+        if (scale !== 1) {
+            const isCenterOriginActive = layerContainer.dataset.centerOriginActive === 'true';
+            if (isCenterOriginActive) {
+                const centerOffsetX = parseFloat(layerContainer.dataset.centerOffsetX) || 0;
+                const centerOffsetY = parseFloat(layerContainer.dataset.centerOffsetY) || 0;
+                layerContainer.style.transform = `translate(calc(-50% - ${centerOffsetX}px), calc(-50% - ${centerOffsetY}px)) scale(${scale})`;
+            } else {
+                layerContainer.style.transform = `translate(-50%, -50%) scale(${scale})`;
+            }
+        }
+        drawGuideCanvas();
+    };
+    
+    // Debounce resize handler (prevent excessive redraws)
+    let resizeTimeout;
+    const debouncedResize = () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(handleResize, 150);
+    };
+    
+    // Add event listeners for responsiveness
+    window.addEventListener('resize', debouncedResize);
+    window.addEventListener('orientationchange', debouncedResize);
+    
+    // Optional: ResizeObserver untuk detect perubahan size elemen (tidak hanya window)
+    if (typeof ResizeObserver !== 'undefined') {
+        const resizeObserver = new ResizeObserver(() => {
+            handleResize();
+        });
+        // Observe panel-group (parent container)
+        const panelGroup = document.getElementById('panelGroup');
+        if (panelGroup) {
+            resizeObserver.observe(panelGroup);
+        }
+        resizeObserver.observe(layerContainer);
+    }
+}
+
+// Initialize responsiveness saat document loaded
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initPanelResponsiveness);
+} else {
+    initPanelResponsiveness();
 }

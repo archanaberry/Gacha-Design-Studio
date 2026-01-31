@@ -104,6 +104,7 @@ document.addEventListener('touchcancel', stopMove);
 
 /**
  * Handle ESC key untuk membuka settings di studio
+ * Handle Ctrl+Alt+R untuk manual refresh center origin
  */
 document.addEventListener('keydown', function(event) {
   // ESC key = 27 atau event.key === 'Escape'
@@ -112,6 +113,16 @@ document.addEventListener('keydown', function(event) {
     if (typeof window.openSettingsWindow === 'function') {
       event.preventDefault();
       window.openSettingsWindow();
+    }
+  }
+  
+  // Ctrl+Alt+R untuk refresh center origin (sinkronisasi dengan zoom saat ini)
+  if (event.ctrlKey && event.altKey && (event.key === 'r' || event.key === 'R')) {
+    event.preventDefault();
+    console.log('studiocharacter/key.js: Ctrl+Alt+R pressed - refreshing center origin');
+    if (typeof refreshCenterOrigin === 'function') {
+      refreshCenterOrigin();
+      console.log('✅ Center origin refreshed via keyboard shortcut');
     }
   }
 });

@@ -47,6 +47,7 @@
             display: none;
             width: 0;
             min-height: 100%;
+            overflow: hidden;
         }
 
         /* Horizontal splitter */
@@ -111,17 +112,23 @@
         }
 
         /* Panel1 Layer Container - objek layer bisa di-zoom dan transform */
-        .panel1-layercontainer {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            z-index: 1;
-            transform-origin: center center;
-            /* Will be scaled by zoom slider */
-            transform: scale(1);
-        }
+        /* Panel1 Layer Container - STABIL & RESPONSIF */
+.panel1-layercontainer {
+    position: fixed;              /* 🔥 anchor ke viewport */
+    left: 50%;
+    top: 50%;
+
+    width: 100%;
+    height: 100%;
+
+    transform-origin: center center;
+
+    /* translate untuk posisi, scale untuk zoom internal */
+    transform: translate(-50%, -50%) scale(1);
+    will-change: transform;
+    z-index: 1;
+}
+
 
         /* Guide Canvas untuk outline garis biru saat zoom <100% */
         .panel1-guide-canvas {
@@ -562,12 +569,20 @@
             const offset = calculateCenterOffset();
             const layerContainer = document.getElementById('panel1-layercontainer');
             if (layerContainer) {
-                const scaleMatch = layerContainer.style.transform.match(/scale\\(([\\d.]+)\\)/);
+                const scaleMatch = layerContainer.style.transform.match(/scale\(([\d.]+)\)/);
                 const scale = scaleMatch ? scaleMatch[1] : 1;
-                layerContainer.style.transform = 'translate(-' + offset.offsetX + 'px, -' + offset.offsetY + 'px) scale(' + scale + ')';
+                // FIXED: Use calc() untuk proper centering saat resize
+                layerContainer.style.transform = 'translate(calc(-50% - ' + offset.offsetX + 'px), calc(-50% - ' + offset.offsetY + 'px)) scale(' + scale + ')';
             }
         }
     });
+
+    // Initialize zoom detection untuk monitor browser zoom changes (25% - 500%)
+    // Secara otomatis refresh center origin saat user ubah zoom di Chrome
+    if (typeof initZoomDetection === 'function') {
+        initZoomDetection();
+        console.log('✅ Zoom detection initialized - akan follow Chrome zoom 25%-500%');
+    }
 
     </script>
 </html>`;
