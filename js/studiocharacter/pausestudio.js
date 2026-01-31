@@ -199,7 +199,7 @@ document.addEventListener("DOMContentLoaded", function () {
         -webkit-appearance: none;
         appearance: none;
         width: 42px;
-        height: 42px;
+        height: 40px;
         background: url('/assets/ui/menu/thumb.svg') no-repeat center/contain;
         border: none;
         border-radius: 0;

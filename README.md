@@ -52,8 +52,6 @@ Berikut adalah tabel README yang menjelaskan bagian "Kustomisasi," termasuk desk
 - **✅**: Fitur sudah dibuat dan berfungsi dengan baik.  
 - **❌**: Fitur belum dibuat atau belum berfungsi sesuai rencana.  
 
-Apakah ada bagian yang perlu ditambahkan atau diperjelas?
-
 ## Link
 
 ![Gacha Life 2](archanaberry/gachaassets.png)
@@ -459,7 +457,7 @@ const layers = [
 | Selektor Karakter Belum Aktif Sepenuhnya     | Selektor karakter masih belum berfungsi sepenuhnya, sehingga pengguna belum dapat dengan mudah memilih karakter yang ingin dimodifikasi. | ✅ |
 | Tidak Ada Fitur Berbagi Karakter dengan Kode atau Upload Aset SVG | Fitur untuk berbagi karakter menggunakan kode atau mengunggah aset SVG sebagai tambahan aset belum ditambahkan. | ✅ |
 | Input box Lebar/Width, dan Tinggi/Height nya bermasalah | Ketika bisa diubah nilai nya tetapi tidak mengalami perubahan posisi | ✅ |
-| Pengingat jika tidak sengaja ke refresh | Untuk mencegah kehilangan posisi pose ataupun rangkai karakter Gacha mu | ❌ |
+| Pengingat jika tidak sengaja ke refresh | Untuk mencegah kehilangan posisi pose ataupun rangkai karakter Gacha mu | 💡 |
 | Belum ada main menu | Supaya terkesan ada menu awal permainan | ✅ |
 | Belum ada BGM | Fitur untuk menyegarkan suasana dengan musik yang aesthetic agar tidak monoton (hanya saja harus pakai aplikasi apk dikhususkan!) | ✅ |
 | Design UI/UX masih berantakan | Untuk menambah ke estetika game ini agar menarik pengunjung :3 | 💡 |
@@ -467,6 +465,7 @@ const layers = [
 | Resource web terkompilasi .dgc (Data Gacha resource Compiled) | Berfungsi untuk mengompres dan mengoptimalkan webview engine seperti .swf (Adobe Flash) | ❌ |
 | TransVar (Translator Variable) dukungan library bahasa berbasis javascript | Multibahasa bisa dilakukan dengan otomatis (mengambil konfigurasi sistem) atau disetel sesuai pengguna | 💡 |
 | Sudah ditambah ikon thumbnail karakter | Ikon karakter agar mudah dicari dan menambah estetika profile karakter gacha mu :> | ✅ |
+| Ubah posisi editor origin |  Pengaturan layout origin 0,0 default (tengah layar) untuk menentukan antara kemudahan atau keaslian layout | ✅ |
 
 ## Tangkapan Layar
 * Main menu

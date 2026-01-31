@@ -1,0 +1,221 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                   🎯 ZOOM CENTER ORIGIN - TESTING GUIDE                      ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+## ✅ 3 ISSUES FIXED
+
+[✅] Issue 1: ReferenceError - centerOriginActive undefined
+    └─ Solution: Declared as global variable at top of centerorigin.js
+
+[✅] Issue 2: Center Origin unstable with Chrome zoom (25%-500%)
+    └─ Solution: Using calc() formula instead of pure pixels
+       OLD: translate(-offsetX, -offsetY)
+       NEW: translate(calc(-50% - offsetX), calc(-50% - offsetY))
+
+[✅] Issue 3: No auto-detection for browser zoom changes
+    └─ Solution: Added initZoomDetection() + manual refresh
+
+═══════════════════════════════════════════════════════════════════════════════
+
+## 🧪 TESTING CHECKLIST
+
+### TEST 1: Zoom Detection at 25%
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Purpose: Verify default 0,0 is centered at smallest zoom                    │
+│                                                                              │
+│ Steps:                                                                       │
+│  1. Close browser completely                                                │
+│  2. Open Chrome                                                              │
+│  3. Set zoom to 25% (Ctrl+Minus 3 times)                                    │
+│  4. Navigate to studio                                                      │
+│  5. Open browser console (F12)                                              │
+│                                                                              │
+│ Expected Results:                                                            │
+│  ✅ Console shows: "✅ Zoom detection initialized"                           │
+│  ✅ 0,0 origin appears perfectly centered on screen                         │
+│  ✅ No shifting or misalignment                                             │
+│  ✅ Panel elements fully visible                                            │
+│                                                                              │
+│ Status: [ ] Pass  [ ] Fail                                                  │
+│ Notes: ___________________________________________________________________  │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+### TEST 2: Auto-Detection of Zoom Changes
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Purpose: Verify automatic refresh when user changes browser zoom            │
+│                                                                              │
+│ Steps:                                                                       │
+│  1. Open studio at 100% zoom                                                │
+│  2. Open browser console (F12)                                              │
+│  3. Check "Pusatkan Origin (0,0)" if not already checked                   │
+│  4. Change zoom to 50% (Ctrl+Minus)                                         │
+│  5. Watch console output                                                    │
+│  6. Repeat for 75%, 150%, 200%, 300%, 500%                                  │
+│                                                                              │
+│ Expected Results:                                                            │
+│  ✅ Console shows: "🔍 Browser zoom changed to: X%"                         │
+│  ✅ Console shows: "🔄 Center origin refreshed untuk follow zoom"           │
+│  ✅ 0,0 stays centered after each zoom change                               │
+│  ✅ No manual refresh needed                                                │
+│  ✅ Works at 25%, 50%, 75%, 100%, 150%, 200%, 300%, 500%                    │
+│                                                                              │
+│ Status: [ ] Pass  [ ] Fail                                                  │
+│ Notes: ___________________________________________________________________  │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+### TEST 3: Manual Refresh Button
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Purpose: Verify manual refresh via button works correctly                   │
+│                                                                              │
+│ Steps:                                                                       │
+│  1. Open studio                                                              │
+│  2. Set zoom to 50% (Ctrl+Minus twice)                                      │
+│  3. Look for "🔄 Refresh Origin" button (next to center origin checkbox)    │
+│  4. Click the button                                                        │
+│  5. Open console (F12) to watch output                                      │
+│                                                                              │
+│ Expected Results:                                                            │
+│  ✅ Console shows: "🔄 Manual refresh: browserZoom=50.0%"                   │
+│  ✅ Console shows: "✅ Center origin manually refreshed"                     │
+│  ✅ 0,0 stays centered                                                      │
+│  ✅ No visual glitches or jumps                                             │
+│                                                                              │
+│ Status: [ ] Pass  [ ] Fail                                                  │
+│ Notes: ___________________________________________________________________  │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+### TEST 4: Keyboard Shortcut (Ctrl+Alt+R)
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Purpose: Verify keyboard shortcut for manual refresh                        │
+│                                                                              │
+│ Steps:                                                                       │
+│  1. Open studio                                                              │
+│  2. Set zoom to 200% (Ctrl+Plus twice)                                      │
+│  3. Open console (F12)                                                      │
+│  4. Press Ctrl+Alt+R                                                        │
+│  5. Watch console output                                                    │
+│                                                                              │
+│ Expected Results:                                                            │
+│  ✅ Console shows: "Ctrl+Alt+R pressed - refreshing center origin"          │
+│  ✅ Console shows: "Center origin refreshed via keyboard shortcut"          │
+│  ✅ 0,0 realigns to center                                                  │
+│  ✅ Shortcut works at any zoom level                                        │
+│                                                                              │
+│ Status: [ ] Pass  [ ] Fail                                                  │
+│ Notes: ___________________________________________________________________  │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+### TEST 5: Toggle Center Origin (Enable/Disable)
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Purpose: Verify toggle works correctly at different zoom levels             │
+│                                                                              │
+│ Steps:                                                                       │
+│  1. Set zoom to 25%                                                         │
+│  2. Check "Pusatkan Origin (0,0)"                                          │
+│  3. Verify: 0,0 at center                                                  │
+│  4. Change zoom to 200%                                                     │
+│  5. Verify: 0,0 still at center                                            │
+│  6. Uncheck "Pusatkan Origin"                                              │
+│  7. Verify: 0,0 back to top-left                                           │
+│  8. Zoom to 50%                                                             │
+│  9. Re-check "Pusatkan Origin"                                             │
+│ 10. Verify: 0,0 back to center at 50% zoom                                │
+│                                                                              │
+│ Expected Results:                                                            │
+│  ✅ Toggle works at 25%, 50%, 100%, 200%, 500%                              │
+│  ✅ Smooth transitions (no jumps or shifts)                                 │
+│  ✅ Console shows toggle messages                                           │
+│  ✅ All zoom levels handled correctly                                       │
+│                                                                              │
+│ Status: [ ] Pass  [ ] Fail                                                  │
+│ Notes: ___________________________________________________________________  │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+### TEST 6: Panel Zoom Stability
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Purpose: Verify panel zoom slider works without jumping                    │
+│                                                                              │
+│ Steps:                                                                       │
+│  1. Enable center origin                                                    │
+│  2. Set Chrome zoom to 100%                                                 │
+│  3. Use the "Zoom Panel1" slider to change zoom:                           │
+│     - Move from 100% → 50% → 25%                                           │
+│     - Move from 100% → 200% → 300%                                         │
+│  4. Watch for any shifting or misalignment                                 │
+│  5. Change Chrome zoom while panel zoom is different                       │
+│  6. Verify everything stays stable                                         │
+│                                                                              │
+│ Expected Results:                                                            │
+│  ✅ Smooth zoom transitions                                                 │
+│  ✅ 0,0 stays centered through all changes                                  │
+│  ✅ No jumping to corners or wrong positions                               │
+│  ✅ Works with browser zoom at 25%-500%                                    │
+│  ✅ Combined zoom (panel + browser) works correctly                        │
+│                                                                              │
+│ Status: [ ] Pass  [ ] Fail                                                  │
+│ Notes: ___________________________________________________________________  │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+### TEST 7: Console Debugging Commands
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Purpose: Verify console commands work for debugging                         │
+│                                                                              │
+│ Steps:                                                                       │
+│  1. Open browser console (F12)                                              │
+│  2. Run each command and verify output:                                     │
+│     → console.log(window.centerOriginActive)                                │
+│     → console.log(getBrowserZoom())                                         │
+│     → refreshCenterOrigin()                                                 │
+│     → initZoomDetection()                                                   │
+│                                                                              │
+│ Expected Results:                                                            │
+│  ✅ centerOriginActive shows true/false                                     │
+│  ✅ getBrowserZoom() returns number between 0.25-5                          │
+│  ✅ refreshCenterOrigin() shows success message                             │
+│  ✅ initZoomDetection() shows initialization message                        │
+│                                                                              │
+│ Status: [ ] Pass  [ ] Fail                                                  │
+│ Notes: ___________________________________________________________________  │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════════════════════
+
+## 🎯 SUMMARY
+
+Total Tests: 7
+Passed: [ ] / 7
+Failed: [ ] / 7
+
+Overall Status:
+[ ] ✅ ALL TESTS PASSED - Ready for production
+[ ] ⚠️  SOME TESTS FAILED - Needs debugging
+[ ] ❌ CRITICAL FAILURES - Do not deploy
+
+Tester Name: ______________________  Date: ______________________
+
+═══════════════════════════════════════════════════════════════════════════════
+
+## 📝 DETAILED NOTES (if needed)
+
+Test 1 Notes:
+______________________________________________________________________________
+
+Test 2 Notes:
+______________________________________________________________________________
+
+Test 3 Notes:
+______________________________________________________________________________
+
+Test 4 Notes:
+______________________________________________________________________________
+
+Test 5 Notes:
+______________________________________________________________________________
+
+Test 6 Notes:
+______________________________________________________________________________
+
+Test 7 Notes:
+______________________________________________________________________________
+
+═══════════════════════════════════════════════════════════════════════════════
