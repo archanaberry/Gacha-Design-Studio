@@ -225,12 +225,22 @@
     // ============================================
     if (isCtrl && e.key.toLowerCase() === 'p' && !isInput) {
       e.preventDefault();
-      const panel = document.getElementById('panel1');
-      if (panel) {
-        const currentScale = parseFloat(panel.dataset.scale) || 1;
+      const layerContainer = document.getElementById('panel1-layercontainer') || document.getElementById('panel1');
+      if (layerContainer) {
+        const currentScale = parseFloat(layerContainer.dataset.scale) || 1;
         const newScale = Math.min(currentScale + 0.1, 3);
-        panel.dataset.scale = newScale;
-        panel.style.transform = `scale(${newScale})`;
+        layerContainer.dataset.scale = newScale;
+        
+        // Preserve center origin translate jika aktif
+        const isCenterOriginActive = layerContainer.dataset.centerOriginActive === 'true';
+        if (isCenterOriginActive) {
+            const centerOffsetX = parseFloat(layerContainer.dataset.centerOffsetX) || 0;
+            const centerOffsetY = parseFloat(layerContainer.dataset.centerOffsetY) || 0;
+            layerContainer.style.transform = `translate(-${centerOffsetX}px, -${centerOffsetY}px) scale(${newScale})`;
+        } else {
+            layerContainer.style.transform = `scale(${newScale})`;
+        }
+        
         console.log('Zoom in: ' + Math.round(newScale * 100) + '%');
         
         // Update zoom slider and input
@@ -238,6 +248,11 @@
         const zoomInput = document.getElementById('zoomInput');
         if (zoomSlider) zoomSlider.value = Math.round(newScale * 100);
         if (zoomInput) zoomInput.value = Math.round(newScale * 100) + '%';
+        
+        // Update guide canvas
+        if (typeof drawGuideCanvas === 'function') {
+          drawGuideCanvas();
+        }
         
         // Record history
         if (typeof window.HistoryManager !== 'undefined') {
@@ -255,12 +270,22 @@
     // ============================================
     if (isCtrl && e.key.toLowerCase() === 'm' && !isInput) {
       e.preventDefault();
-      const panel = document.getElementById('panel1');
-      if (panel) {
-        const currentScale = parseFloat(panel.dataset.scale) || 1;
+      const layerContainer = document.getElementById('panel1-layercontainer') || document.getElementById('panel1');
+      if (layerContainer) {
+        const currentScale = parseFloat(layerContainer.dataset.scale) || 1;
         const newScale = Math.max(currentScale - 0.1, 0.1);
-        panel.dataset.scale = newScale;
-        panel.style.transform = `scale(${newScale})`;
+        layerContainer.dataset.scale = newScale;
+        
+        // Preserve center origin translate jika aktif
+        const isCenterOriginActive = layerContainer.dataset.centerOriginActive === 'true';
+        if (isCenterOriginActive) {
+            const centerOffsetX = parseFloat(layerContainer.dataset.centerOffsetX) || 0;
+            const centerOffsetY = parseFloat(layerContainer.dataset.centerOffsetY) || 0;
+            layerContainer.style.transform = `translate(-${centerOffsetX}px, -${centerOffsetY}px) scale(${newScale})`;
+        } else {
+            layerContainer.style.transform = `scale(${newScale})`;
+        }
+        
         console.log('Zoom out: ' + Math.round(newScale * 100) + '%');
         
         // Update zoom slider and input
@@ -268,6 +293,11 @@
         const zoomInput = document.getElementById('zoomInput');
         if (zoomSlider) zoomSlider.value = Math.round(newScale * 100);
         if (zoomInput) zoomInput.value = Math.round(newScale * 100) + '%';
+        
+        // Update guide canvas
+        if (typeof drawGuideCanvas === 'function') {
+          drawGuideCanvas();
+        }
         
         // Record history
         if (typeof window.HistoryManager !== 'undefined') {

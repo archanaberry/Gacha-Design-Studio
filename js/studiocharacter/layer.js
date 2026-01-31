@@ -368,9 +368,18 @@ class Layer {
             return; // Keluar jika elemen tidak ada
         }
     
-        // Atur posisi dan ukuran elemen utama
-        const offsetX = window.originOffsetX || 0;
-        const offsetY = window.originOffsetY || 0;
+        // Hitung render offset (visual only - tidak mempengaruhi layer.x/layer.y)
+        // Default render offset: center canvas (50% X, 50% Y)
+        let offsetX = 0, offsetY = 0;
+        if (typeof getTotalLayerRenderOffset === 'function') {
+            const renderOffset = getTotalLayerRenderOffset();
+            offsetX = renderOffset.offsetX;
+            offsetY = renderOffset.offsetY;
+        }
+        
+        // Atur posisi elemen utama
+        // this.#x dan this.#y adalah absolute position dalam storage
+        // Visual rendering: position = storage + renderOffset
         this.element.style.left = (this.#x + offsetX) + 'px'; // Posisi horizontal
         this.element.style.top = (this.#y + offsetY) + 'px'; // Posisi vertikal
         

@@ -24,8 +24,22 @@
 let interval;
 
 function updateCoordInput() {
-    document.getElementById('xCoord').value = selected.x;
-    document.getElementById('yCoord').value = selected.y;
+    if (!selected) return;
+    
+    const xCoordInput = document.getElementById('xCoord');
+    const yCoordInput = document.getElementById('yCoord');
+    
+    // Convert ke display coord jika center origin aktif
+    let displayX = selected.x || 0;
+    let displayY = selected.y || 0;
+    if (typeof getDisplayCoord === 'function') {
+        const disp = getDisplayCoord(displayX, displayY);
+        displayX = disp.x;
+        displayY = disp.y;
+    }
+    
+    if (xCoordInput) xCoordInput.value = displayX;
+    if (yCoordInput) yCoordInput.value = displayY;
 }
 
 

@@ -57,10 +57,18 @@ function setOpacity(panelId) {
     
     const opacitySlider = document.getElementById(sliderId);
     const opacityInput = document.getElementById(inputId);
-    const panel = document.getElementById(panelId);
+    
+    let targetElement;
+    
+    // Jika panel1, set opacity ke panel1-root (background)
+    if (panelId === 'panel1') {
+        targetElement = document.getElementById('panel1-root') || document.getElementById('panel1');
+    } else {
+        targetElement = document.getElementById(panelId);
+    }
 
-    if (opacitySlider && opacityInput && panel) {
-        panel.style.opacity = opacitySlider.value / 100;
+    if (opacitySlider && opacityInput && targetElement) {
+        targetElement.style.opacity = opacitySlider.value / 100;
         opacityInput.value = opacitySlider.value + '%';
         
         // Save configuration using bgconfig

@@ -96,6 +96,45 @@
             z-index: 1; /* Behind panel2 */
         }
 
+        /* Panel1 Root - Background/Wallpaper tidak ikut zoom */
+        .panel1-root {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: none;
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            z-index: 0;
+        }
+
+        /* Panel1 Layer Container - objek layer bisa di-zoom dan transform */
+        .panel1-layercontainer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 1;
+            transform-origin: center center;
+            /* Will be scaled by zoom slider */
+            transform: scale(1);
+        }
+
+        /* Guide Canvas untuk outline garis biru saat zoom <100% */
+        .panel1-guide-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+            display: none; /* Tampil hanya saat zoom <100% */
+        }
+
         /* Vertical splitter */
         #splitter {
             width: 100%;
@@ -150,8 +189,17 @@
 
         <!-- Panel tengah: Panel1 (Canvas) dan Panel2 (Controls) -->
         <div class="panel-group" id="panelGroup">
-            <!-- Panel atas -->
+            <!-- Panel atas - dengan pemisahan background dan layer container -->
             <div class="panel1 container" id="panel1">
+                <!-- Background/Wallpaper tetap full size tanpa zoom -->
+                <div class="panel1-root" id="panel1-root">
+                </div>
+                
+                <!-- Layer Container - objek dan layer yang bisa di-zoom dan diatur -->
+                <div class="panel1-layercontainer" id="panel1-layercontainer">
+                    <!-- Guide outline untuk menunjukkan batas kerja saat zoom <100% -->
+                    <canvas id="guideCanvas" class="panel1-guide-canvas"></canvas>
+                </div>
             </div>
 
             <!-- Panel bawah -->
@@ -195,7 +243,7 @@
 
         <label for="centerOriginToggle">
             <input type="checkbox" id="centerOriginToggle" onchange="toggleCenterOrigin(this.checked)">
-            Pusatkan Origin (0,0) ke Tengah Layar
+            Pusatkan Origin (0,0) ke Pojok Atas Kiri
         </label>
 
         <label for="layerName">Layer:</label>
@@ -275,6 +323,7 @@
     <!-- Skrip -->
     <script src="js/windowhandler.js"></script>
     <script src="js/mainmenu/studiopose.js"></script>
+    <script src="js/studiocharacter/layerrenderoffset.js"></script>
     <script src="js/studiocharacter/layer.js"></script>
     <script src="js/studiocharacter/history.js"></script>
     <script src="js/studiocharacter/historywindow.js"></script>
@@ -289,6 +338,7 @@
     <script src="js/studiocharacter/selector.js"></script>
     <script src="js/studiocharacter/key.js"></script>
     <script src="js/studiocharacter/sensivity.js"></script>
+    <script src="js/studiocharacter/centerorigin.js"></script>
     <script src="js/studiocharacter/upload.js"></script>
     <script src="js/studiocharacter/export.js"></script>
     <script src="js/studiocharacter/layersrcmanager.js"></script>
@@ -507,44 +557,14 @@
 
     // Update origin offset on resize if centered
     window.addEventListener('resize', function() {
-        if (isOriginCentered) {
-            // Re-apply transform dengan ukuran baru
-            if (window.parent && window.parent.postMessage) {
-                window.parent.postMessage({
-                    type: 'originChanged',
-                    centered: true
-                }, '*');
-            }
-        }
-    });
-
-    // ========== CENTER ORIGIN TOGGLE ==========
-    let isOriginCentered = false;
-    let centerOffsetX = 0;
-    let centerOffsetY = 0;
-
-    function toggleCenterOrigin(checked) {
-        console.log('toggleCenterOrigin called with:', checked);
-        // Kirim pesan ke parent window untuk toggle transform
-        if (window.parent && window.parent.postMessage) {
-            window.parent.postMessage({
-                type: 'originChanged',
-                centered: checked
-            }, '*');
-        }
-        
-        isOriginCentered = checked;
-    }
-
-    // Update offset on resize if centered
-    window.addEventListener('resize', function() {
-        if (isOriginCentered) {
-            console.log('Resize detected, re-sending originChanged');
-            if (window.parent && window.parent.postMessage) {
-                window.parent.postMessage({
-                    type: 'originChanged',
-                    centered: true
-                }, '*');
+        if (centerOriginActive) {
+            // Re-calculate offset untuk ukuran baru
+            const offset = calculateCenterOffset();
+            const layerContainer = document.getElementById('panel1-layercontainer');
+            if (layerContainer) {
+                const scaleMatch = layerContainer.style.transform.match(/scale\\(([\\d.]+)\\)/);
+                const scale = scaleMatch ? scaleMatch[1] : 1;
+                layerContainer.style.transform = 'translate(-' + offset.offsetX + 'px, -' + offset.offsetY + 'px) scale(' + scale + ')';
             }
         }
     });
