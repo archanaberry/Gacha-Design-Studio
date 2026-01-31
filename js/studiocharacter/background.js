@@ -38,14 +38,22 @@ function setBackground(panelId) {
     const reader = new FileReader();
 
     reader.onload = function(e) {
-        const panel = document.getElementById(panelId);
+        let targetElement;
+        
+        // Jika panel1, set background ke panel1-root (tidak terpengaruh zoom)
+        if (panelId === 'panel1') {
+            targetElement = document.getElementById('panel1-root') || document.getElementById('panel1');
+        } else {
+            targetElement = document.getElementById(panelId);
+        }
+        
         const imageUrl = e.target.result;
         
-        panel.style.backgroundImage = `url('${imageUrl}')`;
+        targetElement.style.backgroundImage = `url('${imageUrl}')`;
         
         // Save configuration using bgconfig
         if (typeof updateBgConfig === 'function') {
-            const currentOpacity = panel.style.opacity ? Math.round(parseFloat(panel.style.opacity) * 100) : 100;
+            const currentOpacity = targetElement.style.opacity ? Math.round(parseFloat(targetElement.style.opacity) * 100) : 100;
             updateBgConfig(panelId, imageUrl, currentOpacity);
         }
     }

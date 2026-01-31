@@ -1,0 +1,2 @@
+git pull --no-rebase origin DL
+git config pull.rebase true

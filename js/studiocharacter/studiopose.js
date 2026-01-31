@@ -38,9 +38,9 @@ const multiDragState = new Map();
 function onLayerPointerDown(e, layer) {
     // Only primary button for mouse
     if (e.button !== undefined && e.button !== 0) return;
-    // Only handle pointers in panel1 (guard)
-    const panel1El = document.getElementById('panel1') || document.querySelector('.container');
-    if (!panel1El || !panel1El.contains(layer.element)) return;
+    // Only handle pointers in panel1-layercontainer (guard)
+    const panel1LayerContainer = document.getElementById('panel1-layercontainer') || document.getElementById('panel1') || document.querySelector('.container');
+    if (!panel1LayerContainer || !panel1LayerContainer.contains(layer.element)) return;
 
     e.preventDefault();
     // Capture pointer on target so we don't lose events when finger leaves element
@@ -149,8 +149,15 @@ function onLayerPointerMove(e) {
     if (!multiDragState.has(pid)) return;
     e.preventDefault();
     const info = multiDragState.get(pid);
-    const dx = e.clientX - info.lastX;
-    const dy = e.clientY - info.lastY;
+    
+    // Get current zoom scale untuk normalize drag distance
+    const layerContainer = document.getElementById('panel1-layercontainer');
+    const currentScale = layerContainer ? (parseFloat(layerContainer.dataset.scale) || 1) : 1;
+    
+    // Normalize drag delta by zoom scale
+    // Ketika zoom 50%, user drag 10px tapi gerakan actual harus 20px (10 / 0.5 = 20)
+    const dx = (e.clientX - info.lastX) / currentScale;
+    const dy = (e.clientY - info.lastY) / currentScale;
 
     // Support both group-drag (type='group') and independent per-layer drag (type='independent')
     if (info.type === 'group' && Array.isArray(info.layers)) {
@@ -977,8 +984,8 @@ document.addEventListener('keydown', function(e) {
 });
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Pasang layer ke container ketika halaman selesai dimuat
-    const container = document.getElementById('panel1') || document.querySelector('.container');
+    // Pasang layer ke layer container ketika halaman selesai dimuat
+    const container = document.getElementById('panel1-layercontainer') || document.getElementById('panel1') || document.querySelector('.container');
     for (const layer of layers) {
         // Pasang tanpa legacy onlayerdragstart agar PointerEvent tidak duplikat trigger
         layer.attach(container, null);
@@ -1499,6 +1506,7 @@ function updateCoordInput() {
     } else if (selectedLayers.length === 1) {
         // Single selection: show individual layer data
         const layer = selectedLayers[0];
+        
         console.log('Single layer selected:', layer.name, {
             x: layer.x,
             y: layer.y,
@@ -1589,7 +1597,8 @@ function updateCoordInput() {
 function handleXCoord(value) {
     const selectedLayers = getSelectedLayers();
     if (selectedLayers.length === 0) return;
-    const xVal = parseFloat(value);
+    
+    let xVal = parseFloat(value);
     
     if (selectedLayers.length === 1) {
         // Single layer: set absolute position
@@ -1619,7 +1628,8 @@ function handleXCoord(value) {
 function handleYCoord(value) {
     const selectedLayers = getSelectedLayers();
     if (selectedLayers.length === 0) return;
-    const yVal = parseFloat(value);
+    
+    let yVal = parseFloat(value);
     
     if (selectedLayers.length === 1) {
         // Single layer: set absolute position
@@ -1809,7 +1819,7 @@ function moveLayerDown() {
 }
 
 function renderLayer(layer) {
-    const container = document.getElementById('panel1') || document.querySelector('.container'); // Container tempat layer ditampilkan
+    const container = document.getElementById('panel1-layercontainer') || document.getElementById('panel1') || document.querySelector('.container'); // Container tempat layer ditampilkan
 
     if (!container) {
         console.error('Container not found for rendering');

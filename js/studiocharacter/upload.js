@@ -19,6 +19,13 @@
 
 //upload.js
 
+// Helper function untuk mendapatkan panel1-layercontainer
+function getPanel1LayerContainer() {
+    return document.getElementById('panel1-layercontainer') || 
+           document.getElementById('panel1') || 
+           document.querySelector('.container');
+}
+
 // Accept multiple SVG files, parse _lX suffix to order layers
 async function addSVGFiles(files) {
     if (!files || files.length === 0) return;
@@ -47,7 +54,7 @@ async function addSVGFiles(files) {
         groups[base].push({ file: f, index: idx });
     });
 
-    const container = document.querySelector('.container') || document.getElementById('panel1');
+    const container = document.querySelector('.container') || getPanel1LayerContainer();
 
     // Jika container tidak ada, abort
     if (!container) {
@@ -122,7 +129,7 @@ async function addImageFiles(files) {
     const imageFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
     if (!imageFiles.length) return;
 
-    const container = document.querySelector('.container') || document.getElementById('panel1');
+    const container = document.querySelector('.container') || getPanel1LayerContainer();
 
     // Jika container tidak ada, abort
     if (!container) {
