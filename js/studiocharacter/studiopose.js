@@ -329,6 +329,7 @@ function createLayerFromObject(layerObj) {
  * ============================================================
  */
 
+/*
 const layers = [
     // ========== RAMBUT (Hair) - 5 src dengan styling lengkap per-src ==========
     {
@@ -689,6 +690,94 @@ const layers = [
        }
      }
   ].map(createLayerFromObject);
+*/
+
+const layers = [
+    // ========== RAMBUT (Hair) - 5 src dengan styling lengkap per-src ==========
+    {
+      "layerName": "Kepala",
+      "src": [
+        "assets/profilechibi/head1.svg",     // src0 - outline
+        "assets/profilechibi/head2.svg",     // src1 - base
+      ],
+      "options": {
+        // ---- src0: Outline (stroke) ----
+        "posX0": 0,
+        "posY0": 0,
+        "opacity0": 1,
+        "color0": "#1A1A1A",
+        
+        // ---- src1: Base Color Head ----
+        "posX1": -0.5,
+        "posY1": -0.5,
+        "opacity1": 1,
+        "color1": "#FFFFFF",
+        
+        // Global transformations
+        "rotation": 0,
+        "scale": 1,
+        "skewX": 0,
+        "skewY": 0,
+        "flipX": false,
+        "flipY": false,
+        "width": null,
+        "height": null
+      }
+    },
+    {
+      "layerName": "Rambut",
+      "src": [
+        "assets/profilechibi/hair1.svg",     // src0 - outline
+        "assets/profilechibi/hairl1.svg",    // src1 - light/highlight
+        "assets/profilechibi/hairss1.svg",   // src2 - shade
+        "assets/profilechibi/hairs1.svg",    // src3 - shadow/gradation
+        "assets/profilechibi/hairo1.svg"     // src4 - base color
+      ],
+      "options": {
+        // ---- src0: base (base fill/warna utama) ----
+        "posX0": 1,
+        "posY0": 2,
+        "opacity0": 1,
+        "color0": "#1A1A1A",
+        
+        // ---- src1: Light/Highlight ----
+        "posX1": 27,
+        "posY1": 10,
+        "opacity1": 0.85,
+        "color1": "#FFFFFF",
+        
+        // ---- src2: Shade (gradasi tengah) ----
+        "posX2": 15,
+        "posY2": 9,
+        "opacity2": 0.65,
+        "color2": "#B39DDB",
+        
+        // ---- src3: Shadow (gradasi gelap) ----
+        "posX3": 2,
+        "posY3": 1,
+        "opacity3": 0.55,
+        "color3": "#6A4C93",
+        
+        // ---- src4: Outline Color (warna garis luar) ----
+        "posX4": 0,
+        "posY4": 0,
+        "opacity4": 1,
+        "color4": "#9C6FB1",
+        
+        // Global transformations
+        "posX": 0,
+        "posY": 0,
+        "rotation": 0,
+        "scale": 1,
+        "skewX": 0,
+        "skewY": 0,
+        "flipX": false,
+        "flipY": false,
+        "width": null,
+        "height": null
+      }
+    },
+].map(createLayerFromObject);
 
 // Mendefinisikan koordinat awal ketika halaman dimuat
 let initialX = 0;
@@ -722,6 +811,25 @@ const splitter = window.splitterInstance;
 const panel1 = window.panel1Instance;
 const panel2 = window.panel2Instance;
 const splitterHeight = splitter ? splitter.offsetHeight : 0;
+
+/**
+ * Update input koordinat berdasarkan layer yang dipilih
+ */
+function updateCoordInput() {
+    if (!selected) return;
+    if (xCoordInput) xCoordInput.value = selected.x;
+    if (yCoordInput) yCoordInput.value = selected.y;
+    if (widthInput) widthInput.value = selected.width || selected.element.clientWidth;
+    if (heightInput) heightInput.value = selected.height || selected.element.clientHeight;
+    if (scaleInput) scaleInput.value = selected.scale;
+    if (rotationControl) rotationControl.value = selected.rotation;
+    if (flipHorizontal) flipHorizontal.checked = selected.isFlipX;
+    if (flipVertical) flipVertical.checked = selected.isFlipY;
+    if (rotationIndicator) rotationIndicator.innerText = selected.rotation;
+    if (layerNameInput) layerNameInput.value = selected.name;
+    if (skewXControl) skewXControl.value = selected.skewX;
+    if (skewYControl) skewYControl.value = selected.skewY;
+}
 
 /**
  * @param {Event} e
@@ -789,8 +897,8 @@ function onlayerdragstart(e, layer) {
             // Hanya update selected untuk panel, tanpa mengubah visual selection di UI
             selected = layer;
             updateCoordInput();
-            if (widthInput) widthInput.value = selected.element.clientWidth;
-            if (heightInput) heightInput.value = selected.element.clientHeight;
+            if (widthInput) widthInput.value = selected.width || selected.element.clientWidth;
+            if (heightInput) heightInput.value = selected.height || selected.element.clientHeight;
             if (layerNameInput) layerNameInput.value = selected.name;
             if (scaleInput) scaleInput.value = selected.scale;
             if (rotationControl) rotationControl.value = selected.rotation;
@@ -898,12 +1006,20 @@ function onlayerdrag(e) {
     // Memperbarui koordinat elemen gambar (support group drag jika aktif)
     if (isGroupDragging && groupDraggedLayers && groupDraggedLayers.length) {
         groupDraggedLayers.forEach(l => {
-            l.x += dx;
-            l.y += dy;
+            if (l.selectedImageIndex !== null) {
+                l.updateSrcPosition(l.selectedImageIndex, dx, dy);
+            } else {
+                l.x += dx;
+                l.y += dy;
+            }
         });
     } else {
-        selected.x += dx;
-        selected.y += dy;
+        if (selected.selectedImageIndex !== null) {
+            selected.updateSrcPosition(selected.selectedImageIndex, dx, dy);
+        } else {
+            selected.x += dx;
+            selected.y += dy;
+        }
     }
 
     updateCoordInput();

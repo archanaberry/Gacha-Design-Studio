@@ -40,6 +40,7 @@ class Layer {
     #srcProperties = {}; // Per-src properties (posX0, posY1, rotation2, opacity3, dst)
     #parentLayer = null; // Reference ke parent layer jika ini adalah child
     #opacity = 1; // 0-1
+    #selectedImageIndex = null; // Index src yang sedang dipilih
     options = {};
 
     constructor(name, src, options = {}, childLayers = []) {
@@ -130,19 +131,36 @@ class Layer {
          * Parse per-src properties dari options
          * Mendukung: posX0, posY0, opacity0, rotation0, scale0, skewX0, skewY0, flipX0, flipY0, width0, height0, color0
          * dst untuk src1, src2, src3, ... src9
+         * Default: posX{i}=0, posY{i}=0, opacity{i}=1, dll.
          */
         const srcPropertyNames = ['posX', 'posY', 'opacity', 'rotation', 'scale', 'skewX', 'skewY', 'flipX', 'flipY', 'width', 'height', 'color'];
+        const defaults = {
+            posX: 0,
+            posY: 0,
+            opacity: 1,
+            rotation: 0,
+            scale: 1,
+            skewX: 0,
+            skewY: 0,
+            flipX: false,
+            flipY: false,
+            width: null,
+            height: null,
+            color: null
+        };
         
         for (let i = 0; i < this.#src.length; i++) {
             if (!this.#srcProperties[i]) {
                 this.#srcProperties[i] = {};
             }
             
-            // Parse setiap property dengan suffix nomor src
+            // Parse setiap property dengan suffix nomor src, atau set default
             srcPropertyNames.forEach(prop => {
                 const keyWithSuffix = `${prop}${i}`;
                 if (keyWithSuffix in options) {
                     this.#srcProperties[i][prop] = options[keyWithSuffix];
+                } else if (!(prop in this.#srcProperties[i])) {
+                    this.#srcProperties[i][prop] = defaults[prop];
                 }
             });
         }
@@ -344,6 +362,11 @@ class Layer {
         const posXForSrc = this.#getPropertyForSrc('posX', srcIndex, null, null);
         const posYForSrc = this.#getPropertyForSrc('posY', srcIndex, null, null);
         
+        // Set position absolute untuk positioning relatif di dalam layer
+        imgElement.style.position = 'absolute';
+        imgElement.style.left = (posXForSrc ?? 0) + 'px';
+        imgElement.style.top = (posYForSrc ?? 0) + 'px';
+        
         // Store per-src offset untuk digunakan di #updateElement
         imgElement.dataset.posXOffset = posXForSrc ?? 0;
         imgElement.dataset.posYOffset = posYForSrc ?? 0;
@@ -488,7 +511,7 @@ class Layer {
         }
     
         // Simpan status seleksi jika diperlukan
-        this.selectedImageIndex = index;
+        this.#selectedImageIndex = index;
     
         console.log(`Image ${index} selected in layer "${this.#name}"`);
     }    
@@ -547,8 +570,8 @@ class Layer {
         return this.#skewY;
     }
 
-    get selected() {
-        return this.selectedState;
+    get selectedImageIndex() {
+        return this.#selectedImageIndex;
     }
 
     set name(name) {
@@ -678,6 +701,20 @@ class Layer {
         this.element && this.element.querySelectorAll('.src-item').forEach(img => {
             img.style.opacity = v;
         });
+    }
+
+    /**
+     * Update posisi per-src dengan delta
+     */
+    updateSrcPosition(index, dx, dy) {
+        if (index in this.#srcProperties) {
+            this.#srcProperties[index].posX = (this.#srcProperties[index].posX || 0) + dx;
+            this.#srcProperties[index].posY = (this.#srcProperties[index].posY || 0) + dy;
+            // Update options juga agar konsisten
+            this.options[`posX${index}`] = this.#srcProperties[index].posX;
+            this.options[`posY${index}`] = this.#srcProperties[index].posY;
+            this.#updateElement();
+        }
     }
 
     set width(value) {
