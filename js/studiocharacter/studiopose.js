@@ -24,6 +24,56 @@ if (typeof window.touchDragActive === 'undefined') {
 
 // studiopose.js
 
+// Define LayerGroup class
+class LayerGroup {
+    constructor(children) {
+        this.children = children;
+        this.element = document.createElement('div');
+        this.element.classList.add('layer-group');
+        this.element.style.position = 'absolute';
+
+        // Tambahkan setiap anak ke dalam grup
+        children.forEach(child => {
+            this.element.appendChild(child.element);
+        });
+
+        // Tambahkan root anchor untuk melindungi drag
+        const rootAnchor = document.createElement('div');
+        rootAnchor.classList.add('root-anchor');
+        rootAnchor.style.position = 'absolute';
+        rootAnchor.style.width = '100%';
+        rootAnchor.style.height = '100%';
+        rootAnchor.style.pointerEvents = 'none';
+        this.element.appendChild(rootAnchor);
+
+        // Tetapkan posisi awal grup
+        this._x = 0;
+        this._y = 0;
+    }
+
+    set x(value) {
+        this._x = value;
+        this.updatePosition();
+    }
+
+    get x() {
+        return this._x;
+    }
+
+    set y(value) {
+        this._y = value;
+        this.updatePosition();
+    }
+
+    get y() {
+        return this._y;
+    }
+
+    updatePosition() {
+        this.element.style.transform = `translate(${this._x}px, ${this._y}px)`;
+    }
+}
+
 
 /** @type {Layer} Elemen yang sedang dipilih */
 let selected = null;
@@ -714,6 +764,8 @@ const layers = [
         "color1": "#FFFFFF",
         
         // Global transformations
+        "posX": 16.9,
+        "posY": 25,
         "rotation": 0,
         "scale": 1,
         "skewX": 0,
@@ -728,9 +780,9 @@ const layers = [
       "layerName": "Rambut",
       "src": [
         "assets/profilechibi/hair1.svg",     // src0 - outline
-        "assets/profilechibi/hairl1.svg",    // src1 - light/highlight
-        "assets/profilechibi/hairss1.svg",   // src2 - shade
-        "assets/profilechibi/hairs1.svg",    // src3 - shadow/gradation
+        "assets/profilechibi/hairss1.svg",   // src1 - shade
+        "assets/profilechibi/hairs1.svg",    // src2 - shadow/gradation
+        "assets/profilechibi/hairl1.svg",    // src3 - light/highlight
         "assets/profilechibi/hairo1.svg"     // src4 - base color
       ],
       "options": {
@@ -740,23 +792,23 @@ const layers = [
         "opacity0": 1,
         "color0": "#1A1A1A",
         
-        // ---- src1: Light/Highlight ----
-        "posX1": 27,
-        "posY1": 10,
-        "opacity1": 0.85,
-        "color1": "#FFFFFF",
-        
-        // ---- src2: Shade (gradasi tengah) ----
-        "posX2": 15,
-        "posY2": 9,
+        // ---- src1: Shade (gradasi tengah) ----
+        "posX1": 15,
+        "posY1": 9,
         "opacity2": 0.65,
         "color2": "#B39DDB",
+
+        // ---- src3: Light/Highlight ----
+        "posX3": 22.85,
+        "posY3": 14,
+        "opacity3": 1,
+        "color3": "#FFFFFF",
         
         // ---- src3: Shadow (gradasi gelap) ----
-        "posX3": 2,
-        "posY3": 1,
-        "opacity3": 0.55,
-        "color3": "#6A4C93",
+        "posX2": 2,
+        "posY2": 1,
+        "opacity2": 1,
+        "color2": "#6A4C93",
         
         // ---- src4: Outline Color (warna garis luar) ----
         "posX4": 0,
@@ -1031,7 +1083,7 @@ function onlayerdrag(e) {
 
 function onlayerdragend(e) {
     // Jika ini adalah touch event, ignore touchend yang bukan bagian dari aktif drag
-    if (e && e.changedTouches && e.changedTouches.length > 0 && layerDragTouchIds && layerDragTouchIds.length) {
+    if (e && e.changedTouches && e.changedTouches.length > 0 && layerDragTouchIds && layerDragTouchIds.length > 0) {
         let matchedAny = false;
         for (let i = 0; i < e.changedTouches.length; i++) {
             const id = e.changedTouches[i].identifier;
@@ -1955,6 +2007,7 @@ function renderLayer(layer) {
         }
 
         // Ensure layer.element is attached to container if not already
+       
         if (!container.contains(layer.element)) {
             container.appendChild(layer.element);
         }
@@ -2201,6 +2254,10 @@ function groupSelectedLayer() {
   const minX = Math.min(...layersToGroup.map(l => l.x));
   const minY = Math.min(...layersToGroup.map(l => l.y));
 
+  // Hitung posisi absolut grup sebelum reset
+  const groupAbsoluteX = minX;
+  const groupAbsoluteY = minY;
+
   // Reset posisi relative terhadap group
   const childrenForGroup = layersToGroup.map(layer => {
     layer.x -= minX;
@@ -2208,31 +2265,25 @@ function groupSelectedLayer() {
     return layer;
   });
 
-  // Detach semua
-  childrenForGroup.forEach(l => l.detach());
+  // Buat grup baru
+  const newGroup = new LayerGroup(childrenForGroup);
+  newGroup.x = groupAbsoluteX; // Tetapkan posisi absolut grup
+  newGroup.y = groupAbsoluteY;
 
-  // Create group
-  const groupLayer = new Layer('Group', [], {
-    x: minX,
-    y: minY
-  }, childrenForGroup);
+  // Tambahkan grup ke container
+  container.appendChild(newGroup.element);
+  layers.push(newGroup);
 
-  // Update layers array: hapus children, tambah group
-  const firstIndex = layers.indexOf(layersToGroup[0]);
+  // Hapus layer lama dari array (elemen sudah dipindahkan ke dalam grup)
   layersToGroup.forEach(layer => {
-    const idx = layers.indexOf(layer);
-    if (idx !== -1) layers.splice(idx, 1);
+    const index = layers.indexOf(layer);
+    if (index > -1) {
+      layers.splice(index, 1);
+    }
   });
-  
-  if (firstIndex !== -1) {
-    layers.splice(firstIndex, 0, groupLayer);
-  } else {
-    layers.push(groupLayer);
-  }
 
-  // Attach group
-  groupLayer.attach(container, onlayerdragstart);
-  selectLayer(groupLayer);
+  // Pilih grup baru
+  selectLayer(newGroup);
   renderLayer();
 }
 
@@ -2370,7 +2421,7 @@ function pasteCopiedLayers() {
 
 /**
  * Buka settings window menggunakan openWindow() dari windowhandler.js
- * Ini adalah alternative ke pause menu, bisa dipanggil dari ESC atau back button
+ * Ini adalah alternative ke paus menu, bisa dipanggil dari ESC atau back button
  */
 function openSettingsWindow() {
   // Check if windowhandler is available
@@ -2412,13 +2463,13 @@ function openSettingsWindow() {
           <span id="uiVolumePercentage" class="percentage">50%</span>
         </div>
         <div id="studioAudioBGMControls" class="bgm-controls">
-          <button id="prevStudioAudioBGM" style="padding: 8px 12px; cursor: pointer;">⏮️ Previous</button>
-          <span id="studioAudioBGMTitle" style="margin: 0 20px; flex-grow: 1; text-align: center;">Loading...</span>
-          <button id="nextStudioAudioBGM" style="padding: 8px 12px; cursor: pointer;">Next ⏭️</button>
+          <button id="prevStudioAudioBGM" style="padding: 8px 12px, cursor: pointer;">⏮️ Previous</button>
+          <span id="studioAudioBGMTitle" style="margin: 0 20px, flex-grow: 1, text-align: center;">Loading...</span>
+          <button id="nextStudioAudioBGM" style="padding: 8px 12px, cursor: pointer;">Next ⏭️</button>
         </div>
         
-        <div style="width: 100%; text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ccc;">
-          <button id="exitStudioBtn" style="background-color: #ff6b6b; color: white; padding: 12px 24px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; font-weight: bold;">
+        <div style="width: 100%, text-align: center, margin-top: 30px, padding-top: 20px, border-top: 1px solid #ccc;">
+          <button id="exitStudioBtn" style="background-color: #ff6b6b, color: white, padding: 12px 24px, border: none, border-radius: 5px, cursor: pointer, font-size: 14px, font-weight: bold;">
             🚪 Keluar dari Studio
           </button>
         </div>
