@@ -236,16 +236,24 @@ function exportAsSVG() {
         const svg = document.createElementNS(svgNS, "svg");
         const group = document.createElementNS(svgNS, "g");
 
-        // Add semua images dengan base64
+        // Tambahkan logika untuk mengelompokkan innerchild
+        const innerChildGroups = new Map();
         imageElements.forEach(imgData => {
+            const groupKey = imgData.group || 'default';
+            if (!innerChildGroups.has(groupKey)) {
+                const innerGroup = document.createElementNS(svgNS, "g");
+                innerChildGroups.set(groupKey, innerGroup);
+                group.appendChild(innerGroup);
+            }
+            const innerGroup = innerChildGroups.get(groupKey);
+
             const image = document.createElementNS(svgNS, "image");
             image.setAttribute('href', imgData.base64Src);
             image.setAttribute('x', imgData.x);
             image.setAttribute('y', imgData.y);
             image.setAttribute('width', imgData.width);
             image.setAttribute('height', imgData.height);
-            
-            group.appendChild(image);
+            innerGroup.appendChild(image);
         });
 
         // Rapakan ke 0.0 jika ada celah di kiri

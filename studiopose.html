@@ -11,6 +11,20 @@
         /* outline biru, style default, tidak menambah style baru bentrok */
     }
 
+    /* Layer Group Content Wrapper - protect child dari parent transform */
+    .layer-group-content {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        pointer-events: none !important;
+    }
+
+    .layer-group-content[data-selected="true"] {
+        pointer-events: auto !important;
+    }
+
     /* Panel1 Root - Background/Wallpaper tidak ikut zoom */
     .panel1-root {
         position: absolute;

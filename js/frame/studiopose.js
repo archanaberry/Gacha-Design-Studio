@@ -114,7 +114,7 @@
         /* Panel1 Layer Container - objek layer bisa di-zoom dan transform */
         /* Panel1 Layer Container - STABIL & RESPONSIF */
 .panel1-layercontainer {
-    position: fixed;              /* 🔥 anchor ke viewport */
+    position: relative;              /* 🔥 anchor ke viewport */
     left: 50%;
     top: 50%;
 

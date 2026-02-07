@@ -67,7 +67,7 @@ function getBrowserZoom() {
 function calculateCenterOffset() {
     const layerContainer = document.getElementById('panel1-layercontainer');
     const panel1 = document.getElementById('panel1');
-    const panelGroup = document.getElementById('panelGroup');
+    const panel0 = document.getElementById('panelGroup');
     
     if (!layerContainer) return { offsetX: 0, offsetY: 0, offsetXPercent: 0, offsetYPercent: 0 };
     
@@ -141,30 +141,26 @@ function toggleCenterOrigin(enabled) {
     if (enabled) {
         // Aktifkan center origin
         const offset = calculateCenterOffset();
-        const centerOffset = offset.offsetX; // centerX
+        const centerOffsetX = offset.offsetX; // centerX
         const centerOffsetY = offset.offsetY; // centerY
-        
+
+        // Simpan posisi awal grup
+        const initialTransform = layerContainer.style.transform;
+        const translateMatch = initialTransform.match(/translate\(([^,]+),\s*([^\)]+)\)/);
+        const initialTranslateX = translateMatch ? parseFloat(translateMatch[1]) : 0;
+        const initialTranslateY = translateMatch ? parseFloat(translateMatch[2]) : 0;
+
         // Set transform-origin ke center
         layerContainer.style.transformOrigin = 'center center';
-        
-        // Apply translate ONLY untuk visual offset - TIDAK mengubah layer.x/layer.y
-        // Get current zoom scale jika ada
-        const currentTransform = layerContainer.style.transform;
-        const scaleMatch = currentTransform.match(/scale\(([\d.]+)\)/);
+
+        // Terapkan transformasi baru dengan mempertahankan posisi awal
+        const scaleMatch = initialTransform.match(/scale\(([^\)]+)\)/);
         const scale = scaleMatch ? scaleMatch[1] : 1;
-        
-        // PENTING: Gunakan calc() untuk menggabungkan percentage (untuk responsiveness)
-        // dengan pixel offset (untuk center origin offset)
-        // Formula: translate(calc(-50% - offsetX), calc(-50% - offsetY))
-        // Ini memastikan:
-        // 1. -50% membuat element centered relative to parent
-        // 2. - offsetX/offsetY menggeser origin 0,0 ke tengah visual
-        // 3. Works dengan browser zoom karena % handling independent
-        layerContainer.style.transform = `translate(calc(-50% - ${centerOffset}px), calc(-50% - ${centerOffsetY}px)) scale(${scale})`;
+        layerContainer.style.transform = `translate(calc(${initialTranslateX}px - 50% - ${centerOffsetX}px), calc(${initialTranslateY}px - 50% - ${centerOffsetY}px)) scale(${scale})`;
         
         // Store state
         layerContainer.dataset.centerOriginActive = 'true';
-        layerContainer.dataset.centerOffsetX = centerOffset;
+        layerContainer.dataset.centerOffsetX = centerOffsetX;
         layerContainer.dataset.centerOffsetY = centerOffsetY;
         
         // Update checkbox to match state
@@ -174,7 +170,7 @@ function toggleCenterOrigin(enabled) {
         }
         
         console.log('✅ Center origin ENABLED - Origin (0,0) at center (visual only)');
-        console.log(`📍 Offset: ${centerOffset}px, ${centerOffsetY}px`);
+        console.log(`📍 Offset: ${centerOffsetX}px, ${centerOffsetY}px`);
         
         // Trigger layer re-render dengan memanggil updateCoordInput untuk refresh visual
         if (typeof updateCoordInput === 'function') {

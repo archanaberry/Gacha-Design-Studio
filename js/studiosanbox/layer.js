@@ -33,6 +33,10 @@ class Layer {
     #src = [];
     #childLayers = [];
     #ondragstart = null;
+    #relativeX = 0; // Posisi relatif terhadap parent
+    #relativeY = 0; // Posisi relatif terhadap parent
+    #parentLayer = null; // Reference ke parent layer
+    #contentWrapper = null; // Wrapper untuk child agar terlindungi dari parent transform
 
     constructor(name, src, options = {}, childLayers = []) {
         this.#name = name;
@@ -100,6 +104,21 @@ class Layer {
         console.log(`Initializing element for layer "${this.#name}"`);
         this.element = document.createElement('div');
         this.element.classList.add('layer');
+        this.element.style.position = 'absolute';
+        
+        if (this.#childLayers.length > 0) {
+            this.element.classList.add('layer-group');
+            // Create content wrapper untuk protect child dari parent transform
+            const contentWrapper = document.createElement('div');
+            contentWrapper.classList.add('layer-group-content');
+            contentWrapper.style.position = 'absolute';
+            contentWrapper.style.left = '0px';
+            contentWrapper.style.top = '0px';
+            contentWrapper.style.width = '100%';
+            contentWrapper.style.height = '100%';
+            this.#contentWrapper = contentWrapper;
+            this.element.appendChild(contentWrapper);
+        }
         
         this.#src.forEach((src, index) => {
             const imgElement = document.createElement('img');
@@ -112,7 +131,9 @@ class Layer {
             // src0 (index 0) = z-index 0, src1 (index 1) = z-index 1, dst
             imgElement.style.zIndex = index;
             
-            this.element.appendChild(imgElement);
+            // Append ke content wrapper jika group, atau ke element jika standalone
+            const attachTarget = this.#contentWrapper || this.element;
+            attachTarget.appendChild(imgElement);
             
             // Tambahkan event listener untuk seleksi
             imgElement.addEventListener('click', (e) => {
@@ -122,19 +143,24 @@ class Layer {
         });
     
         // Inisialisasi child layers
-        this.#childLayers.forEach(child => child.attach(this.element));
+        this.#childLayers.forEach(child => {
+            const attachTarget = this.#contentWrapper || this.element;
+            child.attach(attachTarget);
+        });
     }    
     //
     
     //
     #selectSrc(imgElement, index) {
-    // Hapus seleksi pada semua elemen src
+    // Hapus seleksi pada semua elemen src (gunakan class baru `item-selected`)
     this.element.querySelectorAll('.src-item').forEach(img => {
-        img.classList.remove('src-selected');
+        img.classList.remove('item-selected');
+        img.dataset.selected = 'false';
     });
 
     // Tandai elemen yang dipilih
-    imgElement.classList.add('src-selected');
+    imgElement.classList.add('item-selected');
+    imgElement.dataset.selected = 'true';
     console.log(`Selected src at index ${index} for layer "${this.#name}"`);
 }
     //
@@ -145,9 +171,19 @@ class Layer {
             return; // Keluar jika elemen tidak ada
         }
     
+        // Jika ini child layer, gunakan relative position; jika root, gunakan absolute
+        let posX = this.#x;
+        let posY = this.#y;
+        
+        if (this.#parentLayer) {
+            // Child layer: gunakan relative offset terhadap parent
+            posX = this.#relativeX;
+            posY = this.#relativeY;
+        }
+        
         // Atur posisi dan ukuran elemen utama
-        this.element.style.left = this.#x + 'px'; // Posisi horizontal
-        this.element.style.top = this.#y + 'px'; // Posisi vertikal
+        this.element.style.left = posX + 'px'; // Posisi horizontal
+        this.element.style.top = posY + 'px'; // Posisi vertikal
         this.element.style.width = this.#width + 'px'; // Lebar
         this.element.style.height = this.#height + 'px'; // Tinggi
     
@@ -181,13 +217,15 @@ class Layer {
     #selectImage(index) {
         // Reset seleksi semua gambar dalam layer
         this.element.querySelectorAll('.src-item').forEach(img => {
-            img.classList.remove('src-selected');
+            img.classList.remove('item-selected');
+            img.dataset.selected = 'false';
         });
     
         // Tandai gambar yang dipilih
         const selectedImage = this.element.querySelector(`.src-item[data-index="${index}"]`);
         if (selectedImage) {
-            selectedImage.classList.add('src-selected');
+            selectedImage.classList.add('item-selected');
+            selectedImage.dataset.selected = 'true';
         }
     
         // Simpan status seleksi jika diperlukan
@@ -200,31 +238,20 @@ class Layer {
      * @param {boolean} selected
      */
 
-    //
-    set selected(value) {
-        if (!this.element) {
-            return;
-        }
     
-        if (value) {
-            this.element.classList.add('selected');
-        } else {
-            this.element.classList.remove('selected');
-            this.#resetInputs(); // Panggil fungsi untuk membersihkan input
-        }
-    }    
-    //
 
     get name() {
         return this.#name;
     }
     
     get x() {
-        return this.#x;
+        // Return posisi yang sesuai konteks: relative jika punya parent, absolute jika root
+        return this.#parentLayer ? this.#relativeX : this.#x;
     }
     
     get y() {
-        return this.#y;
+        // Return posisi yang sesuai konteks: relative jika punya parent, absolute jika root
+        return this.#parentLayer ? this.#relativeY : this.#y;
     }
     
     get rotation() {
@@ -252,12 +279,24 @@ class Layer {
     }
 
     set x(value) {
-        this.#x = value;
+        if (this.#parentLayer) {
+            // Jika punya parent, update relative position
+            this.#relativeX = value;
+        } else {
+            // Jika root, update absolute position
+            this.#x = value;
+        }
         this.#updateElement(); // Perbarui posisi elemen DOM
     }
     
     set y(value) {
-        this.#y = value;
+        if (this.#parentLayer) {
+            // Jika punya parent, update relative position
+            this.#relativeY = value;
+        } else {
+            // Jika root, update absolute position
+            this.#y = value;
+        }
         this.#updateElement(); // Perbarui posisi elemen DOM
     }
     
@@ -285,7 +324,7 @@ class Layer {
     this.#width = value;
 
     // Perbarui ukuran untuk elemen src yang dipilih
-    const selectedImg = this.element.querySelector('.src-item.src-selected');
+    const selectedImg = this.element.querySelector('.src-item.item-selected');
     if (selectedImg) {
         selectedImg.style.width = `${value}px`;
     } else {
@@ -296,7 +335,7 @@ class Layer {
     set height(value) {
     this.#height = value;
 
-    const selectedImg = this.element.querySelector('.src-item.src-selected');
+    const selectedImg = this.element.querySelector('.src-item.item-selected');
     if (selectedImg) {
         selectedImg.style.height = `${value}px`;
     } else {
@@ -311,14 +350,16 @@ class Layer {
         if (this.element) {
             if (value) {
                 this.element.classList.add('selected');
-                // Tandai semua elemen src di dalam layer
+                // Tandai semua elemen src di dalam layer sebagai selected (item-level)
                 this.element.querySelectorAll('.src-item').forEach(img => {
-                    img.classList.add('src-selected');
+                    img.classList.add('item-selected');
+                    img.dataset.selected = 'true';
                 });
             } else {
                 this.element.classList.remove('selected');
                 this.element.querySelectorAll('.src-item').forEach(img => {
-                    img.classList.remove('src-selected');
+                    img.classList.remove('item-selected');
+                    img.dataset.selected = 'false';
                     this.#resetInputs();
                 });
             }
@@ -343,7 +384,19 @@ class Layer {
         }
 
         // Inisialisasi child layers
-        this.#childLayers.forEach(child => child.attach(this.element, ondragstart));
+        this.#childLayers.forEach(child => {
+            child.#parentLayer = this; // Set parent reference
+            // Inisialisasi relative position ke current absolute position
+            child.#relativeX = child.#x;
+            child.#relativeY = child.#y;
+            // Attach child ke content wrapper agar terlindungi dari parent transform
+            const attachTarget = this.#contentWrapper || this.element;
+            child.attach(attachTarget, ondragstart);
+            if (child.element) {
+                child.element.classList.add('src-group');
+                child.element.dataset.innerchild = 'true';
+            }
+        });
     }
 
     detach() {
