@@ -764,6 +764,8 @@ const layers = [
         "color1": "#FFFFFF",
         
         // Global transformations
+        "posX": 16.9,
+        "posY": 25,
         "rotation": 0,
         "scale": 1,
         "skewX": 0,
@@ -778,9 +780,9 @@ const layers = [
       "layerName": "Rambut",
       "src": [
         "assets/profilechibi/hair1.svg",     // src0 - outline
-        "assets/profilechibi/hairl1.svg",    // src1 - light/highlight
-        "assets/profilechibi/hairss1.svg",   // src2 - shade
-        "assets/profilechibi/hairs1.svg",    // src3 - shadow/gradation
+        "assets/profilechibi/hairss1.svg",   // src1 - shade
+        "assets/profilechibi/hairs1.svg",    // src2 - shadow/gradation
+        "assets/profilechibi/hairl1.svg",    // src3 - light/highlight
         "assets/profilechibi/hairo1.svg"     // src4 - base color
       ],
       "options": {
@@ -790,23 +792,23 @@ const layers = [
         "opacity0": 1,
         "color0": "#1A1A1A",
         
-        // ---- src1: Light/Highlight ----
-        "posX1": 27,
-        "posY1": 10,
-        "opacity1": 0.85,
-        "color1": "#FFFFFF",
-        
-        // ---- src2: Shade (gradasi tengah) ----
-        "posX2": 15,
-        "posY2": 9,
+        // ---- src1: Shade (gradasi tengah) ----
+        "posX1": 15,
+        "posY1": 9,
         "opacity2": 0.65,
         "color2": "#B39DDB",
+
+        // ---- src3: Light/Highlight ----
+        "posX3": 22.85,
+        "posY3": 14,
+        "opacity3": 1,
+        "color3": "#FFFFFF",
         
         // ---- src3: Shadow (gradasi gelap) ----
-        "posX3": 2,
-        "posY3": 1,
-        "opacity3": 0.55,
-        "color3": "#6A4C93",
+        "posX2": 2,
+        "posY2": 1,
+        "opacity2": 1,
+        "color2": "#6A4C93",
         
         // ---- src4: Outline Color (warna garis luar) ----
         "posX4": 0,
