@@ -107,17 +107,24 @@ function handleZoom(value) {
         const scale = zoomValue / 100; // 100% = scale 1
         layerContainer.dataset.scale = scale;
         
-        // FIXED: Always maintain translate(-50%, -50%) for proper centering
-        // Preserve center origin translate jika aktif
+        // Check if center origin mode
         const isCenterOriginActive = layerContainer.dataset.centerOriginActive === 'true';
+        
         if (isCenterOriginActive) {
-            const centerOffsetX = parseFloat(layerContainer.dataset.centerOffsetX) || 0;
-            const centerOffsetY = parseFloat(layerContainer.dataset.centerOffsetY) || 0;
-            // FIXED: Combine center positioning with center origin offset
-            layerContainer.style.transform = `translate(calc(-50% - ${centerOffsetX}px), calc(-50% - ${centerOffsetY}px)) scale(${scale})`;
+            // ✅ SIMPLE: Center origin dengan HANYA scale, NO positioning adjustment
+            // positioning (left/top) TETAP FIXED ke center viewport
+            // Hanya ubah scale() di transform saat zoom
+            // TOP-LEFT corner element di viewport center → scale dari sana → membesar ke right & down
+            layerContainer.style.transformOrigin = 'top left';
+            layerContainer.style.transform = `scale(${scale})`;
+            
+            console.log(`🔍 Zoom ${zoomValue}% - Center origin scale only (scale: ${scale})`);
         } else {
-            // FIXED: ALWAYS use translate(-50%, -50%) for robust centering
-            layerContainer.style.transform = `translate(-50%, -50%) scale(${scale})`;
+            // Default: pojok kiri atas dengan scale transform
+            layerContainer.style.left = '0';
+            layerContainer.style.top = '0';
+            layerContainer.style.transformOrigin = 'top left';
+            layerContainer.style.transform = `scale(${scale})`;
         }
         
         // Gambar guide canvas jika zoom <100%
@@ -148,17 +155,24 @@ function handleZoomInput(value) {
         const scale = zoomValue / 100; // 100% = scale 1
         layerContainer.dataset.scale = scale;
         
-        // FIXED: Always maintain translate(-50%, -50%) for proper centering
-        // Preserve center origin translate jika aktif
+        // Check if center origin mode
         const isCenterOriginActive = layerContainer.dataset.centerOriginActive === 'true';
+        
         if (isCenterOriginActive) {
-            const centerOffsetX = parseFloat(layerContainer.dataset.centerOffsetX) || 0;
-            const centerOffsetY = parseFloat(layerContainer.dataset.centerOffsetY) || 0;
-            // FIXED: Combine center positioning with center origin offset
-            layerContainer.style.transform = `translate(calc(-50% - ${centerOffsetX}px), calc(-50% - ${centerOffsetY}px)) scale(${scale})`;
+            // ✅ SIMPLE: Center origin dengan HANYA scale, NO positioning adjustment
+            // positioning (left/top) TETAP FIXED ke center viewport
+            // Hanya ubah scale() di transform saat zoom
+            // TOP-LEFT corner element di viewport center → scale dari sana → membesar ke right & down
+            layerContainer.style.transformOrigin = 'top left';
+            layerContainer.style.transform = `scale(${scale})`;
+            
+            console.log(`🔍 Zoom ${zoomValue}% - Center origin scale only (scale: ${scale})`);
         } else {
-            // FIXED: ALWAYS use translate(-50%, -50%) for robust centering
-            layerContainer.style.transform = `translate(-50%, -50%) scale(${scale})`;
+            // Default: pojok kiri atas dengan scale transform
+            layerContainer.style.left = '0';
+            layerContainer.style.top = '0';
+            layerContainer.style.transformOrigin = 'top left';
+            layerContainer.style.transform = `scale(${scale})`;
         }
         
         // Gambar guide canvas jika zoom <100%
@@ -177,8 +191,8 @@ function handleZoomInput(value) {
     }
 }
 /**
- * FIXED: Auto-recenter panel1-layercontainer saat window resize atau orientation change
- * Pastikan panel tetap centered setelah window size berubah
+ * Auto-recenter panel1-layercontainer saat window resize atau orientation change
+ * Gunakan CSS positioning untuk responsive centering
  */
 function initPanelResponsiveness() {
     const layerContainer = document.getElementById('panel1-layercontainer');
@@ -186,20 +200,18 @@ function initPanelResponsiveness() {
     
     // Handler untuk window resize
     const handleResize = () => {
-        // Trigger redraw guide canvas dan maintain centering
+        // Trigger redraw guide canvas dan maintain positioning saat resize
         const scale = parseFloat(layerContainer.dataset.scale) || 1;
+        const isCenterOriginActive = layerContainer.dataset.centerOriginActive === 'true';
+        const centerPositionMode = layerContainer.dataset.centerPositionMode === 'true';
         
-        // Re-apply zoom untuk memastikan centering saat resize
-        if (scale !== 1) {
-            const isCenterOriginActive = layerContainer.dataset.centerOriginActive === 'true';
-            if (isCenterOriginActive) {
-                const centerOffsetX = parseFloat(layerContainer.dataset.centerOffsetX) || 0;
-                const centerOffsetY = parseFloat(layerContainer.dataset.centerOffsetY) || 0;
-                layerContainer.style.transform = `translate(calc(-50% - ${centerOffsetX}px), calc(-50% - ${centerOffsetY}px)) scale(${scale})`;
-            } else {
-                layerContainer.style.transform = `translate(-50%, -50%) scale(${scale})`;
+        if (isCenterOriginActive && centerPositionMode) {
+            // Center origin: update positioning saat resize via updateCenterOriginTransform
+            if (typeof updateCenterOriginTransform === 'function') {
+                updateCenterOriginTransform();
             }
         }
+        
         drawGuideCanvas();
     };
     

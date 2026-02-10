@@ -153,8 +153,9 @@ input {
     touch-action: none;
 }
 
+/* Gaya untuk layer yang dipilih */
 .layer.selected {
-    outline: 1px solid blue;
+    outline: 1px solid red;
 }
 
 .layer-group {
@@ -164,7 +165,7 @@ input {
 }
 
 .layer-group.selected {
-    border: 2px solid #007bff !important;
+    border: 1px solid red !important;
     pointer-events: auto;
 }
 

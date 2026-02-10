@@ -47,7 +47,6 @@
             display: none;
             width: 0;
             min-height: 100%;
-            overflow: hidden;
         }
 
         /* Horizontal splitter */
@@ -86,60 +85,58 @@
             height: 100%;
             flex: 1; /* Take all available space */
             overflow: auto; /* Scrollable jika content melebihi */
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
+            position: relative;
             display: flex;
             flex-direction: column;
             box-sizing: border-box;
             z-index: 1; /* Behind panel2 */
+            touch-action: pan-x pan-y; /* Allow natural touch scrolling */
+            -webkit-user-select: none; /* Prevent text selection during touch drag */
+            user-select: none;
         }
 
-        /* Panel1 Root - Background/Wallpaper tidak ikut zoom */
-        .panel1-root {
+        /* Panel1 Layer Container - Support CSS positioning untuk centering vs top-left */
+        /* DEFAULT: left: 0, top: 0, transform-origin: top left, size limited to parent */
+        /* CENTER: left: 0, top: 0, transform-origin: center center, size unlimited (no width/height constraint) */
+        .panel1-layercontainer {
             position: absolute;
-            top: 0;
             left: 0;
-            right: 0;
-            bottom: 0;
-            background: none;
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
-            z-index: 0;
+            top: 0;
+            z-index: 1;
+            transform-origin: top left;
+            transform: scale(1);
+            /* PENTING: min-width/min-height untuk memastikan minimal size = parent */
+            /* Tapi JANGAN gunakan width/height 100% - let content grow beyond parent untuk unlimited canvas */
+            min-width: 100%;
+            min-height: 100%;
+            /* overflow visible to allow content outside bounds */
+            overflow: visible;
+            pointer-events: auto; /* Default: allow layer interaction */
         }
 
-        /* Panel1 Layer Container - objek layer bisa di-zoom dan transform */
-        /* Panel1 Layer Container - STABIL & RESPONSIF */
-.panel1-layercontainer {
-    position: relative;              /* 🔥 anchor ke viewport */
-    left: 50%;
-    top: 50%;
+        .panel1-layercontainer.locked {
+            pointer-events: none; /* Block ALL events to layer container */
+        }
 
-    width: 100%;
-    height: 100%;
-
-    transform-origin: center center;
-
-    /* translate untuk posisi, scale untuk zoom internal */
-    transform: translate(-50%, -50%) scale(1);
-    will-change: transform;
-    z-index: 1;
-}
-
-
-        /* Guide Canvas untuk outline garis biru saat zoom <100% */
-        .panel1-guide-canvas {
+        /* Panel1 Layer Pan Lock - Overlay transparent untuk mengunci layer saat drag mode aktif */
+        .panel1-layerpanlock {
             position: absolute;
-            top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 0;
-            pointer-events: none;
-            display: none; /* Tampil hanya saat zoom <100% */
+            top: 0;
+            z-index: 1000; /* TINGGI: block semua lainnya kecuali ini */
+            background-color: transparent;
+            cursor: grab;
+            pointer-events: none; /* DEFAULT: hidden */
+            display: none; /* Hidden by default */
+            touch-action: pan-x pan-y; /* Allow natural touch scroll */
+        }
+
+        .panel1-layerpanlock.active {
+            display: block;
+            /* PENTING: pointer-events AUTO untuk block layer touchstart/mousedown */
+            /* TAPI touch-action: pan-x pan-y membiarkan browser handle scroll otomatis */
+            pointer-events: auto;
+            touch-action: pan-x pan-y;
         }
 
         /* Vertical splitter */
@@ -196,17 +193,10 @@
 
         <!-- Panel tengah: Panel1 (Canvas) dan Panel2 (Controls) -->
         <div class="panel-group" id="panelGroup">
-            <!-- Panel atas - dengan pemisahan background dan layer container -->
+            <!-- Panel atas -->
             <div class="panel1 container" id="panel1">
-                <!-- Background/Wallpaper tetap full size tanpa zoom -->
-                <div class="panel1-root" id="panel1-root">
-                </div>
-                
-                <!-- Layer Container - objek dan layer yang bisa di-zoom dan diatur -->
-                <div class="panel1-layercontainer" id="panel1-layercontainer">
-                    <!-- Guide outline untuk menunjukkan batas kerja saat zoom <100% -->
-                    <canvas id="guideCanvas" class="panel1-guide-canvas"></canvas>
-                </div>
+                <!-- Layer container untuk responsive positioning centering -->
+                <div class="panel1-layercontainer" id="panel1-layercontainer"></div>
             </div>
 
             <!-- Panel bawah -->
@@ -250,7 +240,12 @@
 
         <label for="centerOriginToggle">
             <input type="checkbox" id="centerOriginToggle" onchange="toggleCenterOrigin(this.checked)">
-            Pusatkan Origin (0,0) ke Pojok Atas Kiri
+            Pusatkan Origin (0,0) ke Tengah Layar
+        </label>
+
+        <label for="dragPanel1Toggle">
+            <input type="checkbox" id="dragPanel1Toggle" onchange="toggleDragPanel1(this.checked)">
+            Nyalakan untuk menyeret panel1
         </label>
 
         <label for="layerName">Layer:</label>
@@ -330,7 +325,6 @@
     <!-- Skrip -->
     <script src="js/windowhandler.js"></script>
     <script src="js/mainmenu/studiopose.js"></script>
-    <script src="js/studiocharacter/layerrenderoffset.js"></script>
     <script src="js/studiocharacter/layer.js"></script>
     <script src="js/studiocharacter/history.js"></script>
     <script src="js/studiocharacter/historywindow.js"></script>
@@ -382,6 +376,34 @@
         }
     }
 
+    // Initialize layer container pada startup SEBELUM centerorigin.js load
+    document.addEventListener('DOMContentLoaded', function() {
+        const layerContainer = document.getElementById('panel1-layercontainer');
+        if (layerContainer) {
+            // Set default positioning untuk pojok kiri atas
+            layerContainer.style.left = '0px';
+            layerContainer.style.top = '0px';
+            layerContainer.style.transformOrigin = 'top left';
+            layerContainer.style.transform = 'scale(1)';
+            
+            // Set dataset state
+            layerContainer.dataset.centerOriginActive = 'false';
+            layerContainer.dataset.centerPositionMode = 'false';
+            
+            // Create panel1 layer pan lock overlay
+            const panel1 = document.getElementById('panel1');
+            if (panel1) {
+                const lockOverlay = document.createElement('div');
+                lockOverlay.id = 'panel1-layerpanlock';
+                lockOverlay.className = 'panel1-layerpanlock';
+                panel1.appendChild(lockOverlay);
+                console.log('✅ Panel1 layer pan lock overlay created');
+            }
+            
+            console.log('✅ Panel1 layer container initialized to default state (top-left)');
+        }
+    });
+
     // Initialize splitter for panel3 (horizontal - left to right)
     document.addEventListener('DOMContentLoaded', function() {
         const splitterH = document.getElementById('splitterH');
@@ -389,8 +411,6 @@
         const panel1 = document.getElementById('panel1');
         const mainContainer = document.getElementById('mainContainer');
         let isDraggingH = false;
-        // Track touch identifier to support multi-touch devices (multiple fingers)
-        let currentTouchId = null;
 
         if (splitterH && mainContainer) {
             splitterH.addEventListener('mousedown', function(e) {
@@ -401,15 +421,8 @@
 
             splitterH.addEventListener('touchstart', function(e) {
                 isDraggingH = true;
-                // store the touch identifier that started the drag so we can follow it
-                if (e.changedTouches && e.changedTouches.length > 0) {
-                    currentTouchId = e.changedTouches[0].identifier;
-                } else {
-                    currentTouchId = null;
-                }
                 document.addEventListener('touchmove', handleHorizontalDrag, { passive: false });
                 document.addEventListener('touchend', stopHorizontalDrag);
-                document.addEventListener('touchcancel', stopHorizontalDrag);
             });
 
             function handleHorizontalDrag(e) {
@@ -417,22 +430,8 @@
                 
                 let clientX;
                 if (e.touches && e.touches.length > 0) {
-                    // find the touch that matches the one that started the drag (by identifier)
-                    let touch = null;
-                    if (currentTouchId !== null) {
-                        for (let i = 0; i < e.touches.length; i++) {
-                            if (e.touches[i].identifier === currentTouchId) {
-                                touch = e.touches[i];
-                                break;
-                            }
-                        }
-                    }
-                    // fallback to first touch if the original id isn't present
-                    if (!touch) touch = e.touches[0];
-                    clientX = touch.clientX;
-                    // prevent scrolling while dragging on touch devices
-                    e.preventDefault();
-                } else if (e.clientX != null) {
+                    clientX = e.touches[0].clientX;
+                } else if (e.clientX) {
                     clientX = e.clientX;
                 } else {
                     return;
@@ -452,26 +451,12 @@
                 }
             }
 
-            function stopHorizontalDrag(e) {
-                // Jika ini touchend, pastikan menyangkut touch yang memulai drag
-                if (e && e.changedTouches && e.changedTouches.length > 0 && currentTouchId !== null) {
-                    let matched = false;
-                    for (let i = 0; i < e.changedTouches.length; i++) {
-                        if (e.changedTouches[i].identifier === currentTouchId) {
-                            matched = true;
-                            break;
-                        }
-                    }
-                    if (!matched) return; // ignore touchend from other fingers
-                }
-
+            function stopHorizontalDrag() {
                 isDraggingH = false;
-                currentTouchId = null;
                 document.removeEventListener('mousemove', handleHorizontalDrag);
                 document.removeEventListener('mouseup', stopHorizontalDrag);
                 document.removeEventListener('touchmove', handleHorizontalDrag);
                 document.removeEventListener('touchend', stopHorizontalDrag);
-                document.removeEventListener('touchcancel', stopHorizontalDrag);
                 
                 // If panel3 width is 0, hide it completely
                 if (panel3.offsetWidth < 10) {
@@ -484,105 +469,220 @@
         }
     });
 
-    // ========== LISTEN FOR PARENT MESSAGES (UPDATE INPUTS) ==========
-    window.addEventListener('message', function(event) {
-        console.log('🔔 Message received in iframe:', event.data?.type || 'unknown', event.data);
+    // Update origin offset on resize - handled by centerorigin.js
+    // centerorigin.js sudah menangani resize events dan responsive positioning
+
+    // ========== PANEL1 DRAG/PAN HANDLER ==========
+    let isDraggingPanel1 = false;
+    let dragStartX = 0;
+    let dragStartY = 0;
+    let scrollStartLeft = 0;
+    let scrollStartTop = 0;
+    let dragPanel1Enabled = false;
+
+    function toggleDragPanel1(enabled) {
+        dragPanel1Enabled = enabled;
+        const panel1 = document.getElementById('panel1');
+        const layerContainer = document.getElementById('panel1-layercontainer');
+        const lockOverlay = document.getElementById('panel1-layerpanlock');
         
-        if (event.data && event.data.type === 'updateLayerInputs') {
-            const data = event.data;
-            console.log('📥 Received updateLayerInputs from parent:', data);
+        if (dragPanel1Enabled) {
+            panel1.style.cursor = 'grab';
             
-            // Update layer name input
-            const layerNameInput = document.getElementById('layerName');
-            console.log('layerNameInput element:', layerNameInput ? '✓ found' : '✗ NOT FOUND');
-            if (layerNameInput && data.layerName !== undefined) {
-                layerNameInput.value = data.layerName;
-                console.log('✓ Updated layerName to:', data.layerName);
-            } else {
-                console.log('✗ Failed: layerNameInput=' + (layerNameInput ? 'ok' : 'null') + ', data.layerName=' + data.layerName);
-            }
-            
-            // Update coordinate inputs
-            const xCoordInput = document.getElementById('xCoord');
-            if (xCoordInput && data.xCoord !== undefined) {
-                xCoordInput.value = data.xCoord;
-            }
-            
-            const yCoordInput = document.getElementById('yCoord');
-            if (yCoordInput && data.yCoord !== undefined) {
-                yCoordInput.value = data.yCoord;
-            }
-            
-            // Update size inputs
-            const widthInput = document.getElementById('width');
-            console.log('widthInput element:', widthInput ? '✓ found' : '✗ NOT FOUND', 'value:', data.width);
-            if (widthInput && data.width !== undefined) {
-                widthInput.value = data.width;
-                console.log('✓ Updated width to:', data.width);
-            }
-            
-            const heightInput = document.getElementById('height');
-            console.log('heightInput element:', heightInput ? '✓ found' : '✗ NOT FOUND', 'value:', data.height);
-            if (heightInput && data.height !== undefined) {
-                heightInput.value = data.height;
-                console.log('✓ Updated height to:', data.height);
-            }
-            
-            // Update scale input
-            const scaleInput = document.getElementById('scale');
-            console.log('scaleInput element:', scaleInput ? '✓ found' : '✗ NOT FOUND', 'value:', data.scale);
-            if (scaleInput && data.scale !== undefined) {
-                scaleInput.value = data.scale;
-                console.log('✓ Updated scale to:', data.scale);
-            }
-            
-            // Update rotation
-            const rotationControl = document.getElementById('rotationControl');
-            if (rotationControl && data.rotation !== undefined) {
-                rotationControl.value = data.rotation;
-                console.log('✓ Updated rotation to:', data.rotation);
-            }
-            
-            // Update skew inputs
-            const skewXControl = document.getElementById('skewXControl');
-            const skewXSlider = document.getElementById('skewXSlider');
-            if (data.skewX !== undefined) {
-                if (skewXControl) skewXControl.value = data.skewX;
-                if (skewXSlider) skewXSlider.value = data.skewX;
-                console.log('✓ Updated skewX to:', data.skewX);
-            }
-            
-            const skewYControl = document.getElementById('skewYControl');
-            const skewYSlider = document.getElementById('skewYSlider');
-            if (data.skewY !== undefined) {
-                if (skewYControl) skewYControl.value = data.skewY;
-                if (skewYSlider) skewYSlider.value = data.skewY;
-                console.log('✓ Updated skewY to:', data.skewY);
-            }
-        }
-    });
-
-    // Update origin offset on resize if centered
-    window.addEventListener('resize', function() {
-        if (centerOriginActive) {
-            // Re-calculate offset untuk ukuran baru
-            const offset = calculateCenterOffset();
-            const layerContainer = document.getElementById('panel1-layercontainer');
+            // Lock layer container - block ALL events
             if (layerContainer) {
-                const scaleMatch = layerContainer.style.transform.match(/scale\(([\d.]+)\)/);
-                const scale = scaleMatch ? scaleMatch[1] : 1;
-                // FIXED: Use calc() untuk proper centering saat resize
-                layerContainer.style.transform = 'translate(calc(-50% - ' + offset.offsetX + 'px), calc(-50% - ' + offset.offsetY + 'px)) scale(' + scale + ')';
+                layerContainer.classList.add('locked');
+                console.log('✅ Panel1 layer container LOCKED');
             }
+            
+            // Show lock overlay - block semua event ke layer
+            if (lockOverlay) {
+                // Set overlay position to match scrollable content area (not viewport!)
+                // Use scrollWidth/scrollHeight to cover entire content, not just visible viewport
+                lockOverlay.style.left = '0px';
+                lockOverlay.style.top = '0px';
+                lockOverlay.style.width = panel1.scrollWidth + 'px';
+                lockOverlay.style.height = panel1.scrollHeight + 'px';
+                
+                lockOverlay.classList.add('active');
+                lockOverlay.style.cursor = 'grab';
+                console.log('✅ Panel1 layer pan lock ENABLED - Scrollable area:', {
+                    width: panel1.scrollWidth,
+                    height: panel1.scrollHeight
+                });
+            }
+            
+            console.log('✅ Panel1 drag mode ENABLED');
+        } else {
+            panel1.style.cursor = 'default';
+            isDraggingPanel1 = false;
+            
+            // Unlock layer container
+            if (layerContainer) {
+                layerContainer.classList.remove('locked');
+                console.log('✅ Panel1 layer container UNLOCKED');
+            }
+            
+            // Hide lock overlay - allow layer interaction
+            if (lockOverlay) {
+                lockOverlay.classList.remove('active');
+                lockOverlay.style.cursor = 'default';
+                console.log('✅ Panel1 layer pan lock DISABLED');
+            }
+            
+            console.log('❌ Panel1 drag mode DISABLED');
         }
-    });
-
-    // Initialize zoom detection untuk monitor browser zoom changes (25% - 500%)
-    // Secara otomatis refresh center origin saat user ubah zoom di Chrome
-    if (typeof initZoomDetection === 'function') {
-        initZoomDetection();
-        console.log('✅ Zoom detection initialized - akan follow Chrome zoom 25%-500%');
     }
+
+    // Initialize drag handler pada DOMContentLoaded
+    document.addEventListener('DOMContentLoaded', function() {
+        const panel1 = document.getElementById('panel1');
+        const lockOverlay = document.getElementById('panel1-layerpanlock');
+        
+        if (!panel1) return;
+
+        // Update lock overlay position on window resize
+        window.addEventListener('resize', function() {
+            if (dragPanel1Enabled && lockOverlay && lockOverlay.classList.contains('active')) {
+                lockOverlay.style.width = panel1.scrollWidth + 'px';
+                lockOverlay.style.height = panel1.scrollHeight + 'px';
+                console.log('📏 Overlay resized to scrollable area:', {
+                    width: panel1.scrollWidth,
+                    height: panel1.scrollHeight
+                });
+            }
+        });
+
+        // Update overlay saat scroll/zoom mengubah content size
+        panel1.addEventListener('scroll', function() {
+            if (dragPanel1Enabled && lockOverlay && lockOverlay.classList.contains('active')) {
+                // Update overlay size setiap kali scroll (karena zoom juga trigger layout change)
+                lockOverlay.style.width = panel1.scrollWidth + 'px';
+                lockOverlay.style.height = panel1.scrollHeight + 'px';
+            }
+        });
+
+        // Monitor for zoom/transform changes - update overlay untuk match content
+        const observeLayerChanges = () => {
+            if (dragPanel1Enabled && lockOverlay && lockOverlay.classList.contains('active')) {
+                const newWidth = panel1.scrollWidth;
+                const newHeight = panel1.scrollHeight;
+                const currentWidth = parseFloat(lockOverlay.style.width);
+                const currentHeight = parseFloat(lockOverlay.style.height);
+                
+                // Update jika ada perubahan ukuran (dari zoom)
+                if (newWidth !== currentWidth || newHeight !== currentHeight) {
+                    lockOverlay.style.width = newWidth + 'px';
+                    lockOverlay.style.height = newHeight + 'px';
+                    console.log('🔍 Overlay updated after zoom:', {
+                        width: newWidth,
+                        height: newHeight
+                    });
+                }
+            }
+        };
+
+        // Check overlay size every 100ms when drag mode is active
+        setInterval(observeLayerChanges, 100);
+
+        // MOUSE HANDLER - Drag/Pan untuk mouse
+        if (lockOverlay) {
+            lockOverlay.addEventListener('mousedown', function(e) {
+                if (!dragPanel1Enabled) return;
+                
+                isDraggingPanel1 = true;
+                dragStartX = e.clientX;
+                dragStartY = e.clientY;
+                scrollStartLeft = panel1.scrollLeft;
+                scrollStartTop = panel1.scrollTop;
+                
+                // Mouse drag - overlay already blocking due to pointer-events: auto
+                lockOverlay.style.cursor = 'grabbing';
+                panel1.style.cursor = 'grabbing';
+                console.log('🖱️ Mouse drag START on overlay');
+                e.preventDefault();
+            });
+        }
+
+        // Mouse down - start drag
+        panel1.addEventListener('mousedown', function(e) {
+            if (!dragPanel1Enabled) return;
+            
+            // Jangan drag jika click pada input/button
+            const target = e.target;
+            if (target.tagName === 'INPUT' || target.tagName === 'BUTTON' || 
+                target.tagName === 'SELECT' || target.tagName === 'LABEL' ||
+                target.closest('label') || target.closest('[onclick]')) {
+                return;
+            }
+            
+            isDraggingPanel1 = true;
+            dragStartX = e.clientX;
+            dragStartY = e.clientY;
+            scrollStartLeft = panel1.scrollLeft;
+            scrollStartTop = panel1.scrollTop;
+            
+            panel1.style.cursor = 'grabbing';
+            console.log('🖱️ Panel1 mouse drag START');
+            e.preventDefault();
+        });
+
+        // Mouse move - pan canvas
+        document.addEventListener('mousemove', function(e) {
+            if (!isDraggingPanel1 || !dragPanel1Enabled) return;
+            
+            const deltaX = e.clientX - dragStartX;
+            const deltaY = e.clientY - dragStartY;
+            
+            // Invert delta untuk natural pan feeling (drag kanan = scroll kiri)
+            panel1.scrollLeft = scrollStartLeft - deltaX;
+            panel1.scrollTop = scrollStartTop - deltaY;
+        });
+
+        // Mouse up - end drag
+        document.addEventListener('mouseup', function(e) {
+            if (!isDraggingPanel1) return;
+            
+            isDraggingPanel1 = false;
+            console.log('🖱️ Mouse drag END');
+            
+            if (dragPanel1Enabled) {
+                panel1.style.cursor = 'grab';
+                if (lockOverlay) {
+                    lockOverlay.style.cursor = 'grab';
+                }
+            } else {
+                panel1.style.cursor = 'default';
+                if (lockOverlay) {
+                    lockOverlay.style.cursor = 'default';
+                }
+            }
+        });
+
+        // TOUCH HANDLER - Natural scrolling untuk touch/mobile
+        // Overlay punya pointer-events: auto + touch-action: pan-x pan-y
+        // Ini berarti: block layer interaction TAPI allow scroll otomatis
+        panel1.addEventListener('touchstart', function(e) {
+            if (dragPanel1Enabled) {
+                const target = e.target;
+                if (target.tagName !== 'INPUT' && target.tagName !== 'BUTTON' && 
+                    target.tagName !== 'SELECT' && !target.closest('label')) {
+                    // Set flag - overlay akan block touch ke layer
+                    isDraggingPanel1 = true;
+                    console.log('📱 Touch START - overlay blocking + scroll allowed via touch-action');
+                }
+            }
+        }, { passive: true }); // passive: true agar tidak preventDefault scroll
+
+        document.addEventListener('touchend', function(e) {
+            if (isDraggingPanel1) {
+                isDraggingPanel1 = false;
+                console.log('📱 Touch END');
+            }
+        });
+
+        console.log('✅ Panel1 drag handler initialized (Mouse: drag/pan | Touch: natural scroll)');
+    });
 
     </script>
 </html>`;

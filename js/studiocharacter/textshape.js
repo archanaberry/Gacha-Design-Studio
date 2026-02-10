@@ -210,13 +210,18 @@ class TextShapeManager {
             layers.push(textLayer);
         }
 
-        // Attach to panel1
+        // Attach to panel1 using UNIFIED API for multi-drag support
         const container = document.getElementById('panel1') || document.querySelector('.container');
         if (container) {
-            textLayer.attach(container, window.onlayerdragstart || null);
-            // Add click handler if available
-            if (typeof addLayerClickHandler === 'function') {
-                addLayerClickHandler(textLayer);
+            // 🔥 USE UNIFIED API - This connects to pointer system automatically
+            if (typeof attachLayerToPointerSystem === 'function') {
+                attachLayerToPointerSystem(textLayer);
+            } else {
+                // Fallback jika unified API belum tersedia
+                textLayer.attach(container, window.onlayerdragstart || null);
+                if (typeof addLayerClickHandler === 'function') {
+                    addLayerClickHandler(textLayer);
+                }
             }
             // Render
             if (typeof renderLayer === 'function') {

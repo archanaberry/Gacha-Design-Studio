@@ -20,6 +20,7 @@
 // Please patient for release Gacha Design Studio in Playstore UwU
 
 // selector.js
+// 🔥 UNIFIED POINTER EVENT SYSTEM - Menggunakan PointerEvent untuk mouse, touch, dan pen input
 // CSS diubah menjadi string JS
 const css = `
 .selection-box {
@@ -31,6 +32,11 @@ const css = `
 }
 .selector-container {
     position: relative;
+    touch-action: none;
+}
+/* 🔥 Prevent scroll saat selector drag aktif */
+.selector-active-drag {
+    overflow: hidden !important;
 }
 `;
 
@@ -50,9 +56,28 @@ class Selector {
         this.isDragging = false;
         this.selectedLayers = [];
         
+        // 🔥 NEW: Track drag containers untuk multi-panel selector support
+        this.dragContainers = [container];
+        this.dragContainers.forEach(c => {
+            if (c) c.style.touchAction = 'none';
+        });
+        const layerContainer = document.getElementById('panel1-layercontainer');
+        const layerPanlock = document.getElementById('panel1-layerpanlock');
+        if (layerContainer && !this.dragContainers.includes(layerContainer)) {
+            this.dragContainers.push(layerContainer);
+            layerContainer.style.touchAction = 'none';
+        }
+        if (layerPanlock && !this.dragContainers.includes(layerPanlock)) {
+            this.dragContainers.push(layerPanlock);
+            layerPanlock.style.touchAction = 'none';
+        }
+        
+        // 🔥 NEW: Unified pointer state tracking (mouse, touch, pen)
+        this.pointerDownState = new Map();
+        
         // Bind handlers untuk document-level events
-        this.onDocumentMouseMove = this.onMouseMove.bind(this);
-        this.onDocumentMouseUp = this.onMouseUp.bind(this);
+        this.onDocumentPointerMove = this.onPointerMove.bind(this);
+        this.onDocumentPointerUp = this.onPointerUp.bind(this);
 
         // Ensure container punya positioning yang benar untuk absolute child positioning
         const containerStyle = window.getComputedStyle(this.container);
@@ -61,14 +86,14 @@ class Selector {
         }
 
         this.button.addEventListener('click', this.toggleSelector.bind(this));
-        this.container.addEventListener('mousedown', this.onMouseDown.bind(this));
-        // track touchId untuk multi-touch support
-        this.touchId = null;
-        this.container.addEventListener('touchstart', this.onTouchStart.bind(this), { passive: true });
-        this.container.addEventListener('touchmove', this.onTouchMove.bind(this), { passive: false });
-        this.container.addEventListener('touchend', this.onTouchEnd.bind(this));
-        this.container.addEventListener('touchcancel', this.onTouchEnd.bind(this));
-
+        
+        // 🔥 NEW: Use unified PointerEvent system instead of separate mouse/touch handlers
+        this.dragContainers.forEach(c => {
+            if (c) {
+                c.addEventListener('pointerdown', this.onPointerDown.bind(this), { passive: false });
+            }
+        });
+        
         // Keyboard events
         document.addEventListener('keydown', this.onKeyDown.bind(this));
 
@@ -150,6 +175,8 @@ class Selector {
                 const inst = el.__layerInstance || (window.layers && window.layers.find(l => l.element === el));
                 if (inst) {
                     inst.selected = true;
+                    // 🔥 Add to DOM class too
+                    el.classList.add('selected');
                     this.selectedLayers.push(inst);
                 } else {
                     // fallback to DOM selection if no instance present
@@ -159,9 +186,24 @@ class Selector {
             }
         });
         
+        // 🔥 CRITICAL: Sync selector.selectedLayers untuk bisa di-access dari studiopose.js
+        if (window.selectorInstance && window.selectorInstance !== this) {
+            // Copy ke global selector instance jika ada
+            window.selectorInstance.selectedLayers = this.selectedLayers.slice();
+        }
+        
         // Sinkronisasi ke panel lain setelah selection di selector
         if (typeof updateMenuLayerSelectionForMultiSelect === 'function') {
             updateMenuLayerSelectionForMultiSelect();
+        }
+        
+        // 🔥 CRITICAL: Update Panel2 display dengan color indicator (BLUE untuk grouped selection)
+        if (typeof updateCoordInput === 'function') {
+            setTimeout(() => updateCoordInput(), 10);  // Delay sedikit untuk ensure state updated
+            console.log('📊 selectLayersInBox: Multi-select updated', {
+                count: this.selectedLayers.length,
+                names: this.selectedLayers.map(l => l.name || l.__layerInstance?.name || 'unknown')
+            });
         }
     }
 
@@ -206,163 +248,104 @@ class Selector {
         });
     }
 
-    onMouseDown(e) {
+    // 🔥 NEW: Unified pointerdown handler (works for mouse, touch, and pen)
+    onPointerDown(e) {
         if (!this.selectorActive) return;
+        
+        e.preventDefault();
+        try { e.target.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+        
+        const pid = e.pointerId;
         const containerRect = this.container.getBoundingClientRect();
         this.startX = e.clientX - containerRect.left;
         this.startY = e.clientY - containerRect.top;
+        
+        // 🔥 NEW: Store pointer state in Map
+        this.pointerDownState.set(pid, {
+            isDragging: true,
+            startX: this.startX,
+            startY: this.startY,
+            container: this.container
+        });
+        
         this.isDragging = true;
         this.clearSelectionBox();
         this.deselectAllLayers();
         
-        // Disable pointer-events pada container agar document listener bisa tangkap event
-        this.container.style.pointerEvents = 'none';
+        // 🔥 CRITICAL: Untuk layerContainer - pastikan selection box di-attach ke container yang tepat
+        const container = e.currentTarget;
+        if (container && container !== this.container) {
+            // Jika pointer down di layerContainer, gunakan itu sebagai reference
+            if (container === document.getElementById('panel1-layercontainer') ||
+                container === document.getElementById('panel1-layerpanlock')) {
+                this.currentDragContainer = container;
+            }
+        }
+        
+        // 🔥 NEW: Disable scroll pada container ketika selector drag aktif
+        this.dragContainers.forEach(c => {
+            if (c) {
+                c.classList.add('selector-active-drag');
+                c.style.pointerEvents = 'none';
+            }
+        });
         
         // Attach document-level listeners untuk capture movement di atas semua elemen
-        document.addEventListener('mousemove', this.onDocumentMouseMove);
-        document.addEventListener('mouseup', this.onDocumentMouseUp);
+        document.addEventListener('pointermove', this.onDocumentPointerMove, { passive: false });
+        document.addEventListener('pointerup', this.onDocumentPointerUp, { passive: false });
+        document.addEventListener('pointercancel', this.onDocumentPointerUp, { passive: false });
     }
 
-    onMouseMove(e) {
-        if (!this.selectorActive || !this.isDragging) return;
+    // 🔥 NEW: Unified pointermove handler
+    onPointerMove(e) {
+        const pid = e.pointerId;
+        if (!this.pointerDownState.has(pid) || !this.selectorActive || !this.isDragging) return;
+        
+        e.preventDefault();
+        
+        const state = this.pointerDownState.get(pid);
         const containerRect = this.container.getBoundingClientRect();
         const currentX = e.clientX - containerRect.left;
         const currentY = e.clientY - containerRect.top;
-        const width = currentX - this.startX;
-        const height = currentY - this.startY;
-        this.setSelectionBox(this.startX, this.startY, width, height);
+        const width = currentX - state.startX;
+        const height = currentY - state.startY;
+        
+        this.setSelectionBox(state.startX, state.startY, width, height);
     }
 
-    onMouseUp(e) {
-        if (!this.selectorActive || !this.isDragging) return;
-        this.isDragging = false;
+    // 🔥 NEW: Unified pointerup handler
+    onPointerUp(e) {
+        const pid = e.pointerId;
+        if (!this.pointerDownState.has(pid)) return;
         
-        // Re-enable pointer-events pada container
-        this.container.style.pointerEvents = 'auto';
+        e.preventDefault();
+        
+        const state = this.pointerDownState.get(pid);
+        const wasActive = this.isDragging;
+        
+        // 🔥 NEW: Re-enable scroll pada semua drag containers
+        this.dragContainers.forEach(cont => {
+            if (cont) {
+                cont.classList.remove('selector-active-drag');
+                cont.style.pointerEvents = 'auto';
+            }
+        });
         
         // Detach document-level listeners
-        document.removeEventListener('mousemove', this.onDocumentMouseMove);
-        document.removeEventListener('mouseup', this.onDocumentMouseUp);
+        document.removeEventListener('pointermove', this.onDocumentPointerMove);
+        document.removeEventListener('pointerup', this.onDocumentPointerUp);
+        document.removeEventListener('pointercancel', this.onDocumentPointerUp);
+        
+        // Clean up pointer state
+        this.pointerDownState.delete(pid);
+        if (this.pointerDownState.size === 0) {
+            this.isDragging = false;
+        }
+        
+        try { e.target.releasePointerCapture(pid); } catch (err) { /* ignore */ }
         
         // Check apakah selection box ada sebelum di-access
-        if (this.selectionBox) {
-            const box = this.selectionBox.getBoundingClientRect();
-            this.selectLayersInBox(box);
-            this.clearSelectionBox();
-        }
-    }
-
-    onTouchStart(e) {
-        if (!this.selectorActive) return;
-        // If another touch-drag is active elsewhere, ignore starting a selection
-        let startId = null;
-        if (e.changedTouches && e.changedTouches.length > 0) startId = e.changedTouches[0].identifier;
-        if (startId !== null && window.touchDragActive && window.touchDragId !== null && window.touchDragId !== startId) {
-            return; // ignore selection start while dragging layers with another touch
-        }
-
-        // If any touch is on a layer, toggle selection for those touches (support multi-finger selection)
-        if (e.changedTouches && e.changedTouches.length > 0) {
-            for (let i = 0; i < e.changedTouches.length; i++) {
-                const ct = e.changedTouches[i];
-                // Because pointer-events may be disabled on non-selected layers, use bounding-box hit-test
-                const layers = document.querySelectorAll('.layer, .layer-group');
-                let layerEl = null;
-                for (let li = 0; li < layers.length; li++) {
-                    const cand = layers[li];
-                    const r = cand.getBoundingClientRect();
-                    if (ct.clientX >= r.left && ct.clientX <= r.right && ct.clientY >= r.top && ct.clientY <= r.bottom) {
-                        layerEl = cand;
-                        break;
-                    }
-                }
-                if (layerEl) {
-                    const inst = layerEl.__layerInstance || (window.layers && window.layers.find(l => l.element === layerEl));
-                    if (inst) {
-                        if (inst.selected) {
-                            inst.selected = false;
-                            if (Array.isArray(this.selectedLayers)) this.selectedLayers = this.selectedLayers.filter(s => s !== inst);
-                        } else {
-                            inst.selected = true;
-                            if (!Array.isArray(this.selectedLayers)) this.selectedLayers = [];
-                            if (!this.selectedLayers.includes(inst)) this.selectedLayers.push(inst);
-                        }
-                    } else {
-                        if (layerEl.classList.contains('selected')) {
-                            layerEl.classList.remove('selected');
-                            if (Array.isArray(this.selectedLayers)) this.selectedLayers = this.selectedLayers.filter(s => s !== layerEl);
-                        } else {
-                            layerEl.classList.add('selected');
-                            if (!Array.isArray(this.selectedLayers)) this.selectedLayers = [];
-                            this.selectedLayers.push(layerEl);
-                        }
-                    }
-                }
-            }
-            // Don't start selection box if touch was used to toggle layers
-            window.frameworkDisplay?.updateSelectionVisuals?.();
-            updateMenuLayerSelectionForMultiSelect?.();
-            return;
-        }
-
-        // simpan touch identifier yang memulai selection (for selection box)
-        if (e.changedTouches && e.changedTouches.length > 0) {
-            this.touchId = e.changedTouches[0].identifier;
-        } else {
-            this.touchId = null;
-        }
-        const touch = e.touches ? e.touches[0] : (e.changedTouches ? e.changedTouches[0] : null);
-        if (!touch) return;
-        const containerRect = this.container.getBoundingClientRect();
-        this.startX = touch.clientX - containerRect.left;
-        this.startY = touch.clientY - containerRect.top;
-        this.isDragging = true;
-        this.clearSelectionBox();
-        // Only deselect when starting a selection box on empty space
-        this.deselectAllLayers();
-    }
-
-    onTouchMove(e) {
-        if (!this.selectorActive || !this.isDragging) return;
-        // cari touch yang sesuai identifier (support multi-touch)
-        let touch = null;
-        if (this.touchId !== null && e.touches) {
-            for (let i = 0; i < e.touches.length; i++) {
-                if (e.touches[i].identifier === this.touchId) {
-                    touch = e.touches[i];
-                    break;
-                }
-            }
-        }
-        if (!touch) touch = e.touches ? e.touches[0] : (e.changedTouches ? e.changedTouches[0] : null);
-        if (!touch) return;
-        const containerRect = this.container.getBoundingClientRect();
-        const currentX = touch.clientX - containerRect.left;
-        const currentY = touch.clientY - containerRect.top;
-        const width = currentX - this.startX;
-        const height = currentY - this.startY;
-        this.setSelectionBox(this.startX, this.startY, width, height);
-        e.preventDefault();
-    }
-
-    onTouchEnd(e) {
-        if (!this.selectorActive || !this.isDragging) return;
-        // Jika ini touchend, pastikan menyangkut touch yang memulai selection
-        if (e && e.changedTouches && e.changedTouches.length > 0 && this.touchId !== null) {
-            let matched = false;
-            for (let i = 0; i < e.changedTouches.length; i++) {
-                if (e.changedTouches[i].identifier === this.touchId) {
-                    matched = true;
-                    break;
-                }
-            }
-            if (!matched) return; // ignore touchend from other fingers
-        }
-
-        this.isDragging = false;
-        this.touchId = null;
-        // Check apakah selection box ada sebelum di-access
-        if (this.selectionBox) {
+        if (wasActive && this.selectionBox) {
             const box = this.selectionBox.getBoundingClientRect();
             this.selectLayersInBox(box);
             this.clearSelectionBox();
@@ -390,7 +373,7 @@ function initSelector() {
         return;
     }
     
-    console.log('Selector initialized successfully');
+    console.log('✅ Selector initialized with unified PointerEvent system');
     // expose selector instance globally so drag code can detect multi-selected layers
     window.selectorInstance = new Selector(container, toggleSelectorBtn);
 }
