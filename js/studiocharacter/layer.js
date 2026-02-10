@@ -350,8 +350,13 @@ class Layer {
             
             // Tambahkan event listener untuk seleksi
             imgElement.addEventListener('click', (e) => {
-                e.stopPropagation(); // Hindari seleksi layer utama
-                this.#selectImage(index);
+                // 🔥 CRITICAL: Check Ctrl key - if Ctrl, let it bubble to layer handler for multi-select!
+                const isCtrl = e.ctrlKey || e.metaKey;
+                if (!isCtrl) {
+                    e.stopPropagation(); // Hindari seleksi layer utama (for normal click)
+                    this.#selectImage(index);
+                }
+                // If Ctrl pressed, let click bubble up to layer.element handler to handle multi-select toggle
             });
             // Terapkan opacity per src pada saat inisialisasi
             const opacityForSrc = this.#getPropertyForSrc('opacity', index, this.#opacity, 1);
@@ -724,8 +729,13 @@ class Layer {
                     imgElement.src = src;
                     this.element.appendChild(imgElement);
                     imgElement.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        this.#selectImage(index);
+                        // 🔥 CRITICAL: Check Ctrl key - if Ctrl, let it bubble to layer handler for multi-select!
+                        const isCtrl = e.ctrlKey || e.metaKey;
+                        if (!isCtrl) {
+                            e.stopPropagation();
+                            this.#selectImage(index);
+                        }
+                        // If Ctrl pressed, let click bubble up to layer.element handler to handle multi-select toggle
                     });
                 }
             });

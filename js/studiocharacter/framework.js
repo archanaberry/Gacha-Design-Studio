@@ -59,11 +59,32 @@ class FrameworkDisplay {
      */
     initialize(layers) {
         if (!this.panel3 || !layers || layers.length === 0) {
+            console.warn(`❌ Framework.initialize: panel3=${!!this.panel3}, layers=${layers?.length || 0}`);
             return;
+        }
+
+        // 🔥 DIAGNOSTIC: Verify layer instances are valid
+        const validLayers = layers.filter(l => {
+            const isValid = l && l.element && l.element.classList;
+            if (!isValid) {
+                console.warn(`⚠️ Framework.initialize: Invalid layer:`, {
+                    name: l?.name,
+                    hasElement: !!l?.element,
+                    hasClassList: !!l?.element?.classList,
+                    elementType: l?.element?.constructor.name
+                });
+            }
+            return isValid;
+        });
+
+        if (validLayers.length < layers.length) {
+            console.warn(`⚠️ Framework.initialize: Only ${validLayers.length}/${layers.length} layers are valid`);
         }
 
         // Sort layers berdasarkan whitelist order
         this.allLayers = this.sortLayersByWhitelist(layers);
+        
+        console.log(`✅ Framework.initialize: Rendering ${this.allLayers.length} layers`);
         this.renderFrameworkPanel();
     }
 
@@ -165,9 +186,12 @@ class FrameworkDisplay {
 
         // Add click handler untuk trigger selection di panel1
         card.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.handleCardClick(layer, card);
-        });
+            // 🔥 CRITICAL: Pass Ctrl key info to handler
+            const isCtrl = e.ctrlKey || e.metaKey;
+            console.log(`🎲 FrameworkPanel Click: "${layer.name}", Ctrl=${isCtrl}`);
+            
+            this.handleCardClick(layer, card, isCtrl);
+        }, true); // 🔥 CAPTURE PHASE - must be before child handlers
 
         // Create frame container
         const frame = document.createElement('div');
@@ -294,48 +318,125 @@ class FrameworkDisplay {
 
     /**
      * Handle click pada framework card - trigger selection di panel1
-     * Support untuk single selection dan multi-selection via selector
+     * Support untuk single selection dan multi-selection via Ctrl+Click atau selector mode
+     * Menggunakan SAME multiselect logic sebagai touchscreen/multiDrag system
      * @param {Object} layer - Layer object to select
      * @param {Element} cardElement - DOM element dari card yang di-klik
+     * @param {Boolean} isCtrl - Whether Ctrl key was held
      */
-    handleCardClick(layer, cardElement) {
+    handleCardClick(layer, cardElement, isCtrl = false) {
         if (!layer || !layer.element) {
+            console.warn(`❌ handleCardClick: invalid layer or layer.element`, {
+                layer: layer?.name,
+                hasElement: !!layer?.element,
+                elementValid: layer?.element?.classList ? 'yes' : 'no'
+            });
             return;
         }
         
-        // Jika selector aktif (multi-select mode)
-        if (window.__selectorActive) {
-            // Toggle selection pada layer element di panel1
-            if (layer.element.classList.contains('selected')) {
-                layer.element.classList.remove('selected');
-                cardElement.classList.remove('framework-card-selected');
-            } else {
-                layer.element.classList.add('selected');
-                cardElement.classList.add('framework-card-selected');
+        try {
+            console.log(`�️ FrameworkPanel Click:`, {
+                layer: layer.name,
+                isCtrl,
+                selectorActive: window.__selectorActive,
+                selectorValid: !!window.selectorInstance,
+                selectedCount: window.selectorInstance?.selectedLayers?.length || 0,
+                elementInDOM: layer.element.parentElement ? 'yes' : 'no'
+            });
+            
+            // 🔥 CRITICAL: Handle BOTH Ctrl+Click AND selector mode (SAMA seperti studiopose.js)
+            if (isCtrl || window.__selectorActive) {
+                console.log(`✋ FrameworkPanel: INTERCEPTED Ctrl+Click/Selector Mode on "${layer.name}"`);
+                
+                // Toggle selection pada layer element di panel1
+                const wasSelected = layer.element.classList.contains('selected');
+                
+                if (wasSelected) {
+                    // Remove from selection
+                    layer.element.classList.remove('selected');
+                    cardElement.classList.remove('framework-card-selected');
+                    layer.selected = false;
+                    console.log(`✖ Removed "${layer.name}" from framework selection`, {
+                        elementHasClass: layer.element.classList.contains('selected'),
+                        cardHasClass: cardElement.classList.contains('framework-card-selected'),
+                        layerSelected: layer.selected
+                    });
+                } else {
+                    // Add to selection
+                    layer.element.classList.add('selected');
+                    cardElement.classList.add('framework-card-selected');
+                    layer.selected = true;
+                    console.log(`✅ Added "${layer.name}" to framework selection`, {
+                        elementHasClass: layer.element.classList.contains('selected'),
+                        cardHasClass: cardElement.classList.contains('framework-card-selected'),
+                        layerSelected: layer.selected
+                    });
+                }
+                
+                // 🔥 CRITICAL: Sync selector.selectedLayers - SAME LOGIC as studiopose.js onLayerPointerDown
+                const selector = window.selectorInstance;
+                if (selector) {
+                    // Ensure selectedLayers array exists (like in studiopose.js line 132)
+                    if (!Array.isArray(selector.selectedLayers)) {
+                        selector.selectedLayers = [];
+                    }
+                    
+                    // Toggle logic - remove if was selected, add otherwise
+                    if (wasSelected) {
+                        // Remove - filter by both layer instance and element (defensive)
+                        selector.selectedLayers = selector.selectedLayers.filter(s => 
+                            s !== layer && s !== layer.element && s.__layerInstance !== layer
+                        );
+                    } else {
+                        // Add - check for duplicates (defensive against race conditions)
+                        const alreadyExists = selector.selectedLayers.some(s => 
+                            s === layer || s === layer.element || s.__layerInstance === layer
+                        );
+                        if (!alreadyExists) {
+                            selector.selectedLayers.push(layer);
+                        }
+                    }
+                    
+                    console.log(`📊 FrameworkPanel: selector.selectedLayers updated, total: ${selector.selectedLayers.length}`);
+                }
+                
+                // Update visual feedback - SAME ORDER as studiopose.js
+                // Key: updateCoordInput() MUST be called last untuk reflect selection state
+                if (typeof updateMenuLayerSelectionForMultiSelect === 'function') {
+                    updateMenuLayerSelectionForMultiSelect();
+                }
+                if (window.frameworkDisplay && typeof window.frameworkDisplay.updateSelectionVisuals === 'function') {
+                    window.frameworkDisplay.updateSelectionVisuals();
+                }
+                
+                // 🔥 CRITICAL: Sync DOM .selected classes dengan selector.selectedLayers
+                this.syncFrameworkSelectionWithPanel();
+                
+                if (typeof updateCoordInput === 'function') {
+                    updateCoordInput();  // 🔥 MUST be last - updates Panel2 display with color indicator
+                }
+                
+                console.log(`✅ Toggle complete on "${layer.name}", total selected: ${selector?.selectedLayers?.length || 0}`);
+                return;
             }
-            // Update menulayer dan sinkronisasi multi-select
-            if (typeof updateMenuLayerSelectionForMultiSelect === 'function') {
-                updateMenuLayerSelectionForMultiSelect();
-            }
-        } else {
-            // Single select mode - clear previous selection
+            
+            // Single select mode - clear previous selection (DEFAULT behavior tanpa Ctrl)
+            console.log(`👆 FrameworkPanel: Single-select on "${layer.name}"`);
+            
+            // Clear framework card visuals
             document.querySelectorAll('.framework-card-selected').forEach(card => {
                 card.classList.remove('framework-card-selected');
             });
             
             // Trigger selectLayer dari studiopose.js
-            // selectLayer akan memanggil syncLayerSelectionAcrossAllPanels
+            // selectLayer sẽ memanggil syncLayerSelectionAcrossAllPanels dan updateCoordInput()
             if (typeof selectLayer === 'function') {
                 selectLayer(layer);
                 cardElement.classList.add('framework-card-selected');
+                console.log(`✅ selectLayer called for "${layer.name}"`);
             }
-            
-            // Scroll panel1 ke layer yang ter-select
-            setTimeout(() => {
-                if (layer.element) {
-                    layer.element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
-            }, 100);
+        } catch (err) {
+            console.error(`💥 Error in handleCardClick for "${layer.name}":`, err);
         }
     }
 
@@ -393,10 +494,71 @@ class FrameworkDisplay {
             }
         });
     }
+
+    /**
+     * Sinkronisasi Framework selection dengan panel1 layer elements
+     * Memastikan selector.selectedLayers di-reflect di DOM dengan .selected class dan visual outline
+     * @param {Boolean} forceRefresh - Jika true, force re-render visual feedback
+     */
+    syncFrameworkSelectionWithPanel() {
+        const selector = window.selectorInstance;
+        if (!selector || !Array.isArray(selector.selectedLayers)) {
+            console.warn(`❌ Framework sync: selector.selectedLayers not available`);
+            return;
+        }
+
+        // Step 1: Ensure all selected layers punya .selected class di DOM
+        selector.selectedLayers.forEach(layerOrEl => {
+            let el = null;
+            
+            if (layerOrEl && layerOrEl.element) {
+                // It's a Layer instance
+                el = layerOrEl.element;
+            } else if (layerOrEl && layerOrEl.classList) {
+                // It's a DOM element
+                el = layerOrEl;
+            }
+            
+            if (el) {
+                // Add visual class untuk outline
+                if (!el.classList.contains('selected')) {
+                    el.classList.add('selected');
+                    console.log(`✅ Added .selected class to DOM element: ${el.className}`);
+                }
+            }
+        });
+
+        // Step 2: Remove .selected dari layer yang TIDAK di selector.selectedLayers
+        document.querySelectorAll('.layer.selected, .layer-group.selected').forEach(el => {
+            const isInSelector = selector.selectedLayers.some(s => 
+                (s && s.element === el) || s === el || (s && s.__layerInstance && s.__layerInstance.element === el)
+            );
+            
+            if (!isInSelector) {
+                el.classList.remove('selected');
+                console.log(`✖ Removed .selected class from DOM element: ${el.className}`);
+            }
+        });
+
+        // Step 3: Update framework card indicators
+        this.updateSelectionVisuals();
+        
+        console.log(`📊 Framework sync complete: ${selector.selectedLayers.length} layers selected`);
+    }
 }
 
 // Create global instance
 window.frameworkDisplay = new FrameworkDisplay();
+
+/**
+ * 🔥 HELPER: Force sync framework selection dengan panel1
+ * Panggil ini setiap kali ada perubahan selection untuk ensure visual consistency
+ */
+window.syncFrameworkWithPanel1 = function() {
+    if (window.frameworkDisplay) {
+        window.frameworkDisplay.syncFrameworkSelectionWithPanel();
+    }
+};
 
 // Export untuk digunakan di file lain
 if (typeof module !== 'undefined' && module.exports) {
