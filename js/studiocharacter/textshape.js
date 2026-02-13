@@ -1,655 +1,597 @@
-// textshape.js - Text Shape Creation Module for Gacha Design Studio
-// Allows users to create text layers with outline/shadow effects
 
 class TextShapeManager {
     constructor() {
-        this.fonts = this.getAvailableFonts();
+        this.systemFonts = [
+            'Arial', 'Helvetica', 'Times New Roman', 'Courier New', 'Verdana',
+            'Georgia', 'Impact', 'Comic Sans MS', 'Trebuchet MS', 'Arial Black',
+            'Tahoma', 'Geneva', 'Palatino', 'Bookman'
+        ];
+        this.assetFonts = [
+            { name: 'Comfortaa', url: 'assets/font/Comfortaa-Regular.ttf' },
+            { name: 'Comfortaa Bold', url: 'assets/font/Comfortaa-Bold.ttf' }
+        ];
+        this.customFonts = [];
+        this.strokes = [];
+
         this.isEditMode = false;
         this.editingLayer = null;
+
         this.initUI();
         this.attachEventListeners();
+        this.injectAssetFontStyles();
     }
 
-    getAvailableFonts() {
-        // System fonts
-        const systemFonts = [
-            'Arial', 'Helvetica', 'Times New Roman', 'Courier New', 'Verdana',
-            'Georgia', 'Palatino', 'Garamond', 'Bookman', 'Comic Sans MS',
-            'Trebuchet MS', 'Arial Black', 'Impact', 'Lucida Sans', 'Tahoma'
-        ];
+    injectAssetFontStyles() {
+        const styleId = 'text-studio-asset-fonts';
+        if (!document.getElementById(styleId)) {
+            const style = document.createElement('style');
+            style.id = styleId;
+            let css = '';
+            this.assetFonts.forEach(font => {
+                css += `
+                    @font-face {
+                        font-family: '${font.name}';
+                        src: url('${font.url}') format('truetype');
+                    }
+                `;
+            });
+            style.textContent = css;
+            document.head.appendChild(style);
+        }
+    }
 
-        // Asset fonts
-        const assetFonts = [
-            'Comfortaa', 'Comfortaa-Bold', 'Comfortaa-Light', 'Comfortaa-Medium', 'Comfortaa-Regular', 'Comfortaa-SemiBold'
-        ];
+    createControlRow(label, inputHtml) {
+        return `
+            <div style="margin-bottom: 8px;">
+                <label style="display: block; margin-bottom: 3px; font-weight: bold; color: #333; font-size: 11px;">${label}</label>
+                ${inputHtml}
+            </div>
+        `;
+    }
 
-        return {
-            system: systemFonts,
-            assets: assetFonts
-        };
+    createNumberInput(id, value, min = -1000, max = 1000, step = 1) {
+        return `
+            <div style="display: flex; align-items: center; gap: 2px;">
+                <button class="step-btn" data-target="${id}" data-step="-${step}" style="width: 24px; height: 24px; border: 1px solid #ddd; background: #f9f9f9; border-radius: 4px; cursor: pointer;">-</button>
+                <input type="number" id="${id}" value="${value}" min="${min}" max="${max}" step="${step}" style="flex: 1; padding: 4px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; text-align: center;">
+                <button class="step-btn" data-target="${id}" data-step="${step}" style="width: 24px; height: 24px; border: 1px solid #ddd; background: #f9f9f9; border-radius: 4px; cursor: pointer;">+</button>
+            </div>
+        `;
     }
 
     initUI() {
         const uiHTML = `
-            <div id="textShapeContainer" style="margin-bottom: 20px; border: 2px solid #4CAF50; padding: 15px; background-color: #f9f9f9; border-radius: 8px;">
-                <h3 id="textShapeTitle" style="margin-bottom: 10px; color: #4CAF50; font-weight: bold;">Pembuatan Sisipan Teks</h3>
-                
-                <div style="margin-bottom: 10px;">
-                    <label for="textInput" style="display: block; margin-bottom: 5px; font-weight: bold;">Teks:</label>
-                    <input type="text" id="textInput" placeholder="Masukkan teks..." style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+            <div id="textShapeContainer" style="margin-bottom: 5px; border: 2px solid #5E6CC9; padding: 80px; background-color: #f0f4ff; border-radius: 12px; font-family: 'Comfortaa', sans-serif; overflow: auto; max-height: 60vh; overflow-y: auto;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px;">
+                    <h3 id="textShapeTitle" style="margin: 0; color: #5E6CC9; font-weight: bold; font-size: 16px;">✨ Text Studio</h3>
+                    <div style="font-size: 10px; color: #888;">Advanced Styles</div>
                 </div>
                 
-                <div style="margin-bottom: 10px;">
-                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">
-                        <input type="checkbox" id="outlineCheckbox" style="margin-right: 5px;"> Coretan Luar
-                    </label>
-                </div>
-                
-                <div style="margin-bottom: 10px;">
-                    <label for="fontSizeInput" style="display: block; margin-bottom: 5px; font-weight: bold;">Besaran Teks (px):</label>
-                    <input type="number" id="fontSizeInput" min="1" max="500" value="24" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-                </div>
-                
-                <div id="outlineSettings" style="margin-bottom: 10px; display: none;">
-                    <label for="outlineWidthInput" style="display: block; margin-bottom: 5px; font-weight: bold;">Ketebalan Coretan Luar (px):</label>
-                    <input type="number" id="outlineWidthInput" min="0" max="50" value="2" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-                </div>
-                
-                <div style="margin-bottom: 10px;">
-                    <label for="fontSelect" style="display: block; margin-bottom: 5px; font-weight: bold; cursor: pointer;" onclick="toggleFontDropdown()" id="fontSelect">
-                        Pilih Gaya Tulisan ▼
-                    </label>
-                    <div id="fontDropdown" style="display: none; border: 1px solid #ccc; border-radius: 4px; max-height: 200px; overflow-y: auto; background-color: white;">
-                        <div style="padding: 8px; background-color: #eee; font-size: 12px; color: #666; font-weight: bold;">- Bawaan Sistem -</div>
-                        <div style="padding: 8px; cursor: pointer; border-bottom: 1px solid #f0f0f0;" onclick="selectFont('Arial')">Arial</div>
-                        <div style="padding: 8px; cursor: pointer; border-bottom: 1px solid #f0f0f0;" onclick="selectFont('Helvetica')">Helvetica</div>
-                        <div style="padding: 8px; background-color: #eee; font-size: 12px; color: #666; font-weight: bold;">- Bawaan Aset -</div>
-                        <div style="padding: 8px; cursor: pointer; border-bottom: 1px solid #f0f0f0;" onclick="selectFont('Comfortaa')">Comfortaa</div>
-                        <div style="padding: 8px; cursor: pointer;" onclick="selectFont('Comfortaa-Regular')">Comfortaa-Regular</div>
+                <!-- Main Settings -->
+                <div style="background: white; padding: 10px; border-radius: 8px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #333; font-size: 12px;">Konten Teks</label>
+                    <input type="text" id="textInput" placeholder="Ketik teks..." style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; margin-bottom: 8px;">
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 80px; gap: 8px; margin-bottom: 8px;">
+                        <div>
+                            <label style="display: block; margin-bottom: 3px; font-weight: bold; color: #333; font-size: 11px;">Font</label>
+                            <select id="fontSelect" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 6px; background: white; font-size: 12px;">
+                                <optgroup label="Aset Font" id="assetFontsGroup"></optgroup>
+                                <optgroup label="System Fonts" id="systemFontsGroup"></optgroup>
+                                <optgroup label="Custom Fonts" id="customFontsGroup"></optgroup>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 3px; font-weight: bold; color: #333; font-size: 11px;">Size</label>
+                            ${this.createNumberInput('fontSizeInput', 40, 1, 500)}
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                        <div>
+                            <label style="display: block; margin-bottom: 3px; font-weight: bold; color: #333; font-size: 11px;">Warna Utama</label>
+                            <div style="display: flex; gap: 2px;">
+                                <input type="color" id="mainColorPicker" value="#000000" style="height: 28px; padding: 0; border: none; background: none; flex: 0 0 30px; cursor: pointer;">
+                                <input type="text" id="mainColorText" value="#000000FF" style="flex: 1; padding: 4px; border: 1px solid #ddd; border-radius: 4px; font-family: monospace; font-size: 10px;">
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: flex-end;">
+                            <label for="fontUpload" style="cursor: pointer; display: flex; align-items: center; gap: 3px; font-size: 10px; color: #5E6CC9; background: #f0f4ff; padding: 6px; border-radius: 4px; width: 100%; justify-content: center; border: 1px dashed #5E6CC9;">
+                                📥 Import Font
+                                <input type="file" id="fontUpload" accept=".ttf,.otf" style="display: none;">
+                            </label>
+                        </div>
                     </div>
                 </div>
-                
-                <div style="margin-bottom: 10px;">
-                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">Warna Teks Asli:</label>
-                    <input type="color" id="textColorPicker" value="#ffffff" style="width: 100%; height: 40px; border: 1px solid #ccc; border-radius: 4px; cursor: pointer;">
+
+                <!-- Advanced Styling Tab-like section -->
+                <div style="background: white; padding: 10px; border-radius: 8px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                    <div style="font-weight: bold; font-size: 11px; margin-bottom: 8px; color: #5E6CC9; border-bottom: 1px solid #eee; padding-bottom: 5px;">TRANSFORM & SPACING</div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+                        ${this.createControlRow('Skew X', this.createNumberInput('skewXInput', 0, -90, 90))}
+                        ${this.createControlRow('Skew Y', this.createNumberInput('skewYInput', 0, -90, 90))}
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                        ${this.createControlRow('Kerapatan (Letter Spacing)', this.createNumberInput('letterSpacingInput', 0, -50, 100))}
+                        ${this.createControlRow('Margin / Padding SVG', this.createNumberInput('textPaddingInput', 20, 0, 200))}
+                    </div>
                 </div>
-                
-                <div id="outlineColorContainer" style="margin-bottom: 10px; display: none;">
-                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">Warna Coretan:</label>
-                    <input type="color" id="outlineColorPicker" value="#000000" style="width: 100%; height: 40px; border: 1px solid #ccc; border-radius: 4px; cursor: pointer;">
+
+                <!-- Background section -->
+                <div style="background: white; padding: 10px; border-radius: 8px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <div style="font-weight: bold; font-size: 11px; color: #5E6CC9;">BACKGROUND (SOROT)</div>
+                        <input type="checkbox" id="bgEnableCheck" style="cursor: pointer;">
+                    </div>
+                    
+                    <div id="bgSettingsPanel" style="display: none;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+                            <div>
+                                <label style="display: block; margin-bottom: 3px; font-weight: bold; color: #333; font-size: 11px;">Warna BG</label>
+                                <div style="display: flex; gap: 2px;">
+                                    <input type="color" id="bgColorPicker" value="#FFFFFF" style="height: 28px; padding: 0; border: none; background: none; flex: 0 0 30px; cursor: pointer;">
+                                    <input type="text" id="bgColorText" value="#FFFFFFFF" style="flex: 1; padding: 4px; border: 1px solid #ddd; border-radius: 4px; font-family: monospace; font-size: 10px;">
+                                </div>
+                            </div>
+                            ${this.createControlRow('Padding BG', this.createNumberInput('bgPaddingInput', 5, 0, 100))}
+                        </div>
+                        
+                        <label style="display: block; margin-bottom: 3px; font-weight: bold; color: #333; font-size: 11px;">Radius Sudut (TL, TR, BL, BR)</label>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 4px;">
+                            ${this.createNumberInput('radiusTL', 0, 0, 200)}
+                            ${this.createNumberInput('radiusTR', 0, 0, 200)}
+                            ${this.createNumberInput('radiusBL', 0, 0, 200)}
+                            ${this.createNumberInput('radiusBR', 0, 0, 200)}
+                        </div>
+                    </div>
                 </div>
-                
-                <button id="createTextButton" style="width: 100%; padding: 10px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Buat Teks</button>
+
+                <!-- Strokes section -->
+                <div style="margin-bottom: 15px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
+                        <label style="font-weight: bold; color: #333; font-size: 12px;">Daftar Coretan (Layers)</label>
+                        <button id="addStrokeBtn" style="background: #4CAF50; color: white; border: none; padding: 4px 10px; border-radius: 12px; font-size: 11px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                            <span>+</span> Tambah
+                        </button>
+                    </div>
+                    <div id="strokesContainer" style="display: flex; flex-direction: column; gap: 8px;"></div>
+                    <div id="noStrokesMsg" style="text-align: center; color: #999; font-size: 11px; padding: 10px; border: 1px dashed #ddd; border-radius: 6px;">
+                        Belum ada coretan tambahan
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 10px;">
+                    <button id="createLayerBtn" style="flex: 1; padding: 12px; background-color: #5E6CC9; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; box-shadow: 0 2px 5px rgba(94, 108, 201, 0.3); transition: transform 0.1s;">
+                        Buat Text Layer
+                    </button>
+                    <button id="cancelEditBtn" style="padding: 12px; background-color: #FF6B6B; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; display: none;">
+                        Batal
+                    </button>
+                </div>
             </div>
         `;
 
-        // Insert into panel2, before menusrcContainer
         const menusrcContainer = document.getElementById('menusrcContainer');
-        if (menusrcContainer) {
-            menusrcContainer.insertAdjacentHTML('beforebegin', uiHTML);
-        } else {
-            // Fallback: insert at the beginning of panel2
-            const panel2 = document.getElementById('panel2');
-            if (panel2) {
-                panel2.insertAdjacentHTML('afterbegin', uiHTML);
-            }
+        const panel2 = document.getElementById('panel2');
+        const existing = document.getElementById('textShapeContainer');
+        if (existing) existing.remove();
+
+        if (menusrcContainer) menusrcContainer.insertAdjacentHTML('beforebegin', uiHTML);
+        else if (panel2) panel2.insertAdjacentHTML('afterbegin', uiHTML);
+
+        this.populateFontSelect();
+    }
+
+    populateFontSelect() {
+        const sysGroup = document.getElementById('systemFontsGroup');
+        const assetGroup = document.getElementById('assetFontsGroup');
+        const custGroup = document.getElementById('customFontsGroup');
+
+        if (sysGroup) sysGroup.innerHTML = '';
+        this.systemFonts.forEach(font => {
+            const opt = document.createElement('option');
+            opt.value = font; opt.textContent = font; opt.style.fontFamily = font;
+            if (sysGroup) sysGroup.appendChild(opt);
+        });
+
+        if (assetGroup) assetGroup.innerHTML = '';
+        this.assetFonts.forEach(font => {
+            const opt = document.createElement('option');
+            opt.value = font.name; opt.textContent = font.name; opt.style.fontFamily = font.name;
+            if (assetGroup) assetGroup.appendChild(opt);
+        });
+
+        if (custGroup) {
+            custGroup.innerHTML = '';
+            this.customFonts.forEach(font => {
+                const opt = document.createElement('option');
+                opt.value = font.name; opt.textContent = font.name; opt.style.fontFamily = font.name;
+                custGroup.appendChild(opt);
+            });
         }
     }
 
     attachEventListeners() {
-        // Outline checkbox toggle
-        const outlineCheckbox = document.getElementById('outlineCheckbox');
-        const outlineSettings = document.getElementById('outlineSettings');
-        const outlineColorContainer = document.getElementById('outlineColorContainer');
+        document.getElementById('fontUpload').addEventListener('change', (e) => this.handleFontUpload(e));
+        document.getElementById('addStrokeBtn').addEventListener('click', () => this.addStroke());
+        document.getElementById('createLayerBtn').addEventListener('click', () => this.handleCreateOrUpdate());
+        document.getElementById('cancelEditBtn').addEventListener('click', () => this.resetToCreateMode());
 
-        if (!outlineCheckbox || !outlineSettings || !outlineColorContainer) {
-            console.warn('TextShapeManager: Some DOM elements not found');
-            return;
-        }
-
-        outlineCheckbox.addEventListener('change', (e) => {
-            if (e.target.checked) {
-                outlineSettings.style.display = 'block';
-                outlineColorContainer.style.display = 'block';
-            } else {
-                outlineSettings.style.display = 'none';
-                outlineColorContainer.style.display = 'none';
-            }
+        // Background Panel toggle
+        const bgCheck = document.getElementById('bgEnableCheck');
+        const bgPanel = document.getElementById('bgSettingsPanel');
+        bgCheck.addEventListener('change', () => {
+            bgPanel.style.display = bgCheck.checked ? 'block' : 'none';
         });
 
-        // Create text button
-        const createButton = document.getElementById('createTextButton');
-        if (createButton) {
-            createButton.addEventListener('click', () => this.createTextLayer());
-        }
-
-        // Listen for layer selection to sync text input
-        document.addEventListener('layerSelected', (e) => {
-            const layer = e.detail?.layer;
-            if (layer && this.isTextLayer(layer)) {
-                this.syncTextInputFromLayer(layer);
-            } else {
-                this.resetToCreateMode();
-            }
-        });
-
-        // Listen for layer deselection
-        document.addEventListener('layerDeselected', () => {
-            this.resetToCreateMode();
-        });
-    }
-
-    createTextLayer() {
-        if (this.isEditMode && this.editingLayer) {
-            this.editTextLayer();
-            return;
-        }
-
-        const textInput = document.getElementById('textInput');
-        const fontSizeInput = document.getElementById('fontSizeInput');
-        const outlineCheckbox = document.getElementById('outlineCheckbox');
-        const outlineWidthInput = document.getElementById('outlineWidthInput');
-        const textColorPicker = document.getElementById('textColorPicker');
-        const outlineColorPicker = document.getElementById('outlineColorPicker');
-
-        if (!textInput || !fontSizeInput || !outlineCheckbox || !outlineWidthInput || !textColorPicker || !outlineColorPicker) {
-            console.error('TextShapeManager: Required DOM elements not found');
-            return;
-        }
-
-        const text = textInput.value.trim();
-        if (!text) {
-            alert('Masukkan teks terlebih dahulu!');
-            return;
-        }
-
-        const fontSize = parseInt(fontSizeInput.value) || 24;
-        const hasOutline = outlineCheckbox.checked;
-        const outlineWidth = parseInt(outlineWidthInput.value) || 2;
-        const textColor = textColorPicker.value;
-        const outlineColor = outlineColorPicker.value;
-
-        // Get selected font
-        const fontSelect = document.getElementById('fontSelect');
-        const selectedFont = fontSelect ? fontSelect.getAttribute('data-selected-font') || 'Arial' : 'Arial';
-
-        // Create SVG text element
-        const svgText = this.createSVGText(text, fontSize, selectedFont, textColor, hasOutline, outlineWidth, outlineColor);
-        
-        console.log('=== createTextLayer ===');
-        console.log('Text:', text);
-        console.log('Font size:', fontSize);
-        console.log('Font:', selectedFont);
-        console.log('Has outline:', hasOutline);
-        console.log('SVG created, length:', svgText.length);
-        console.log('SVG preview:', svgText.substring(0, 200));
-
-        // Create layer name - sync only if not grouped
-        let layerName = text;
-        // For now, assume it's not grouped, so sync with layerName
-        // In future, check if it's part of a group
-
-        // Create new Layer
-        const textLayer = new Layer(layerName, [svgText], {
-            posX: 100,
-            posY: 100,
-            rotation: 0,
-            scale: 1,
-            skewX: 0,
-            skewY: 0,
-            flipX: false,
-            flipY: false,
-            width: null,
-            height: null,
-            opacity: 1,
-            color: null
-        }, []);
-
-        // Add to layers array
-        if (typeof layers !== 'undefined') {
-            layers.push(textLayer);
-        }
-
-        // Attach to panel1 using UNIFIED API for multi-drag support
-        const container = document.getElementById('panel1') || document.querySelector('.container');
-        if (container) {
-            // 🔥 USE UNIFIED API - This connects to pointer system automatically
-            if (typeof attachLayerToPointerSystem === 'function') {
-                attachLayerToPointerSystem(textLayer);
-            } else {
-                // Fallback jika unified API belum tersedia
-                textLayer.attach(container, window.onlayerdragstart || null);
-                if (typeof addLayerClickHandler === 'function') {
-                    addLayerClickHandler(textLayer);
+        // Plus/Minus Button Logic
+        document.getElementById('textShapeContainer').addEventListener('click', (e) => {
+            const btn = e.target.closest('.step-btn');
+            if (btn) {
+                const targetId = btn.dataset.target;
+                const step = parseFloat(btn.dataset.step);
+                const input = document.getElementById(targetId);
+                if (input) {
+                    input.value = parseFloat(input.value || 0) + step;
+                    input.dispatchEvent(new Event('change', { bubbles: true }));
                 }
             }
-            // Render
-            if (typeof renderLayer === 'function') {
-                renderLayer(textLayer);
+        });
+
+        // Color Syncing Helpers
+        this.setupColorSync('mainColorPicker', 'mainColorText');
+        this.setupColorSync('bgColorPicker', 'bgColorText');
+
+        document.addEventListener('layerSelected', (e) => {
+            if (e.detail && e.detail.layer) {
+                setTimeout(() => this.tryLoadLayer(e.detail.layer), 50);
             }
-        }
-
-        // Select the new layer
-        if (typeof selectLayer === 'function') {
-            selectLayer(textLayer);
-        }
-
-        // Clear input
-        textInput.value = '';
+        });
+        if (window.selected) this.tryLoadLayer(window.selected);
     }
 
-    editTextLayer() {
-        const textInput = document.getElementById('textInput');
-        const fontSizeInput = document.getElementById('fontSizeInput');
-        const outlineCheckbox = document.getElementById('outlineCheckbox');
-        const outlineWidthInput = document.getElementById('outlineWidthInput');
-        const textColorPicker = document.getElementById('textColorPicker');
-        const outlineColorPicker = document.getElementById('outlineColorPicker');
+    setupColorSync(pickerId, textId) {
+        const picker = document.getElementById(pickerId);
+        const text = document.getElementById(textId);
+        picker.addEventListener('input', (e) => {
+            text.value = e.target.value.toUpperCase() + (text.value.length === 9 ? text.value.substring(7) : 'FF');
+        });
+        text.addEventListener('change', (e) => {
+            let val = e.target.value;
+            if (!val.startsWith('#')) val = '#' + val;
+            if (val.length === 7) val += 'FF';
+            if (/^#[0-9A-Fa-f]{8}$/.test(val)) {
+                text.value = val.toUpperCase();
+                picker.value = val.substring(0, 7);
+            }
+        });
+    }
 
-        const text = textInput.value.trim();
-        if (!text) {
-            alert('Masukkan teks terlebih dahulu!');
+    async handleFontUpload(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const fontName = file.name.split('.')[0];
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+            const fontUrl = evt.target.result;
+            const fontFace = new FontFace(fontName, `url(${fontUrl})`);
+            fontFace.load().then(loadedFace => {
+                document.fonts.add(loadedFace);
+                this.customFonts.push({ name: fontName, url: fontUrl });
+                this.populateFontSelect();
+                document.getElementById('fontSelect').value = fontName;
+            }).catch(err => alert('Gagal memuat font: ' + err.message));
+        };
+        reader.readAsDataURL(file);
+    }
+
+    addStroke(data = null) {
+        const id = Date.now() + Math.random().toString(36).substr(2, 5);
+        const strokeHTML = `
+            <div id="stroke-${id}" class="stroke-item" style="background: white; padding: 10px; border-radius: 6px; border-left: 4px solid #FF9800; box-shadow: 0 1px 3px rgba(0,0,0,0.1); position: relative;">
+                <div style="position: absolute; right: 5px; top: 5px; cursor: pointer; color: #aaa;" onclick="event.stopPropagation(); document.getElementById('stroke-${id}').remove(); window.textShapeManager.checkEmptyStrokes();">✕</div>
+                <div style="font-size: 10px; font-weight: bold; color: #FF9800; margin-bottom: 5px;">Coretan (Belakang)</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 5px;">
+                    <div>
+                        <label style="font-size: 10px; display: block;">Warna</label>
+                        <div style="display: flex; align-items: center; gap: 2px;">
+                            <input type="color" class="stroke-picker" value="${data ? data.color.substring(0, 7) : '#000000'}" style="width: 20px; height: 20px; border: none; cursor: pointer;">
+                            <input type="text" class="stroke-color" value="${data ? data.color : '#000000FF'}" style="width: 100%; font-size: 10px; padding: 2px; border: 1px solid #ccc; font-family: monospace;">
+                        </div>
+                    </div>
+                    <div>
+                        <label style="font-size: 10px; display: block;">Tebal</label>
+                        <div style="display: flex; align-items: center;">
+                            <button onclick="val=this.nextElementSibling; val.value=parseInt(val.value)-1" style="width:20px;height:20px;font-size:10px;">-</button>
+                            <input type="number" class="stroke-width" value="${data ? data.width : 4}" style="width: 100%; font-size: 10px; padding: 2px; text-align: center;">
+                            <button onclick="val=this.previousElementSibling; val.value=parseInt(val.value)+1" style="width:20px;height:20px;font-size:10px;">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px;">
+                    <div><label style="font-size: 10px; display: block;">Geser X</label><input type="number" class="stroke-offx" value="${data ? data.offsetX : 0}" style="width: 100%; font-size: 10px; padding: 2px; border: 1px solid #ccc;"></div>
+                    <div><label style="font-size: 10px; display: block;">Geser Y</label><input type="number" class="stroke-offy" value="${data ? data.offsetY : 0}" style="width: 100%; font-size: 10px; padding: 2px; border: 1px solid #ccc;"></div>
+                    <div><label style="font-size: 10px; display: block;">Rotasi</label><input type="number" class="stroke-rot" value="${data ? data.rotation : 0}" style="width: 100%; font-size: 10px; padding: 2px; border: 1px solid #ccc;"></div>
+                </div>
+            </div>
+        `;
+        document.getElementById('strokesContainer').insertAdjacentHTML('beforeend', strokeHTML);
+        this.checkEmptyStrokes();
+
+        const el = document.getElementById(`stroke-${id}`);
+        const picker = el.querySelector('.stroke-picker');
+        const textArea = el.querySelector('.stroke-color');
+        picker.addEventListener('input', (e) => textArea.value = e.target.value.toUpperCase() + 'FF');
+    }
+
+    checkEmptyStrokes() {
+        const container = document.getElementById('strokesContainer');
+        const msg = document.getElementById('noStrokesMsg');
+        if (container && msg) msg.style.display = container.children.length === 0 ? 'block' : 'none';
+    }
+
+    getStrokeData() {
+        const strokes = [];
+        document.querySelectorAll('.stroke-item').forEach(el => {
+            strokes.push({
+                color: el.querySelector('.stroke-color').value,
+                width: parseInt(el.querySelector('.stroke-width').value) || 0,
+                offsetX: parseInt(el.querySelector('.stroke-offx').value) || 0,
+                offsetY: parseInt(el.querySelector('.stroke-offy').value) || 0,
+                rotation: parseInt(el.querySelector('.stroke-rot').value) || 0
+            });
+        });
+        return strokes;
+    }
+
+    handleCreateOrUpdate() {
+        const text = document.getElementById('textInput').value;
+        if (!text) return alert('Isi teks dulu');
+
+        const fontSize = parseInt(document.getElementById('fontSizeInput').value) || 40;
+        const font = document.getElementById('fontSelect').value;
+        const mainColor = document.getElementById('mainColorText').value;
+        const skewX = parseInt(document.getElementById('skewXInput').value) || 0;
+        const skewY = parseInt(document.getElementById('skewYInput').value) || 0;
+        const letterSpacing = parseInt(document.getElementById('letterSpacingInput').value) || 0;
+        const textPadding = parseInt(document.getElementById('textPaddingInput').value) || 20;
+
+        const bgEnabled = document.getElementById('bgEnableCheck').checked;
+        const bgColor = document.getElementById('bgColorText').value;
+        const bgPadding = parseInt(document.getElementById('bgPaddingInput').value) || 0;
+        const radii = {
+            tl: parseInt(document.getElementById('radiusTL').value) || 0,
+            tr: parseInt(document.getElementById('radiusTR').value) || 0,
+            bl: parseInt(document.getElementById('radiusBL').value) || 0,
+            br: parseInt(document.getElementById('radiusBR').value) || 0
+        };
+
+        const strokes = this.getStrokeData();
+        let cumulativeWidth = 0;
+        const processedStrokes = strokes.map(s => {
+            cumulativeWidth += (s.width || 0);
+            return { ...s, renderWidth: cumulativeWidth };
+        });
+
+        const maxStrokeWidth = cumulativeWidth;
+        const reverseStrokes = [...processedStrokes].reverse();
+        const srcArray = [];
+        const options = {};
+
+        let srcIndex = 0;
+        const svgParams = {
+            text, font, fontSize,
+            skewX, skewY, letterSpacing, textPadding,
+            bgEnabled, bgColor, bgPadding, radii
+        };
+
+        reverseStrokes.forEach(stroke => {
+            const svg = this.generateSVG({
+                ...svgParams,
+                color: stroke.color,
+                strokeWidth: stroke.renderWidth,
+                paddingRef: maxStrokeWidth
+            });
+            srcArray.push(svg);
+            options[`posX${srcIndex}`] = stroke.offsetX;
+            options[`posY${srcIndex}`] = stroke.offsetY;
+            options[`rotation${srcIndex}`] = stroke.rotation;
+            options[`scale${srcIndex}`] = 1;
+            srcIndex++;
+        });
+
+        const textSVG = this.generateSVG({
+            ...svgParams,
+            color: mainColor,
+            strokeWidth: 0,
+            isFill: true,
+            paddingRef: maxStrokeWidth
+        });
+        srcArray.push(textSVG);
+        options[`rotation${srcIndex}`] = 0;
+        options[`scale${srcIndex}`] = 1;
+
+        const metadata = {
+            version: '2.5',
+            text, fontSize, fontFamily: font, mainColor,
+            skewX, skewY, letterSpacing, textPadding,
+            bgEnabled, bgColor, bgPadding, radii,
+            strokes
+        };
+
+        const layerOpts = { ...options, width: null, height: null, textShapeData: metadata };
+
+        if (this.isEditMode && this.editingLayer) {
+            this.editingLayer.src = srcArray;
+            this.editingLayer.textShapeData = metadata;
+            if (this.editingLayer.updateOptions) this.editingLayer.updateOptions(layerOpts);
+            else this.editingLayer.options = Object.assign(this.editingLayer.options || {}, layerOpts);
+
+            // Fix sync: ensure we don't accidentally keep old transform values if they weren't in opts
+            this.editingLayer.width = null;
+            this.editingLayer.height = null;
+            this.editingLayer.name = text;
+            this.editingLayer.updateElement();
+        } else {
+            const newLayer = new Layer(text, srcArray, layerOpts);
+            newLayer.textShapeData = metadata;
+            if (typeof layers !== 'undefined') layers.push(newLayer);
+            const container = document.getElementById('panel1') || document.querySelector('.container');
+            if (container) {
+                if (typeof attachLayerToPointerSystem === 'function') attachLayerToPointerSystem(newLayer);
+                else {
+                    newLayer.attach(container);
+                    if (typeof addLayerClickHandler === 'function') addLayerClickHandler(newLayer);
+                }
+                if (typeof renderLayer === 'function') renderLayer(newLayer);
+                if (typeof selectLayer === 'function') selectLayer(newLayer);
+            }
+        }
+        this.resetToCreateMode();
+    }
+
+    generateSVG(params) {
+        const {
+            text, font, fontSize, color, strokeWidth = 0, paddingRef = 0,
+            skewX = 0, skewY = 0, letterSpacing = 0, textPadding = 20,
+            bgEnabled = false, bgColor = '#FFF', bgPadding = 0, radii = {}
+        } = params;
+
+        const c = document.createElement('canvas');
+        const ctx = c.getContext('2d');
+        // Letter spacing in canvas (modern browsers)
+        if ('letterSpacing' in ctx) ctx.letterSpacing = `${letterSpacing}px`;
+        ctx.font = `${fontSize}px "${font}"`;
+
+        const metrics = ctx.measureText(text);
+        // Effective width considering letter spacing (crude estimate if not natively supported)
+        const textWidth = Math.ceil(metrics.width) + (text.length > 0 ? (text.length - 1) * letterSpacing : 0);
+        const lineHeight = Math.ceil(fontSize * 1.25);
+
+        const refPadding = Math.max(paddingRef, strokeWidth, textPadding);
+        const padding = Math.max(refPadding, 10);
+
+        const totalW = textWidth + (padding * 2);
+        const totalH = lineHeight + (padding * 2);
+
+        const centerX = totalW / 2;
+        const centerY = (totalH / 2) + (fontSize * 0.35);
+
+        let style = `font-family: '${font}'; font-size: ${fontSize}px; text-anchor: middle; dominant-baseline: middle; letter-spacing: ${letterSpacing}px;`;
+        if (strokeWidth > 0) style += ` stroke: ${color}; stroke-width: ${strokeWidth}px; fill: none; stroke-linejoin: round; stroke-linecap: round;`;
+        else style += ` fill: ${color};`;
+
+        let fontStyle = '';
+        const assetFont = this.assetFonts.find(f => f.name === font);
+        const customFont = this.customFonts.find(f => f.name === font);
+        if (customFont) fontStyle = `@font-face { font-family: '${font}'; src: url('${customFont.url}'); }`;
+        else if (assetFont) fontStyle = `@font-face { font-family: '${font}'; src: url('${assetFont.url}'); }`;
+        else fontStyle = `@font-face { font-family: '${font}'; src: local('${font}'); }`;
+
+        // Background Logic
+        let backgroundRect = '';
+        if (bgEnabled) {
+            const bw = textWidth + (bgPadding * 2);
+            const bh = lineHeight + (bgPadding * 2);
+            const bx = centerX - (bw / 2);
+            const by = (totalH / 2) - (bh / 2);
+
+            // Custom Path for individual Corners
+            const r = { tl: radii.tl || 0, tr: radii.tr || 0, bl: radii.bl || 0, br: radii.br || 0 };
+            const path = `M ${bx + r.tl},${by} h ${bw - r.tl - r.tr} a ${r.tr},${r.tr} 0 0 1 ${r.tr},${r.tr} v ${bh - r.tr - r.br} a ${r.br},${r.br} 0 0 1 ${-r.br},${r.br} h ${-bw + r.br + r.bl} a ${r.bl},${r.bl} 0 0 1 ${-r.bl},${-r.bl} v ${-bh + r.bl + r.tl} a ${r.tl},${r.tl} 0 0 1 ${r.tl},${-r.tl} z`;
+            backgroundRect = `<path d="${path}" fill="${bgColor}" />`;
+        }
+
+        const transform = `transform="skewX(${skewX}) skewY(${skewY})"`;
+
+        const svgContent = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="${totalW}" height="${totalH}" viewBox="0 0 ${totalW} ${totalH}">
+                <style>${fontStyle}</style>
+                ${backgroundRect}
+                <text x="${centerX}" y="${centerY}" style="${style}" ${transform}>${text}</text>
+            </svg>
+        `;
+        return 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgContent)));
+    }
+
+    syncTextInputFromLayer(layer) { this.tryLoadLayer(layer); }
+
+    tryLoadLayer(layer) {
+        if (!layer || !this.isTextLayer(layer)) {
+            if (this.isEditMode) this.resetToCreateMode();
             return;
         }
 
-        const fontSize = parseInt(fontSizeInput.value) || 24;
-        const hasOutline = outlineCheckbox.checked;
-        const outlineWidth = parseInt(outlineWidthInput.value) || 2;
-        const textColor = textColorPicker.value;
-        const outlineColor = outlineColorPicker.value;
+        let data = layer.textShapeData || (layer.options && layer.options.textShapeData);
+        if (!data) return;
 
-        // Get selected font
-        const fontSelect = document.getElementById('fontSelect');
-        const selectedFont = fontSelect ? fontSelect.getAttribute('data-selected-font') || 'Arial' : 'Arial';
+        console.log('Loading Advanced Text Layer Data');
+        this.isEditMode = true; this.editingLayer = layer; this.updateUIMode();
 
-        // Create new SVG
-        const newSvgText = this.createSVGText(text, fontSize, selectedFont, textColor, hasOutline, outlineWidth, outlineColor);
+        document.getElementById('textInput').value = data.text || '';
+        document.getElementById('fontSizeInput').value = data.fontSize || 40;
+        document.getElementById('fontSelect').value = data.fontFamily || 'Arial';
+        document.getElementById('mainColorText').value = data.mainColor || '#000000FF';
+        document.getElementById('mainColorPicker').value = (data.mainColor || '#000000').substring(0, 7);
 
-        // Update layer - directly update the src array (this will trigger the setter)
-        this.editingLayer.src = [newSvgText];
-        
-        // Reset width/height to null so layer will auto-detect from new SVG
-        // This allows the SVG to dynamically resize based on new text/font size
-        this.editingLayer.width = null;
-        this.editingLayer.height = null;
-        
-        // Update layer name
-        this.editingLayer.name = text;
+        // Load new fields
+        document.getElementById('skewXInput').value = data.skewX || 0;
+        document.getElementById('skewYInput').value = data.skewY || 0;
+        document.getElementById('letterSpacingInput').value = data.letterSpacing || 0;
+        document.getElementById('textPaddingInput').value = data.textPadding !== undefined ? data.textPadding : 20;
 
-        // Re-render
-        if (typeof renderLayer === 'function') {
-            renderLayer(this.editingLayer);
+        const bgCheck = document.getElementById('bgEnableCheck');
+        bgCheck.checked = !!data.bgEnabled;
+        bgCheck.dispatchEvent(new Event('change'));
+        document.getElementById('bgColorText').value = data.bgColor || '#FFFFFFFF';
+        document.getElementById('bgColorPicker').value = (data.bgColor || '#FFFFFF').substring(0, 7);
+        document.getElementById('bgPaddingInput').value = data.bgPadding || 0;
+
+        const r = data.radii || {};
+        document.getElementById('radiusTL').value = r.tl || 0;
+        document.getElementById('radiusTR').value = r.tr || 0;
+        document.getElementById('radiusBL').value = r.bl || 0;
+        document.getElementById('radiusBR').value = r.br || 0;
+
+        const container = document.getElementById('strokesContainer');
+        container.innerHTML = '';
+        if (data.strokes) data.strokes.forEach(s => this.addStroke(s));
+        this.checkEmptyStrokes();
+    }
+
+    isTextLayer(layer) { return !!(layer.textShapeData || (layer.options && layer.options.textShapeData)); }
+
+    updateUIMode() {
+        const title = document.getElementById('textShapeTitle');
+        const btn = document.getElementById('createLayerBtn');
+        const cancel = document.getElementById('cancelEditBtn');
+        if (this.isEditMode) {
+            title.textContent = '✏️ Edit Text Layer'; title.style.color = '#FF9800';
+            btn.textContent = 'Simpan Perubahan'; btn.style.backgroundColor = '#FF9800';
+            cancel.style.display = 'block';
+        } else {
+            title.textContent = '✨ Text Studio'; title.style.color = '#5E6CC9';
+            btn.textContent = 'Buat Text Layer'; btn.style.backgroundColor = '#5E6CC9';
+            cancel.style.display = 'none';
         }
-
-        // Update layer name input
-        if (typeof layerNameInput !== 'undefined') {
-            layerNameInput.value = text;
-        }
-
-        // Don't clear inputs in edit mode
     }
 
     resetToCreateMode() {
-        this.isEditMode = false;
-        this.editingLayer = null;
-        this.updateUIMode(false);
-        
-        // Clear inputs
+        this.isEditMode = false; this.editingLayer = null; this.updateUIMode();
         document.getElementById('textInput').value = '';
-        document.getElementById('fontSizeInput').value = '24';
-        document.getElementById('outlineCheckbox').checked = false;
-        document.getElementById('outlineWidthInput').value = '2';
-        document.getElementById('textColorPicker').value = '#ffffff';
-        document.getElementById('outlineColorPicker').value = '#000000';
-        
-        // Reset font
-        const fontSelect = document.getElementById('fontSelect');
-        fontSelect.setAttribute('data-selected-font', 'Arial');
-        fontSelect.textContent = 'Pilih Gaya Tulisan ▼';
-        
-        // Hide outline settings
-        this.updateOutlineUI(false);
-    }
-
-    updateOutlineUI(hasOutline) {
-        const outlineSettings = document.getElementById('outlineSettings');
-        const outlineColorContainer = document.getElementById('outlineColorContainer');
-        if (hasOutline) {
-            outlineSettings.style.display = 'block';
-            outlineColorContainer.style.display = 'block';
-        } else {
-            outlineSettings.style.display = 'none';
-            outlineColorContainer.style.display = 'none';
-        }
-    }
-
-    createSVGText(text, fontSize, fontFamily, textColor, hasOutline, outlineWidth, outlineColor) {
-        // Estimate text width (rough calculation)
-        const textWidth = text.length * fontSize * 0.6;
-        const textHeight = fontSize * 1.2;
-        const padding = Math.max(outlineWidth * 2, 10);
-
-        // Create SVG with text
-        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        svg.setAttribute('width', textWidth + padding * 2);
-        svg.setAttribute('height', textHeight + padding * 2);
-        svg.setAttribute('viewBox', `0 0 ${textWidth + padding * 2} ${textHeight + padding * 2}`);
-
-        // Store metadata as SVG attributes for reliable serialization
-        const metadata = {
-            text: text,
-            fontSize: fontSize,
-            fontFamily: fontFamily,
-            textColor: textColor,
-            hasOutline: hasOutline,
-            outlineWidth: outlineWidth,
-            outlineColor: outlineColor
-        };
-        
-        // Store metadata in data attributes
-        svg.setAttribute('data-textshape-metadata', JSON.stringify(metadata));
-
-        // Create defs for text styling
-        const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-        const style = document.createElementNS('http://www.w3.org/2000/svg', 'style');
-        style.textContent = `
-            .text-main {
-                font-family: ${fontFamily}, sans-serif;
-                font-size: ${fontSize}px;
-                fill: ${textColor};
-                ${hasOutline ? `-webkit-text-stroke: ${outlineWidth}px ${outlineColor};` : ''}
-            }
-        `;
-        defs.appendChild(style);
-        svg.appendChild(defs);
-
-        // Create text element
-        const textElement = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        textElement.setAttribute('x', (textWidth + padding * 2) / 2);
-        textElement.setAttribute('y', (textHeight + padding * 2) / 2 + fontSize * 0.35); // Adjust baseline
-        textElement.setAttribute('text-anchor', 'middle');
-        textElement.setAttribute('class', 'text-main');
-        textElement.textContent = text;
-
-        svg.appendChild(textElement);
-
-        // Convert to data URL with proper encoding
-        const serializer = new XMLSerializer();
-        const svgString = serializer.serializeToString(svg);
-        
-        // Use TextEncoder for proper UTF-8 encoding
-        const encoder = new TextEncoder();
-        const bytes = encoder.encode(svgString);
-        const encoded = btoa(String.fromCharCode.apply(null, bytes));
-        return 'data:image/svg+xml;base64,' + encoded;
-    }
-
-    isTextLayer(layer) {
-        // Check if layer src contains SVG data URL with text element
-        if (!layer || !layer.src || !Array.isArray(layer.src)) {
-            return false;
-        }
-        
-        for (const src of layer.src) {
-            if (typeof src === 'string' && src.startsWith('data:image/svg+xml')) {
-                try {
-                    // Proper base64 decoding
-                    const base64String = src.split(',')[1];
-                    const decoded = atob(base64String);
-                    const bytes = Uint8Array.from(decoded, c => c.charCodeAt(0));
-                    const svgString = new TextDecoder().decode(bytes);
-                    
-                    const parser = new DOMParser();
-                    const svgDoc = parser.parseFromString(svgString, 'image/svg+xml');
-                    
-                    // Check for parsing errors
-                    if (svgDoc.documentElement.tagName === 'parsererror') {
-                        console.warn('isTextLayer: SVG parsing error for layer:', layer.name);
-                        continue;
-                    }
-                    
-                    // Check for metadata attribute or text element
-                    const hasMetadata = svgDoc.documentElement.getAttribute('data-textshape-metadata');
-                    const textElement = svgDoc.querySelector('text');
-                    
-                    if (hasMetadata || textElement) {
-                        console.log('isTextLayer: Found text element in layer:', layer.name);
-                        return true;
-                    }
-                } catch (e) {
-                    console.warn('isTextLayer: Error parsing SVG for layer:', layer.name, e);
-                    continue;
-                }
-            }
-        }
-        console.log('isTextLayer: No text found in layer:', layer.name);
-        return false;
-    }
-
-    updateOutlineUI(hasOutline) {
-        const outlineSettings = document.getElementById('outlineSettings');
-        const outlineColorContainer = document.getElementById('outlineColorContainer');
-        if (hasOutline) {
-            outlineSettings.style.display = 'block';
-            outlineColorContainer.style.display = 'block';
-        } else {
-            outlineSettings.style.display = 'none';
-            outlineColorContainer.style.display = 'none';
-        }
-    }
-
-    syncTextInputFromLayer(layer) {
-        console.log('=== syncTextInputFromLayer called ===');
-        console.log('Layer name:', layer.name);
-        console.log('Layer object:', layer);
-        
-        // Only sync if not grouped (no parentLayer)
-        if (layer.parentLayer) {
-            console.log('✗ syncTextInputFromLayer: Layer is grouped, skipping');
-            return;
-        }
-
-        // Extract metadata from SVG
-        const svgSrc = layer.src.find(src => src && src.startsWith('data:image/svg+xml'));
-        if (!svgSrc) {
-            console.warn('✗ syncTextInputFromLayer: No SVG src found. Layer.src:', layer.src);
-            return;
-        }
-
-        console.log('✓ Found SVG src, length:', svgSrc.length);
-
-        try {
-            // Proper base64 decoding
-            const parts = svgSrc.split(',');
-            if (parts.length < 2) {
-                console.error('✗ Invalid data URL format');
-                return;
-            }
-            
-            const base64String = parts[1];
-            console.log('Base64 string length:', base64String.length);
-            
-            const decoded = atob(base64String);
-            const bytes = Uint8Array.from(decoded, c => c.charCodeAt(0));
-            const svgString = new TextDecoder().decode(bytes);
-            
-            console.log('✓ Decoded SVG string length:', svgString.length);
-            console.log('SVG preview:', svgString.substring(0, 300));
-            
-            const parser = new DOMParser();
-            const svgDoc = parser.parseFromString(svgString, 'image/svg+xml');
-            
-            // Check for parsing errors
-            if (svgDoc.documentElement.tagName === 'parsererror') {
-                console.error('✗ SVG parsing error');
-                return;
-            }
-            
-            // Get metadata from attribute
-            const metadataStr = svgDoc.documentElement.getAttribute('data-textshape-metadata');
-            console.log('Metadata attribute:', metadataStr ? 'FOUND' : 'NOT FOUND');
-            
-            let metadata = null;
-            
-            if (metadataStr) {
-                try {
-                    metadata = JSON.parse(metadataStr);
-                    console.log('✓ Parsed metadata:', metadata);
-                } catch (e) {
-                    console.warn('✗ Failed to parse metadata JSON:', e);
-                    console.warn('Metadata string was:', metadataStr);
-                }
-            }
-            
-            if (metadata) {
-                console.log('✓ Switching to edit mode with metadata');
-                // Fill all inputs
-                const textInputEl = document.getElementById('textInput');
-                const fontSizeEl = document.getElementById('fontSizeInput');
-                const outlineCheckboxEl = document.getElementById('outlineCheckbox');
-                const outlineWidthEl = document.getElementById('outlineWidthInput');
-                const textColorEl = document.getElementById('textColorPicker');
-                const outlineColorEl = document.getElementById('outlineColorPicker');
-                
-                console.log('Elements found:', {
-                    textInputEl: !!textInputEl,
-                    fontSizeEl: !!fontSizeEl,
-                    outlineCheckboxEl: !!outlineCheckboxEl,
-                    outlineWidthEl: !!outlineWidthEl,
-                    textColorEl: !!textColorEl,
-                    outlineColorEl: !!outlineColorEl
-                });
-                
-                if (textInputEl) {
-                    textInputEl.value = metadata.text;
-                    console.log('Set text input to:', metadata.text);
-                }
-                if (fontSizeEl) {
-                    fontSizeEl.value = metadata.fontSize;
-                    console.log('Set font size to:', metadata.fontSize);
-                }
-                if (textColorEl) {
-                    textColorEl.value = metadata.textColor;
-                    console.log('Set text color to:', metadata.textColor);
-                }
-                if (outlineCheckboxEl) {
-                    outlineCheckboxEl.checked = metadata.hasOutline;
-                    console.log('Set outline checkbox to:', metadata.hasOutline);
-                }
-                if (outlineWidthEl) {
-                    outlineWidthEl.value = metadata.outlineWidth;
-                    console.log('Set outline width to:', metadata.outlineWidth);
-                }
-                if (outlineColorEl) {
-                    outlineColorEl.value = metadata.outlineColor;
-                    console.log('Set outline color to:', metadata.outlineColor);
-                }
-                
-                // Set font
-                const fontSelect = document.getElementById('fontSelect');
-                if (fontSelect) {
-                    fontSelect.setAttribute('data-selected-font', metadata.fontFamily);
-                    fontSelect.textContent = `Pilih Gaya Tulisan: ${metadata.fontFamily}`;
-                    console.log('Set font to:', metadata.fontFamily);
-                }
-                
-                // Update UI visibility
-                this.updateOutlineUI(metadata.hasOutline);
-                console.log('Updated outline UI visibility');
-                
-                // Set edit mode
-                this.isEditMode = true;
-                this.editingLayer = layer;
-                console.log('Set isEditMode=true, editingLayer set');
-                
-                this.updateUIMode(true);
-                console.log('✓ updateUIMode(true) called');
-            } else {
-                console.log('⚠ No metadata found');
-                // Fallback: extract text only
-                const textElement = svgDoc.querySelector('text');
-                if (textElement) {
-                    const textInputEl = document.getElementById('textInput');
-                    if (textInputEl) {
-                        textInputEl.value = textElement.textContent;
-                        console.log('Set text from element (fallback):', textElement.textContent);
-                    }
-                }
-            }
-        } catch (e) {
-            console.error('✗ syncTextInputFromLayer: Failed to process SVG:', e);
-            console.error('Stack:', e.stack);
-        }
-    }
-
-    updateUIMode(isEditMode) {
-        console.log('updateUIMode called with isEditMode:', isEditMode);
-        
-        const title = document.getElementById('textShapeTitle');
-        const button = document.getElementById('createTextButton');
-        const container = document.getElementById('textShapeContainer');
-        
-        if (!title || !button || !container) {
-            console.error('updateUIMode: Required DOM elements not found');
-            return;
-        }
-        
-        if (isEditMode) {
-            title.textContent = 'Pengeditan Sisipan Teks';
-            title.style.color = '#FF9800'; // Orange
-            button.textContent = 'Ubah Teks';
-            button.style.backgroundColor = '#FF9800'; // Orange
-            container.style.borderColor = '#FF9800'; // Orange border
-            console.log('✓ UI switched to EDIT MODE (orange)');
-        } else {
-            title.textContent = 'Pembuatan Sisipan Teks';
-            title.style.color = '#4CAF50'; // Green
-            button.textContent = 'Buat Teks';
-            button.style.backgroundColor = '#4CAF50'; // Green
-            container.style.borderColor = '#4CAF50'; // Green border
-            console.log('✓ UI switched to CREATE MODE (green)');
-        }
+        document.getElementById('strokesContainer').innerHTML = '';
+        // Reset all inputs to default
+        ['fontSizeInput', 'skewXInput', 'skewYInput', 'letterSpacingInput', 'radiusTL', 'radiusTR', 'radiusBL', 'radiusBR'].forEach(id => {
+            const el = document.getElementById(id); if (el) el.value = (id === 'fontSizeInput' ? 40 : 0);
+        });
+        document.getElementById('textPaddingInput').value = 20;
+        document.getElementById('bgEnableCheck').checked = false;
+        document.getElementById('bgEnableCheck').dispatchEvent(new Event('change'));
+        this.checkEmptyStrokes();
     }
 }
 
-// Global functions for UI
-function toggleFontDropdown() {
-    const dropdown = document.getElementById('fontDropdown');
-    if (!dropdown) {
-        console.warn('fontDropdown element not found');
-        return;
-    }
-    if (dropdown.style.display === 'none') {
-        dropdown.style.display = 'block';
-    } else {
-        dropdown.style.display = 'none';
-    }
-}
-
-function selectFont(fontName) {
-    const fontSelect = document.getElementById('fontSelect');
-    if (fontSelect) {
-        fontSelect.setAttribute('data-selected-font', fontName);
-        fontSelect.textContent = `Pilih Gaya Tulisan: ${fontName}`;
-    }
-    toggleFontDropdown();
-}
-
-// Initialize immediately if DOM is ready, otherwise wait
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-        window.textShapeManager = new TextShapeManager();
-        
-        // Check if there's already a selected layer
-        if (typeof selected !== 'undefined' && selected && window.textShapeManager.isTextLayer(selected)) {
-            window.textShapeManager.syncTextInputFromLayer(selected);
-        }
-    });
-} else {
-    window.textShapeManager = new TextShapeManager();
-    
-    // Check if there's already a selected layer
-    if (typeof window.selected !== 'undefined' && window.selected && window.textShapeManager.isTextLayer(window.selected)) {
-        window.textShapeManager.syncTextInputFromLayer(window.selected);
-    }
-}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => window.textShapeManager = new TextShapeManager());
+else window.textShapeManager = new TextShapeManager();

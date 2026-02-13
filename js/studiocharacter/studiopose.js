@@ -1,8 +1,8 @@
 //  -------------------Gacha Design Studio--------------------  //
 // Global touch-drag flags (used to prevent other touches stealing an active drag)
 if (typeof window.touchDragActive === 'undefined') {
-    window.touchDragActive = false;
-    window.touchDragId = null;
+  window.touchDragActive = false;
+  window.touchDragId = null;
 }
 //  Created by: Archana Berry                                   //
 //  Assets credits: Lunime, OGL (Open Game License), MIT CC     //
@@ -26,52 +26,52 @@ if (typeof window.touchDragActive === 'undefined') {
 
 // Define LayerGroup class
 class LayerGroup {
-    constructor(children) {
-        this.children = children;
-        this.element = document.createElement('div');
-        this.element.classList.add('layer-group');
-        this.element.style.position = 'absolute';
+  constructor(children) {
+    this.children = children;
+    this.element = document.createElement('div');
+    this.element.classList.add('layer-group');
+    this.element.style.position = 'absolute';
 
-        // Tambahkan setiap anak ke dalam grup
-        children.forEach(child => {
-            this.element.appendChild(child.element);
-        });
+    // Tambahkan setiap anak ke dalam grup
+    children.forEach(child => {
+      this.element.appendChild(child.element);
+    });
 
-        // Tambahkan root anchor untuk melindungi drag
-        const rootAnchor = document.createElement('div');
-        rootAnchor.classList.add('root-anchor');
-        rootAnchor.style.position = 'absolute';
-        rootAnchor.style.width = '100%';
-        rootAnchor.style.height = '100%';
-        rootAnchor.style.pointerEvents = 'none';
-        this.element.appendChild(rootAnchor);
+    // Tambahkan root anchor untuk melindungi drag
+    const rootAnchor = document.createElement('div');
+    rootAnchor.classList.add('root-anchor');
+    rootAnchor.style.position = 'absolute';
+    rootAnchor.style.width = '100%';
+    rootAnchor.style.height = '100%';
+    rootAnchor.style.pointerEvents = 'none';
+    this.element.appendChild(rootAnchor);
 
-        // Tetapkan posisi awal grup
-        this._x = 0;
-        this._y = 0;
-    }
+    // Tetapkan posisi awal grup
+    this._x = 0;
+    this._y = 0;
+  }
 
-    set x(value) {
-        this._x = value;
-        this.updatePosition();
-    }
+  set x(value) {
+    this._x = value;
+    this.updatePosition();
+  }
 
-    get x() {
-        return this._x;
-    }
+  get x() {
+    return this._x;
+  }
 
-    set y(value) {
-        this._y = value;
-        this.updatePosition();
-    }
+  set y(value) {
+    this._y = value;
+    this.updatePosition();
+  }
 
-    get y() {
-        return this._y;
-    }
+  get y() {
+    return this._y;
+  }
 
-    updatePosition() {
-        this.element.style.transform = `translate(${this._x}px, ${this._y}px)`;
-    }
+  updatePosition() {
+    this.element.style.transform = `translate(${this._x}px, ${this._y}px)`;
+  }
 }
 
 
@@ -88,269 +88,282 @@ let groupDraggedLayers = [];
 const multiDragState = new Map();
 
 function onLayerPointerDown(e, layer) {
-    // Only primary button for mouse
-    if (e.button !== undefined && e.button !== 0) return;
-    // Only handle pointers in panel1-layercontainer (guard)
-    const panel1LayerContainer = document.getElementById('panel1-layercontainer') || document.getElementById('panel1') || document.querySelector('.container');
-    if (!panel1LayerContainer || !panel1LayerContainer.contains(layer.element)) return;
+  // Only primary button for mouse
+  if (e.button !== undefined && e.button !== 0) return;
+  // Only handle pointers in panel1-layercontainer (guard)
+  const panel1LayerContainer = document.getElementById('panel1-layercontainer') || document.getElementById('panel1') || document.querySelector('.container');
+  if (!panel1LayerContainer || !panel1LayerContainer.contains(layer.element)) return;
 
-    // 🔥 CRITICAL: Handle Ctrl+Click for multi-select DIRECTLY HERE (not in click handler)
-    // Mirror multidrag approach: handle selection in pointer events for better control
-    const isCtrl = e.ctrlKey || e.metaKey;
-    if (isCtrl) {
-        e.preventDefault();
-        e.stopPropagation();
-        try { e.target.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
-        
-        // Initialize selector if needed
-        const selector = window.selectorInstance;
-        if (selector && !Array.isArray(selector.selectedLayers)) {
-            selector.selectedLayers = [];
-        }
-
-        // Use multidrag's approach: check if already selected using multiple matching methods
-        const alreadySelected = selector && Array.isArray(selector.selectedLayers) &&
-            selector.selectedLayers.some(s => {
-                if (!s) return false;
-                if (s === layer) return true; // Direct layer reference
-                if (s === layer.element) return true; // DOM element reference
-                if (s.__layerInstance === layer) return true; // Instance reference  
-                if (s.element === layer.element) return true; // Element comparison
-                return false;
-            });
-
-        if (alreadySelected) {
-            // REMOVE from selection
-            layer.element.classList.remove('selected');
-            layer.selected = false;
-            if (selector) {
-                selector.selectedLayers = selector.selectedLayers.filter(s => {
-                    if (!s) return false;
-                    return !(s === layer || s === layer.element || s.__layerInstance === layer || s.element === layer.element);
-                });
-            }
-            console.log('🔴 Multi-select: REMOVED', layer.name);
-        } else {
-            // ADD to selection
-            layer.element.classList.add('selected');
-            layer.selected = true;
-            if (selector) {
-                selector.selectedLayers.push(layer);
-            }
-            selected = layer;
-            window.selected = layer;
-            console.log('🟢 Multi-select: ADDED', layer.name);
-        }
-
-        // Update displays immediately
-        updateCoordInput();
-        updateMenuLayerSelectionForMultiSelect();
-        syncMultiSelectToFramework();
-
-        return; // Don't continue to drag logic when Ctrl held!
-    }
-
+  // 🔥 CRITICAL: Handle Ctrl+Click for multi-select DIRECTLY HERE (not in click handler)
+  // Mirror multidrag approach: handle selection in pointer events for better control
+  const isCtrl = e.ctrlKey || e.metaKey;
+  if (isCtrl) {
     e.preventDefault();
-    // Capture pointer on target so we don't lose events when finger leaves element
+    e.stopPropagation();
     try { e.target.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
 
-    const pid = e.pointerId;
-    const isTouch = e.pointerType === 'touch';
-
-    // For touch: allow unlimited independent pointers on different layers
-    // For mouse: keep backward-compatible single-drag behavior
-    if (isTouch) {
-        // Touch mode: each pointer tracks its own layer independently
-        multiDragState.set(pid, {
-            type: 'independent',
-            layer: layer,
-            lastX: e.clientX,
-            lastY: e.clientY
-        });
-
-        // Multi-touch logic:
-        // - If first touch (no active touches yet), initialize selector & set as selected
-        // - If subsequent touch (other touches active), ADD to selector.selectedLayers for true multi-select
-        const activeIndependentTouches = Array.from(multiDragState.values()).filter(info => info.type === 'independent').length;
-        
-        // 🔥 CRITICAL FIX: Ensure selector.selectedLayers exists for touch mode
-        const selector = window.selectorInstance;
-        if (selector && !Array.isArray(selector.selectedLayers)) {
-            selector.selectedLayers = [];
-        }
-        
-        if (activeIndependentTouches === 1) {
-            // First touch on this new session
-            selected = layer;
-            window.selected = layer;
-            
-            // Initialize selector with first touched layer
-            if (selector) {
-                selector.selectedLayers = [layer];
-            }
-            
-            // Sync to panel2 if available
-            if (typeof syncLayerSelectionAcrossAllPanels === 'function') {
-                syncLayerSelectionAcrossAllPanels(layer);
-            }
-        } else if (activeIndependentTouches > 1) {
-            // CRITICAL FIX: Subsequent fingers - ADD to selector.selectedLayers if not already there
-            if (selector && Array.isArray(selector.selectedLayers)) {
-                const alreadySelected = selector.selectedLayers.some(s => {
-                    if (s === layer || s.__layerInstance === layer) return true;
-                    if (s && s instanceof Object && typeof s.x !== 'undefined' && s === layer) return true;
-                    return false;
-                });
-                if (!alreadySelected) {
-                    selector.selectedLayers.push(layer);
-                }
-            }
-        }
-        
-        // Update coord inputs to show latest selection (single or multi)
-        updateCoordInput();
-
-        // Visual feedback
-        if (layer.element) {
-            layer.element.classList.add('dragging');
-            layer.element.classList.add('selected');
-        }
-    } else {
-        // Mouse mode: keep original multi-select group-drag logic
-        const selector = window.selectorInstance;
-        const isSelectedDOM = layer.element && layer.element.classList && layer.element.classList.contains('selected');
-        const selectorSet = (selector && Array.isArray(selector.selectedLayers)) ? selector.selectedLayers.map(s => s.__layerInstance || s) : [];
-        const instSelected = selectorSet.includes(layer) || isSelectedDOM;
-
-        // If there are active drags and user touched a non-selected layer => cancel all and switch
-        if (!instSelected && multiDragState.size > 0) {
-            for (const info of multiDragState.values()) {
-                if (info.layer && info.layer.element) info.layer.element.classList.remove('dragging');
-            }
-            multiDragState.clear();
-            isGroupDragging = false;
-            groupDraggedLayers = [];
-            if (selector && Array.isArray(selector.selectedLayers)) selector.selectedLayers = [];
-            selectLayer(layer);
-        }
-
-        // Normalize selector.selectedLayers to an array of Layer instances
-        const selectedNow = [];
-        if (selector && Array.isArray(selector.selectedLayers)) {
-            for (const s of selector.selectedLayers) {
-                if (!s) continue;
-                if (s.__layerInstance) selectedNow.push(s.__layerInstance);
-                else if (s instanceof Object && typeof s.x !== 'undefined') selectedNow.push(s);
-                else {
-                    const found = layers.find(l => l.element === s);
-                    if (found) selectedNow.push(found);
-                }
-            }
-        }
-
-        // Determine group-drag purely based on instances
-        let info = null;
-        if (selectedNow.includes(layer) && selectedNow.length > 1) {
-            // Group-drag: move all selected layers together
-            const layersCopy = selectedNow.slice();
-            info = { type: 'group', layer: layer, layers: layersCopy, lastX: e.clientX, lastY: e.clientY };
-            isGroupDragging = true;
-            groupDraggedLayers = layersCopy.slice();
-            selected = layer;
-            window.selected = layer;
-            updateCoordInput();
-        } else {
-            // Single-layer drag
-            info = { type: 'single', layer: layer, lastX: e.clientX, lastY: e.clientY };
-            selectLayer(layer);
-        }
-
-        multiDragState.set(pid, info);
-
-        // Visual feedback
-        if (layer.element) {
-            layer.element.classList.add('dragging');
-            layer.element.classList.add('selected');
-        }
+    // Initialize selector if needed
+    const selector = window.selectorInstance;
+    if (selector && !Array.isArray(selector.selectedLayers)) {
+      selector.selectedLayers = [];
     }
+
+    // Use multidrag's approach: check if already selected using multiple matching methods
+    const alreadySelected = selector && Array.isArray(selector.selectedLayers) &&
+      selector.selectedLayers.some(s => {
+        if (!s) return false;
+        if (s === layer) return true; // Direct layer reference
+        if (s === layer.element) return true; // DOM element reference
+        if (s.__layerInstance === layer) return true; // Instance reference  
+        if (s.element === layer.element) return true; // Element comparison
+        return false;
+      });
+
+    if (alreadySelected) {
+      // REMOVE from selection
+      layer.element.classList.remove('selected');
+      layer.selected = false;
+      if (selector) {
+        selector.selectedLayers = selector.selectedLayers.filter(s => {
+          if (!s) return false;
+          return !(s === layer || s === layer.element || s.__layerInstance === layer || s.element === layer.element);
+        });
+      }
+      console.log('🔴 Multi-select: REMOVED', layer.name);
+    } else {
+      // ADD to selection
+      layer.element.classList.add('selected');
+      layer.selected = true;
+      if (selector) {
+        selector.selectedLayers.push(layer);
+      }
+      selected = layer;
+      window.selected = layer;
+      console.log('🟢 Multi-select: ADDED', layer.name);
+    }
+
+    // Update displays immediately
+    updateCoordInput();
+    updateMenuLayerSelectionForMultiSelect();
+    syncMultiSelectToFramework();
+
+    return; // Don't continue to drag logic when Ctrl held!
+  }
+
+  e.preventDefault();
+  // Capture pointer on target so we don't lose events when finger leaves element
+  try { e.target.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+
+  const pid = e.pointerId;
+  const isTouch = e.pointerType === 'touch';
+
+  // For touch: allow unlimited independent pointers on different layers
+  // For mouse: keep backward-compatible single-drag behavior
+  if (isTouch) {
+    // Touch mode: each pointer tracks its own layer independently
+    multiDragState.set(pid, {
+      type: 'independent',
+      layer: layer,
+      lastX: e.clientX,
+      lastY: e.clientY,
+      startX: e.clientX,
+      startY: e.clientY
+    });
+
+    // Multi-touch logic:
+    // - If first touch (no active touches yet), initialize selector & set as selected
+    // - If subsequent touch (other touches active), ADD to selector.selectedLayers for true multi-select
+    const activeIndependentTouches = Array.from(multiDragState.values()).filter(info => info.type === 'independent').length;
+
+    // 🔥 CRITICAL FIX: Ensure selector.selectedLayers exists for touch mode
+    const selector = window.selectorInstance;
+    if (selector && !Array.isArray(selector.selectedLayers)) {
+      selector.selectedLayers = [];
+    }
+
+    if (activeIndependentTouches === 1) {
+      // First touch on this new session
+      selected = layer;
+      window.selected = layer;
+
+      // Initialize selector with first touched layer
+      if (selector) {
+        selector.selectedLayers = [layer];
+      }
+
+      // Sync to panel2 if available
+      if (typeof syncLayerSelectionAcrossAllPanels === 'function') {
+        syncLayerSelectionAcrossAllPanels(layer);
+      }
+    } else if (activeIndependentTouches > 1) {
+      // CRITICAL FIX: Subsequent fingers - ADD to selector.selectedLayers if not already there
+      if (selector && Array.isArray(selector.selectedLayers)) {
+        const alreadySelected = selector.selectedLayers.some(s => {
+          if (s === layer || s.__layerInstance === layer) return true;
+          if (s && s instanceof Object && typeof s.x !== 'undefined' && s === layer) return true;
+          return false;
+        });
+        if (!alreadySelected) {
+          selector.selectedLayers.push(layer);
+        }
+      }
+    }
+
+    // Update coord inputs to show latest selection (single or multi)
+    updateCoordInput();
+
+    // Visual feedback
+    if (layer.element) {
+      layer.element.classList.add('dragging');
+      layer.element.classList.add('selected');
+    }
+  } else {
+    // Mouse mode: keep original multi-select group-drag logic
+    const selector = window.selectorInstance;
+    const isSelectedDOM = layer.element && layer.element.classList && layer.element.classList.contains('selected');
+    const selectorSet = (selector && Array.isArray(selector.selectedLayers)) ? selector.selectedLayers.map(s => s.__layerInstance || s) : [];
+    const instSelected = selectorSet.includes(layer) || isSelectedDOM;
+
+    // If there are active drags and user touched a non-selected layer => cancel all and switch
+    if (!instSelected && multiDragState.size > 0) {
+      for (const info of multiDragState.values()) {
+        if (info.layer && info.layer.element) info.layer.element.classList.remove('dragging');
+      }
+      multiDragState.clear();
+      isGroupDragging = false;
+      groupDraggedLayers = [];
+      if (selector && Array.isArray(selector.selectedLayers)) selector.selectedLayers = [];
+      selectLayer(layer);
+    }
+
+    // Normalize selector.selectedLayers to an array of Layer instances
+    const selectedNow = [];
+    if (selector && Array.isArray(selector.selectedLayers)) {
+      for (const s of selector.selectedLayers) {
+        if (!s) continue;
+        if (s.__layerInstance) selectedNow.push(s.__layerInstance);
+        else if (s instanceof Object && typeof s.x !== 'undefined') selectedNow.push(s);
+        else {
+          const found = layers.find(l => l.element === s);
+          if (found) selectedNow.push(found);
+        }
+      }
+    }
+
+    // Determine group-drag purely based on instances
+    let info = null;
+    if (selectedNow.includes(layer) && selectedNow.length > 1) {
+      // Group-drag: move all selected layers together
+      const layersCopy = selectedNow.slice();
+      info = { type: 'group', layer: layer, layers: layersCopy, lastX: e.clientX, lastY: e.clientY, startX: e.clientX, startY: e.clientY };
+      isGroupDragging = true;
+      groupDraggedLayers = layersCopy.slice();
+      selected = layer;
+      window.selected = layer;
+      updateCoordInput();
+    } else {
+      // Single-layer drag
+      info = { type: 'single', layer: layer, lastX: e.clientX, lastY: e.clientY, startX: e.clientX, startY: e.clientY };
+      selectLayer(layer);
+    }
+
+    multiDragState.set(pid, info);
+
+    // Visual feedback
+    if (layer.element) {
+      layer.element.classList.add('dragging');
+      layer.element.classList.add('selected');
+    }
+  }
 }
 
 function onLayerPointerMove(e) {
-    const pid = e.pointerId;
-    if (!multiDragState.has(pid)) return;
-    e.preventDefault();
-    const info = multiDragState.get(pid);
-    
-    // Get current zoom scale untuk normalize drag distance
-    const layerContainer = document.getElementById('panel1-layercontainer');
-    const currentScale = layerContainer ? (parseFloat(layerContainer.dataset.scale) || 1) : 1;
-    
-    // Normalize drag delta by zoom scale
-    // Ketika zoom 50%, user drag 10px tapi gerakan actual harus 20px (10 / 0.5 = 20)
-    const dx = (e.clientX - info.lastX) / currentScale;
-    const dy = (e.clientY - info.lastY) / currentScale;
+  const pid = e.pointerId;
+  if (!multiDragState.has(pid)) return;
+  e.preventDefault();
+  const info = multiDragState.get(pid);
 
-    // Support both group-drag (type='group') and independent per-layer drag (type='independent')
-    if (info.type === 'group' && Array.isArray(info.layers)) {
-        info.layers.forEach(l => {
-            try { l.x += dx; l.y += dy; } catch (err) {}
-        });
-    } else if (info.type === 'independent' && info.layer) {
-        // Touch mode: each pointer drags its own layer independently
-        info.layer.x += dx;
-        info.layer.y += dy;
-    } else if (info.type === 'single' && info.layer) {
-        // Mouse mode: single layer drag
-        info.layer.x += dx;
-        info.layer.y += dy;
-    }
+  // Get current zoom scale untuk normalize drag distance
+  const layerContainer = document.getElementById('panel1-layercontainer');
+  const currentScale = layerContainer ? (parseFloat(layerContainer.dataset.scale) || 1) : 1;
 
-    info.lastX = e.clientX;
-    info.lastY = e.clientY;
+  // Normalize drag delta by zoom scale
+  // Ketika zoom 50%, user drag 10px tapi gerakan actual harus 20px (10 / 0.5 = 20)
+  const dx = (e.clientX - info.lastX) / currentScale;
+  const dy = (e.clientY - info.lastY) / currentScale;
 
-    // Update the coord inputs whenever any drag happens (both single and multi-select)
-    updateCoordInput();
+  // Support both group-drag (type='group') and independent per-layer drag (type='independent')
+  if (info.type === 'group' && Array.isArray(info.layers)) {
+    info.layers.forEach(l => {
+      try { l.x += dx; l.y += dy; } catch (err) { }
+    });
+  } else if (info.type === 'independent' && info.layer) {
+    // Touch mode: each pointer drags its own layer independently
+    info.layer.x += dx;
+    info.layer.y += dy;
+  } else if (info.type === 'single' && info.layer) {
+    // Mouse mode: single layer drag
+    info.layer.x += dx;
+    info.layer.y += dy;
+  }
+
+  info.lastX = e.clientX;
+  info.lastY = e.clientY;
+
+  // Update the coord inputs whenever any drag happens (both single and multi-select)
+  updateCoordInput();
 }
 
 function onLayerPointerUp(e) {
-    const pid = e.pointerId;
-    if (!multiDragState.has(pid)) return;
+  const pid = e.pointerId;
+  if (!multiDragState.has(pid)) return;
 
-    const info = multiDragState.get(pid);
-    const isTouch = e.pointerType === 'touch';
+  const info = multiDragState.get(pid);
 
-    // Visual cleanup for that pointer's layer
-    if (info.layer && info.layer.element) {
-        // Check if other pointers still drag the same layer
-        const stillDragging = Array.from(multiDragState.entries()).some(([otherPid, otherInfo]) => otherPid !== pid && otherInfo.layer === info.layer);
-        if (!stillDragging) {
-            info.layer.element.classList.remove('dragging');
-        }
-        try { e.target.releasePointerCapture(pid); } catch (err) {}
+  // Check if a drag actually happened (distance > 5px)
+  if (info && info.startX !== undefined && info.startY !== undefined) {
+    const dist = Math.sqrt(Math.pow(e.clientX - info.startX, 2) + Math.pow(e.clientY - info.startY, 2));
+    if (dist > 5) { // Threshold 5px
+      window.justFinishedDrag = true;
+      // Reset flag after small delay (enough for click event to fire and be ignored)
+      setTimeout(() => { window.justFinishedDrag = false; }, 100);
     }
+  }
 
-    // CRITICAL: For touch mode, KEEP released finger's layer in selector for multi-select state
-    // Don't remove it - just let multiDragState clear so display color changes to RED
-    // This allows group-drag to continue without needing to reselect
-    if (isTouch && info.type === 'independent') {
-        const selector = window.selectorInstance;
-        if (selector && Array.isArray(selector.selectedLayers) && info.layer) {
-            // KEEP layer in selector.selectedLayers - don't remove it!
-            // This preserves multi-select state for immediate re-drag or group operations
-        }
-    }
+  const isTouch = e.pointerType === 'touch';
 
-    // Delete this pointer's state from multiDragState
-    multiDragState.delete(pid);
-    // If there are no more pointers related to group dragging, clear group state
-    if (Array.from(multiDragState.values()).every(i => i.type !== 'group')) {
-        isGroupDragging = false;
-        groupDraggedLayers = [];
+  // Visual cleanup for that pointer's layer
+  if (info.layer && info.layer.element) {
+    // Check if other pointers still drag the same layer
+    const stillDragging = Array.from(multiDragState.entries()).some(([otherPid, otherInfo]) => otherPid !== pid && otherInfo.layer === info.layer);
+    if (!stillDragging) {
+      info.layer.element.classList.remove('dragging');
     }
-    
-    // Update display when any drag ends
-    // Color will change from BLUE (active drag) to RED (multi-select idle) based on multiDragState.size
-    updateCoordInput();
+    try { e.target.releasePointerCapture(pid); } catch (err) { }
+  }
+
+  // CRITICAL: For touch mode, KEEP released finger's layer in selector for multi-select state
+  // Don't remove it - just let multiDragState clear so display color changes to RED
+  // This allows group-drag to continue without needing to reselect
+  if (isTouch && info.type === 'independent') {
+    const selector = window.selectorInstance;
+    if (selector && Array.isArray(selector.selectedLayers) && info.layer) {
+      // KEEP layer in selector.selectedLayers - don't remove it!
+      // This preserves multi-select state for immediate re-drag or group operations
+    }
+  }
+
+  // Delete this pointer's state from multiDragState
+  multiDragState.delete(pid);
+  // If there are no more pointers related to group dragging, clear group state
+  if (Array.from(multiDragState.values()).every(i => i.type !== 'group')) {
+    isGroupDragging = false;
+    groupDraggedLayers = [];
+  }
+
+  // Update display when any drag ends
+  // Color will change from BLUE (active drag) to RED (multi-select idle) based on multiDragState.size
+  updateCoordInput();
 }
 
 /**
@@ -393,19 +406,19 @@ function onLayerPointerUp(e) {
 
 // Fungsi untuk membuat instance Layer dari objek JSON
 function createLayerFromObject(layerObj) {
-    if (!layerObj || !layerObj.layerName || !layerObj.src) {
-        console.error('Invalid layer data:', layerObj);
-        return null;
-    }
+  if (!layerObj || !layerObj.layerName || !layerObj.src) {
+    console.error('Invalid layer data:', layerObj);
+    return null;
+  }
 
-    const layer = new Layer(
-        layerObj.layerName,
-        layerObj.src,
-        layerObj.options || {},
-        layerObj.childLayers || []
-    );
+  const layer = new Layer(
+    layerObj.layerName,
+    layerObj.src,
+    layerObj.options || {},
+    layerObj.childLayers || []
+  );
 
-    return layer;
+  return layer;
 }
 
 /**
@@ -832,93 +845,93 @@ const layers = [
   ].map(createLayerFromObject);
 */
 
-const layers = [
-    // ========== RAMBUT (Hair) - 5 src dengan styling lengkap per-src ==========
-    {
-      "layerName": "Kepala",
-      "src": [
-        "assets/profilechibi/head1.svg",     // src0 - outline
-        "assets/profilechibi/head2.svg",     // src1 - base
-      ],
-      "options": {
-        // ---- src0: Outline (stroke) ----
-        "posX0": 0,
-        "posY0": 0,
-        "opacity0": 1,
-        "color0": "#1A1A1A",
-        
-        // ---- src1: Base Color Head ----
-        "posX1": -0.5,
-        "posY1": -0.5,
-        "opacity1": 1,
-        "color1": "#FFFFFF",
-        
-        // Global transformations
-        "posX": 16.9,
-        "posY": 25,
-        "rotation": 0,
-        "scale": 1,
-        "skewX": 0,
-        "skewY": 0,
-        "flipX": false,
-        "flipY": false,
-        "width": null,
-        "height": null
-      }
-    },
-    {
-      "layerName": "Rambut",
-      "src": [
-        "assets/profilechibi/hair1.svg",     // src0 - outline
-        "assets/profilechibi/hairss1.svg",   // src1 - shade
-        "assets/profilechibi/hairs1.svg",    // src2 - shadow/gradation
-        "assets/profilechibi/hairl1.svg",    // src3 - light/highlight
-        "assets/profilechibi/hairo1.svg"     // src4 - base color
-      ],
-      "options": {
-        // ---- src0: base (base fill/warna utama) ----
-        "posX0": 1,
-        "posY0": 2,
-        "opacity0": 1,
-        "color0": "#1A1A1A",
-        
-        // ---- src1: Shade (gradasi tengah) ----
-        "posX1": 15,
-        "posY1": 9,
-        "opacity2": 0.65,
-        "color2": "#B39DDB",
+var layers = [
+  // ========== RAMBUT (Hair) - 5 src dengan styling lengkap per-src ==========
+  {
+    "layerName": "Kepala",
+    "src": [
+      "assets/profilechibi/head1.svg",     // src0 - outline
+      "assets/profilechibi/head2.svg",     // src1 - base
+    ],
+    "options": {
+      // ---- src0: Outline (stroke) ----
+      "posX0": 0,
+      "posY0": 0,
+      "opacity0": 1,
+      "color0": "#1A1A1A",
 
-        // ---- src3: Light/Highlight ----
-        "posX3": 22.85,
-        "posY3": 14,
-        "opacity3": 1,
-        "color3": "#FFFFFF",
-        
-        // ---- src3: Shadow (gradasi gelap) ----
-        "posX2": 2,
-        "posY2": 1,
-        "opacity2": 1,
-        "color2": "#6A4C93",
-        
-        // ---- src4: Outline Color (warna garis luar) ----
-        "posX4": 0,
-        "posY4": 0,
-        "opacity4": 1,
-        "color4": "#9C6FB1",
-        
-        // Global transformations
-        "posX": 0,
-        "posY": 0,
-        "rotation": 0,
-        "scale": 1,
-        "skewX": 0,
-        "skewY": 0,
-        "flipX": false,
-        "flipY": false,
-        "width": null,
-        "height": null
-      }
-    },
+      // ---- src1: Base Color Head ----
+      "posX1": -0.5,
+      "posY1": -0.5,
+      "opacity1": 1,
+      "color1": "#FFFFFF",
+
+      // Global transformations
+      "posX": 16.9,
+      "posY": 25,
+      "rotation": 0,
+      "scale": 1,
+      "skewX": 0,
+      "skewY": 0,
+      "flipX": false,
+      "flipY": false,
+      "width": null,
+      "height": null
+    }
+  },
+  {
+    "layerName": "Rambut",
+    "src": [
+      "assets/profilechibi/hair1.svg",     // src0 - outline
+      "assets/profilechibi/hairss1.svg",   // src1 - shade
+      "assets/profilechibi/hairs1.svg",    // src2 - shadow/gradation
+      "assets/profilechibi/hairl1.svg",    // src3 - light/highlight
+      "assets/profilechibi/hairo1.svg"     // src4 - base color
+    ],
+    "options": {
+      // ---- src0: base (base fill/warna utama) ----
+      "posX0": 1,
+      "posY0": 2,
+      "opacity0": 1,
+      "color0": "#1A1A1A",
+
+      // ---- src1: Shade (gradasi tengah) ----
+      "posX1": 15,
+      "posY1": 9,
+      "opacity2": 0.65,
+      "color2": "#B39DDB",
+
+      // ---- src3: Light/Highlight ----
+      "posX3": 22.85,
+      "posY3": 14,
+      "opacity3": 1,
+      "color3": "#FFFFFF",
+
+      // ---- src3: Shadow (gradasi gelap) ----
+      "posX2": 2,
+      "posY2": 1,
+      "opacity2": 1,
+      "color2": "#6A4C93",
+
+      // ---- src4: Outline Color (warna garis luar) ----
+      "posX4": 0,
+      "posY4": 0,
+      "opacity4": 1,
+      "color4": "#9C6FB1",
+
+      // Global transformations
+      "posX": 0,
+      "posY": 0,
+      "rotation": 0,
+      "scale": 1,
+      "skewX": 0,
+      "skewY": 0,
+      "flipX": false,
+      "flipY": false,
+      "width": null,
+      "height": null
+    }
+  },
 ].map(createLayerFromObject);
 
 // Mendefinisikan koordinat awal ketika halaman dimuat
@@ -958,19 +971,19 @@ const splitterHeight = splitter ? splitter.offsetHeight : 0;
  * Update input koordinat berdasarkan layer yang dipilih
  */
 function updateCoordInput() {
-    if (!selected) return;
-    if (xCoordInput) xCoordInput.value = selected.x;
-    if (yCoordInput) yCoordInput.value = selected.y;
-    if (widthInput) widthInput.value = selected.width || selected.element.clientWidth;
-    if (heightInput) heightInput.value = selected.height || selected.element.clientHeight;
-    if (scaleInput) scaleInput.value = selected.scale;
-    if (rotationControl) rotationControl.value = selected.rotation;
-    if (flipHorizontal) flipHorizontal.checked = selected.isFlipX;
-    if (flipVertical) flipVertical.checked = selected.isFlipY;
-    if (rotationIndicator) rotationIndicator.innerText = selected.rotation;
-    if (layerNameInput) layerNameInput.value = selected.name;
-    if (skewXControl) skewXControl.value = selected.skewX;
-    if (skewYControl) skewYControl.value = selected.skewY;
+  if (!selected) return;
+  if (xCoordInput) xCoordInput.value = selected.x;
+  if (yCoordInput) yCoordInput.value = selected.y;
+  if (widthInput) widthInput.value = selected.width || selected.element.clientWidth;
+  if (heightInput) heightInput.value = selected.height || selected.element.clientHeight;
+  if (scaleInput) scaleInput.value = selected.scale;
+  if (rotationControl) rotationControl.value = selected.rotation;
+  if (flipHorizontal) flipHorizontal.checked = selected.isFlipX;
+  if (flipVertical) flipVertical.checked = selected.isFlipY;
+  if (rotationIndicator) rotationIndicator.innerText = selected.rotation;
+  if (layerNameInput) layerNameInput.value = selected.name;
+  if (skewXControl) skewXControl.value = selected.skewX;
+  if (skewYControl) skewYControl.value = selected.skewY;
 }
 
 /**
@@ -978,481 +991,482 @@ function updateCoordInput() {
  * @param {Layer} layer 
  */
 function onlayerdragstart(e, layer) {
-    // Mendapatkan koordinat awal mouse/jari
-    // Detect touch identifier (if any) and ensure we don't let another touch take over an active drag
-    let startedTouchId = null;
-    if (e.changedTouches && e.changedTouches.length > 0) {
-        startedTouchId = e.changedTouches[0].identifier;
-        initialX = e.changedTouches[0].clientX;
-        initialY = e.changedTouches[0].clientY;
-    } else if (e.touches && e.touches.length > 0) {
-        startedTouchId = e.touches[0].identifier || null;
-        initialX = e.touches[0].clientX;
-        initialY = e.touches[0].clientY;
-    } else if (e.targetTouches && e.targetTouches.length > 0) {
-        startedTouchId = e.targetTouches[0].identifier || null;
-        initialX = e.targetTouches[0].clientX;
-        initialY = e.targetTouches[0].clientY;
+  // Mendapatkan koordinat awal mouse/jari
+  // Detect touch identifier (if any) and ensure we don't let another touch take over an active drag
+  let startedTouchId = null;
+  if (e.changedTouches && e.changedTouches.length > 0) {
+    startedTouchId = e.changedTouches[0].identifier;
+    initialX = e.changedTouches[0].clientX;
+    initialY = e.changedTouches[0].clientY;
+  } else if (e.touches && e.touches.length > 0) {
+    startedTouchId = e.touches[0].identifier || null;
+    initialX = e.touches[0].clientX;
+    initialY = e.touches[0].clientY;
+  } else if (e.targetTouches && e.targetTouches.length > 0) {
+    startedTouchId = e.targetTouches[0].identifier || null;
+    initialX = e.targetTouches[0].clientX;
+    initialY = e.targetTouches[0].clientY;
+  } else {
+    initialX = e.clientX;
+    initialY = e.clientY;
+    startedTouchId = null;
+  }
+
+  // Jika sudah ada touch-drag lain yang aktif, dan ini adalah touch event dari jari berbeda, abaikan start ini
+  if (startedTouchId !== null && window.touchDragActive && window.touchDragId !== null && window.touchDragId !== startedTouchId) {
+    return; // ignore this touchstart so it doesn't interrupt current drag
+  }
+
+  // simpan touch identifier(s) yang memulai drag
+  if (startedTouchId !== null) {
+    // If no drag active yet, set global drag id to the first touch
+    if (!window.touchDragActive) {
+      window.touchDragActive = true;
+      window.touchDragId = startedTouchId;
+    }
+    // Add this touch id to the set of ids participating in this drag
+    if (!layerDragTouchIds.includes(startedTouchId)) layerDragTouchIds.push(startedTouchId);
+    // prevent emulated mouse events / clicks from interfering
+    if (typeof e.preventDefault === 'function') e.preventDefault();
+  } else {
+    // mouse drag - clear touch id list
+    layerDragTouchIds = [];
+    window.touchDragActive = false;
+    window.touchDragId = null;
+  }
+
+  // Cek jika ada multi-selection dan layer yang di-drag termasuk di dalamnya
+  isGroupDragging = false;
+  groupDraggedLayers = [];
+  if (window.selectorInstance && Array.isArray(window.selectorInstance.selectedLayers) && window.selectorInstance.selectedLayers.length > 1) {
+    // Normalize selected set to layer instances if DOM elements were used
+    let selectedSet = window.selectorInstance.selectedLayers.map(s => {
+      if (s && s.__layerInstance) return s.__layerInstance;
+      return s;
+    });
+    if (selectedSet.includes(layer)) {
+      // Layer ini bagian dari multi-selection, aktifkan group drag tanpa deselect
+      isGroupDragging = true;
+      groupDraggedLayers = selectedSet.slice();
+      // JANGAN panggil selectLayer() agar tidak mendeselect layer lainnya
+      // Hanya update selected untuk panel, tanpa mengubah visual selection di UI
+      selected = layer;
+      updateCoordInput();
+      if (widthInput) widthInput.value = selected.width || selected.element.clientWidth;
+      if (heightInput) heightInput.value = selected.height || selected.element.clientHeight;
+      if (layerNameInput) layerNameInput.value = selected.name;
+      if (scaleInput) scaleInput.value = selected.scale;
+      if (rotationControl) rotationControl.value = selected.rotation;
+      if (flipHorizontal) flipHorizontal.checked = selected.isFlipX;
+      if (flipVertical) flipVertical.checked = selected.isFlipY;
+      if (rotationIndicator) rotationIndicator.innerText = selected.rotation;
     } else {
-        initialX = e.clientX;
-        initialY = e.clientY;
-        startedTouchId = null;
+      // Layer ini tidak bagian dari multi-selection, deselect semua dan pilih layer ini
+      selectLayer(layer);
     }
+  } else {
+    // Tidak ada multi-selection, deselect semua dan pilih layer ini
+    selectLayer(layer);
+  }
 
-    // Jika sudah ada touch-drag lain yang aktif, dan ini adalah touch event dari jari berbeda, abaikan start ini
-    if (startedTouchId !== null && window.touchDragActive && window.touchDragId !== null && window.touchDragId !== startedTouchId) {
-        return; // ignore this touchstart so it doesn't interrupt current drag
-    }
+  // Menambahkan event listener untuk mengikuti pergerakan mouse/jari
+  document.addEventListener('mousemove', onlayerdrag);
+  document.addEventListener('mouseup', onlayerdragend);
+  document.addEventListener('touchmove', onlayerdrag, { passive: false });
+  document.addEventListener('touchend', onlayerdragend);
+  document.addEventListener('touchcancel', onlayerdragend);
 
-    // simpan touch identifier(s) yang memulai drag
-    if (startedTouchId !== null) {
-        // If no drag active yet, set global drag id to the first touch
-        if (!window.touchDragActive) {
-            window.touchDragActive = true;
-            window.touchDragId = startedTouchId;
-        }
-        // Add this touch id to the set of ids participating in this drag
-        if (!layerDragTouchIds.includes(startedTouchId)) layerDragTouchIds.push(startedTouchId);
-        // prevent emulated mouse events / clicks from interfering
-        if (typeof e.preventDefault === 'function') e.preventDefault();
-    } else {
-        // mouse drag - clear touch id list
-        layerDragTouchIds = [];
-        window.touchDragActive = false;
-        window.touchDragId = null;
-    }
+  // Allow additional touches on selected layers to join the active drag
+  function onLayerTouchJoin(ev) {
+    if (!ev.changedTouches || !ev.changedTouches.length) return;
+    for (let i = 0; i < ev.changedTouches.length; i++) {
+      const ct = ev.changedTouches[i];
+      const cx = ct.clientX, cy = ct.clientY;
+      // Hit-test layers by bounding box (pointer-events may be disabled on some)
+      const layersEls = document.querySelectorAll('.layer, .layer-group');
+      for (let li = 0; li < layersEls.length; li++) {
+        const cand = layersEls[li];
+        const r = cand.getBoundingClientRect();
+        if (cx >= r.left && cx <= r.right && cy >= r.top && cy <= r.bottom) {
+          const inst = cand.__layerInstance || (window.layers && window.layers.find(l => l.element === cand));
+          const isSelectedDom = cand.classList && cand.classList.contains('selected');
+          const selectedSet = (window.selectorInstance && Array.isArray(window.selectorInstance.selectedLayers)) ? window.selectorInstance.selectedLayers.map(s => s.__layerInstance || s) : [];
+          const instIsSelected = inst ? selectedSet.includes(inst) : isSelectedDom;
 
-    // Cek jika ada multi-selection dan layer yang di-drag termasuk di dalamnya
-    isGroupDragging = false;
-    groupDraggedLayers = [];
-    if (window.selectorInstance && Array.isArray(window.selectorInstance.selectedLayers) && window.selectorInstance.selectedLayers.length > 1) {
-        // Normalize selected set to layer instances if DOM elements were used
-        let selectedSet = window.selectorInstance.selectedLayers.map(s => {
-            if (s && s.__layerInstance) return s.__layerInstance;
-            return s;
-        });
-        if (selectedSet.includes(layer)) {
-            // Layer ini bagian dari multi-selection, aktifkan group drag tanpa deselect
-            isGroupDragging = true;
-            groupDraggedLayers = selectedSet.slice();
-            // JANGAN panggil selectLayer() agar tidak mendeselect layer lainnya
-            // Hanya update selected untuk panel, tanpa mengubah visual selection di UI
-            selected = layer;
-            updateCoordInput();
-            if (widthInput) widthInput.value = selected.width || selected.element.clientWidth;
-            if (heightInput) heightInput.value = selected.height || selected.element.clientHeight;
-            if (layerNameInput) layerNameInput.value = selected.name;
-            if (scaleInput) scaleInput.value = selected.scale;
-            if (rotationControl) rotationControl.value = selected.rotation;
-            if (flipHorizontal) flipHorizontal.checked = selected.isFlipX;
-            if (flipVertical) flipVertical.checked = selected.isFlipY;
-            if (rotationIndicator) rotationIndicator.innerText = selected.rotation;
-        } else {
-            // Layer ini tidak bagian dari multi-selection, deselect semua dan pilih layer ini
-            selectLayer(layer);
-        }
-    } else {
-        // Tidak ada multi-selection, deselect semua dan pilih layer ini
-        selectLayer(layer);
-    }
-
-    // Menambahkan event listener untuk mengikuti pergerakan mouse/jari
-    document.addEventListener('mousemove', onlayerdrag);
-    document.addEventListener('mouseup', onlayerdragend);
-    document.addEventListener('touchmove', onlayerdrag, { passive: false });
-    document.addEventListener('touchend', onlayerdragend);
-    document.addEventListener('touchcancel', onlayerdragend);
-
-    // Allow additional touches on selected layers to join the active drag
-    function onLayerTouchJoin(ev) {
-        if (!ev.changedTouches || !ev.changedTouches.length) return;
-        for (let i = 0; i < ev.changedTouches.length; i++) {
-            const ct = ev.changedTouches[i];
-            const cx = ct.clientX, cy = ct.clientY;
-            // Hit-test layers by bounding box (pointer-events may be disabled on some)
-            const layersEls = document.querySelectorAll('.layer, .layer-group');
-            for (let li = 0; li < layersEls.length; li++) {
-                const cand = layersEls[li];
-                const r = cand.getBoundingClientRect();
-                if (cx >= r.left && cx <= r.right && cy >= r.top && cy <= r.bottom) {
-                    const inst = cand.__layerInstance || (window.layers && window.layers.find(l => l.element === cand));
-                    const isSelectedDom = cand.classList && cand.classList.contains('selected');
-                    const selectedSet = (window.selectorInstance && Array.isArray(window.selectorInstance.selectedLayers)) ? window.selectorInstance.selectedLayers.map(s => s.__layerInstance || s) : [];
-                    const instIsSelected = inst ? selectedSet.includes(inst) : isSelectedDom;
-
-                    if (instIsSelected) {
-                        if (!layerDragTouchIds.includes(ct.identifier)) {
-                            layerDragTouchIds.push(ct.identifier);
-                        }
-                        if (inst && !groupDraggedLayers.includes(inst)) {
-                            groupDraggedLayers.push(inst);
-                            isGroupDragging = true;
-                        }
-                        ev.preventDefault();
-                        ev.stopPropagation();
-                        break;
-                    }
-                }
+          if (instIsSelected) {
+            if (!layerDragTouchIds.includes(ct.identifier)) {
+              layerDragTouchIds.push(ct.identifier);
             }
+            if (inst && !groupDraggedLayers.includes(inst)) {
+              groupDraggedLayers.push(inst);
+              isGroupDragging = true;
+            }
+            ev.preventDefault();
+            ev.stopPropagation();
+            break;
+          }
         }
+      }
     }
+  }
 
-    document.addEventListener('touchstart', onLayerTouchJoin, { passive: false });
+  document.addEventListener('touchstart', onLayerTouchJoin, { passive: false });
 
-    // Store the join handler reference so we can remove it in onlayerdragend
-    document._onLayerTouchJoin = onLayerTouchJoin; 
+  // Store the join handler reference so we can remove it in onlayerdragend
+  document._onLayerTouchJoin = onLayerTouchJoin;
 }
 
 function onlayerdrag(e) {
-    // Koordinat mouse/jari
-    let px, py;
-    if(e.touches && e.touches.length > 0) {
-        // cari touch yang sesuai salah satu identifiers yang ikut dalam drag
-        let touch = null;
-        if (layerDragTouchIds && layerDragTouchIds.length) {
-            for (let i = 0; i < e.touches.length; i++) {
-                if (layerDragTouchIds.includes(e.touches[i].identifier)) {
-                    touch = e.touches[i];
-                    break;
-                }
-            }
+  // Koordinat mouse/jari
+  let px, py;
+  if (e.touches && e.touches.length > 0) {
+    // cari touch yang sesuai salah satu identifiers yang ikut dalam drag
+    let touch = null;
+    if (layerDragTouchIds && layerDragTouchIds.length) {
+      for (let i = 0; i < e.touches.length; i++) {
+        if (layerDragTouchIds.includes(e.touches[i].identifier)) {
+          touch = e.touches[i];
+          break;
         }
-        if (!touch) touch = e.touches[0]; // fallback
-        px = touch.clientX;
-        py = touch.clientY;
-        e.preventDefault(); // cegah scroll saat drag
-    } else if (e.changedTouches && e.changedTouches.length > 0) {
-        // If changedTouches include one of our drag ids, use it; otherwise fallback
-        let ct = null;
-        for (let i = 0; i < e.changedTouches.length; i++) {
-            if (layerDragTouchIds.includes(e.changedTouches[i].identifier)) {
-                ct = e.changedTouches[i];
-                break;
-            }
-        }
-        if (!ct) ct = e.changedTouches[0];
-        px = ct.clientX;
-        py = ct.clientY;
-    } else if (e.targetTouches && e.targetTouches.length > 0) {
-        // legacy fallback
-        px = e.targetTouches[0].clientX;
-        py = e.targetTouches[0].clientY;
-    } else {
-        px = e.clientX;
-        py = e.clientY;
+      }
     }
-
-    let dx = px - initialX;
-    let dy = py - initialY;
-
-    // Memperbarui koordinat elemen gambar (support group drag jika aktif)
-    if (isGroupDragging && groupDraggedLayers && groupDraggedLayers.length) {
-        groupDraggedLayers.forEach(l => {
-            if (l.selectedImageIndex !== null) {
-                l.updateSrcPosition(l.selectedImageIndex, dx, dy);
-            } else {
-                l.x += dx;
-                l.y += dy;
-            }
-        });
-    } else {
-        if (selected.selectedImageIndex !== null) {
-            selected.updateSrcPosition(selected.selectedImageIndex, dx, dy);
-        } else {
-            selected.x += dx;
-            selected.y += dy;
-        }
+    if (!touch) touch = e.touches[0]; // fallback
+    px = touch.clientX;
+    py = touch.clientY;
+    e.preventDefault(); // cegah scroll saat drag
+  } else if (e.changedTouches && e.changedTouches.length > 0) {
+    // If changedTouches include one of our drag ids, use it; otherwise fallback
+    let ct = null;
+    for (let i = 0; i < e.changedTouches.length; i++) {
+      if (layerDragTouchIds.includes(e.changedTouches[i].identifier)) {
+        ct = e.changedTouches[i];
+        break;
+      }
     }
+    if (!ct) ct = e.changedTouches[0];
+    px = ct.clientX;
+    py = ct.clientY;
+  } else if (e.targetTouches && e.targetTouches.length > 0) {
+    // legacy fallback
+    px = e.targetTouches[0].clientX;
+    py = e.targetTouches[0].clientY;
+  } else {
+    px = e.clientX;
+    py = e.clientY;
+  }
 
-    updateCoordInput();
+  let dx = px - initialX;
+  let dy = py - initialY;
 
-    // Memperbarui koordinat awal mouse
-    initialX = px;
-    initialY = py;
+  // Memperbarui koordinat elemen gambar (support group drag jika aktif)
+  if (isGroupDragging && groupDraggedLayers && groupDraggedLayers.length) {
+    groupDraggedLayers.forEach(l => {
+      if (l.selectedImageIndex !== null) {
+        l.updateSrcPosition(l.selectedImageIndex, dx, dy);
+      } else {
+        l.x += dx;
+        l.y += dy;
+      }
+    });
+  } else {
+    if (selected.selectedImageIndex !== null) {
+      selected.updateSrcPosition(selected.selectedImageIndex, dx, dy);
+    } else {
+      selected.x += dx;
+      selected.y += dy;
+    }
+  }
+
+  updateCoordInput();
+
+  // Memperbarui koordinat awal mouse
+  initialX = px;
+  initialY = py;
 }
 
 function onlayerdragend(e) {
-    // Jika ini adalah touch event, ignore touchend yang bukan bagian dari aktif drag
-    if (e && e.changedTouches && e.changedTouches.length > 0 && layerDragTouchIds && layerDragTouchIds.length > 0) {
-        let matchedAny = false;
-        for (let i = 0; i < e.changedTouches.length; i++) {
-            const id = e.changedTouches[i].identifier;
-            const idx = layerDragTouchIds.indexOf(id);
-            if (idx !== -1) {
-                // Remove this touch id from active set
-                layerDragTouchIds.splice(idx, 1);
-                matchedAny = true;
-            }
-        }
-        if (!matchedAny) return; // ignore touchend from other fingers
-
-        // If there are still active touch ids, keep dragging (don't end yet)
-        if (layerDragTouchIds.length > 0) return;
+  // Jika ini adalah touch event, ignore touchend yang bukan bagian dari aktif drag
+  if (e && e.changedTouches && e.changedTouches.length > 0 && layerDragTouchIds && layerDragTouchIds.length > 0) {
+    let matchedAny = false;
+    for (let i = 0; i < e.changedTouches.length; i++) {
+      const id = e.changedTouches[i].identifier;
+      const idx = layerDragTouchIds.indexOf(id);
+      if (idx !== -1) {
+        // Remove this touch id from active set
+        layerDragTouchIds.splice(idx, 1);
+        matchedAny = true;
+      }
     }
+    if (!matchedAny) return; // ignore touchend from other fingers
 
-    // Reset touch ids dan group drag state
-    if (document._onLayerTouchJoin) {
-        document.removeEventListener('touchstart', document._onLayerTouchJoin, { passive: false });
-        delete document._onLayerTouchJoin;
-    }
-    layerDragTouchIds = [];
-    // clear global touch drag flags
-    if (window.touchDragId && window.touchDragId !== null) {
-        window.touchDragActive = false;
-        window.touchDragId = null;
-    }
-    isGroupDragging = false;
-    groupDraggedLayers = []; 
+    // If there are still active touch ids, keep dragging (don't end yet)
+    if (layerDragTouchIds.length > 0) return;
+  }
 
-    // Menghapus event listener setelah selesai drag
-    document.removeEventListener('mousemove', onlayerdrag);
-    document.removeEventListener('mouseup', onlayerdragend);
-    document.removeEventListener('touchmove', onlayerdrag);
-    document.removeEventListener('touchend', onlayerdragend);
-    document.removeEventListener('touchcancel', onlayerdragend);
+  // Reset touch ids dan group drag state
+  if (document._onLayerTouchJoin) {
+    document.removeEventListener('touchstart', document._onLayerTouchJoin, { passive: false });
+    delete document._onLayerTouchJoin;
+  }
+  layerDragTouchIds = [];
+  // clear global touch drag flags
+  if (window.touchDragId && window.touchDragId !== null) {
+    window.touchDragActive = false;
+    window.touchDragId = null;
+  }
+  isGroupDragging = false;
+  groupDraggedLayers = [];
+
+  // Menghapus event listener setelah selesai drag
+  document.removeEventListener('mousemove', onlayerdrag);
+  document.removeEventListener('mouseup', onlayerdragend);
+  document.removeEventListener('touchmove', onlayerdrag);
+  document.removeEventListener('touchend', onlayerdragend);
+  document.removeEventListener('touchcancel', onlayerdragend);
 }
 
 
 // Menambahkan event listener untuk mengatur perpindahan menggunakan keyboard
-document.addEventListener('keydown', function(e) {
-    if(!selected) return;
+document.addEventListener('keydown', function (e) {
+  if (!selected) return;
 
-    // Mengatur sensitivitas perpindahan
-    let sensitivity = 1;
+  // Mengatur sensitivitas perpindahan
+  let sensitivity = 1;
 
-    // Menangani perpindahan menggunakan keyboard
-    switch(e.key) {
-        case 'ArrowUp':
-            selected.y -= sensitivity;
-            updateCoordInput();
-            break;
-        case 'ArrowDown':
-            selected.y += sensitivity;
-            updateCoordInput();
-            break;
-        case 'ArrowLeft':
-            selected.x -= sensitivity;
-            updateCoordInput();
-            break;
-        case 'ArrowRight':
-            selected.x += sensitivity;
-            updateCoordInput();
-            break;
-    }
+  // Menangani perpindahan menggunakan keyboard
+  switch (e.key) {
+    case 'ArrowUp':
+      selected.y -= sensitivity;
+      updateCoordInput();
+      break;
+    case 'ArrowDown':
+      selected.y += sensitivity;
+      updateCoordInput();
+      break;
+    case 'ArrowLeft':
+      selected.x -= sensitivity;
+      updateCoordInput();
+      break;
+    case 'ArrowRight':
+      selected.x += sensitivity;
+      updateCoordInput();
+      break;
+  }
 });
 
 // 🔥 UNIFIED POINTER SYSTEM API
 // Harus dipanggil untuk SETIAP layer baru agar support multi-touch drag
 // Ini menghubungkan semua layer ke unified pointer event system
 function attachLayerToPointerSystem(layer) {
-    if (!layer || !layer.element) return;
-    
-    // Step 1: Set CSS untuk prevent browser default touch/zoom
-    layer.element.style.touchAction = 'none';
-    
-    // Step 2: Attach layer ke DOM (jika belum)
-    // Catatan: layer.attach() sudah dipanggil di tempat lain, 
-    // tapi kita ensure it's called WITHOUT legacy drag handler
-    if (!layer.element.parentElement) {
-        const container = document.getElementById('panel1-layercontainer') || 
-                         document.getElementById('panel1') || 
-                         document.querySelector('.container');
-        if (container && !container.contains(layer.element)) {
-            // Layer belum di-attach, attach sekarang tanpa legacy handler
-            layer.attach(container, null);
-        }
+  if (!layer || !layer.element) return;
+
+  // Step 1: Set CSS untuk prevent browser default touch/zoom
+  layer.element.style.touchAction = 'none';
+
+  // Step 2: Attach layer ke DOM (jika belum)
+  // Catatan: layer.attach() sudah dipanggil di tempat lain, 
+  // tapi kita ensure it's called WITHOUT legacy drag handler
+  if (!layer.element.parentElement) {
+    const container = document.getElementById('panel1-layercontainer') ||
+      document.getElementById('panel1') ||
+      document.querySelector('.container');
+    if (container && !container.contains(layer.element)) {
+      // Layer belum di-attach, attach sekarang tanpa legacy handler
+      layer.attach(container, null);
     }
-    
-    // Step 3: Add multi-select click handler (safe to call multiple times)
-    if (typeof addLayerClickHandler === 'function') {
-        addLayerClickHandler(layer);
-    }
-    
-    // Step 4: CRITICAL - Add pointer event handler untuk multi-drag
-    // Remove existing handler dulu (jika ada) untuk avoid duplikat
-    if (layer.element.__pointerDownHandler) {
-        layer.element.removeEventListener('pointerdown', layer.element.__pointerDownHandler);
-    }
-    
-    // Add new pointer event handler
-    const pointerDownHandler = (e) => {
-        onLayerPointerDown(e, layer);
-    };
-    layer.element.__pointerDownHandler = pointerDownHandler;
-    layer.element.addEventListener('pointerdown', pointerDownHandler, { passive: false });
+  }
+
+  // Step 3: Add multi-select click handler (safe to call multiple times)
+  if (typeof addLayerClickHandler === 'function') {
+    addLayerClickHandler(layer);
+  }
+
+  // Step 4: CRITICAL - Add pointer event handler untuk multi-drag
+  // Remove existing handler dulu (jika ada) untuk avoid duplikat
+  if (layer.element.__pointerDownHandler) {
+    layer.element.removeEventListener('pointerdown', layer.element.__pointerDownHandler);
+  }
+
+  // Add new pointer event handler
+  const pointerDownHandler = (e) => {
+    onLayerPointerDown(e, layer);
+  };
+  layer.element.__pointerDownHandler = pointerDownHandler;
+  layer.element.addEventListener('pointerdown', pointerDownHandler, { passive: false });
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-    // Pasang layer ke layer container ketika halaman selesai dimuat
-    const container = document.getElementById('panel1-layercontainer') || document.getElementById('panel1') || document.querySelector('.container');
-    for (const layer of layers) {
-        // Gunakan unified API untuk konsistensi
-        attachLayerToPointerSystem(layer);
+document.addEventListener('DOMContentLoaded', function () {
+  // Pasang layer ke layer container ketika halaman selesai dimuat
+  const container = document.getElementById('panel1-layercontainer') || document.getElementById('panel1') || document.querySelector('.container');
+  for (const layer of layers) {
+    // Gunakan unified API untuk konsistensi
+    attachLayerToPointerSystem(layer);
+  }
+
+  // Window-level pointer handlers untuk tracking movement & release
+  window.addEventListener('pointermove', onLayerPointerMove, { passive: false });
+  window.addEventListener('pointerup', onLayerPointerUp, { passive: false });
+  window.addEventListener('pointercancel', onLayerPointerUp, { passive: false });
+
+  // Initialize zoom input
+  const zoomInput = document.getElementById('zoomInput');
+  const zoomSlider = document.getElementById('zoomSlider');
+  if (zoomInput) {
+    zoomInput.value = '100%';
+  }
+  if (zoomSlider) {
+    zoomSlider.value = 100;
+  }
+
+  // Initialize framework display di panel3
+  if (window.frameworkDisplay) {
+    window.frameworkDisplay.initialize(layers);
+  }
+
+  // Listen untuk selection perubahan di Panel2 (menulayer)
+  document.addEventListener('layerChildSelected', (e) => {
+    const layerData = e.detail.layerData;
+    const layerName = layerData?.name;
+
+    if (layerName) {
+      // Cari layer dengan nama yang sama di array layers
+      const selectedLayer = layers.find(l => l.name === layerName);
+      if (selectedLayer) {
+        selectLayer(selectedLayer);
+      }
+    }
+  });
+
+  // Track Ctrl key state untuk anti-deselect behavior
+  document.addEventListener('keydown', function (e) {
+    if (e.ctrlKey || e.metaKey) {
+      isCtrlHeld = true;
+    }
+  });
+
+  document.addEventListener('keyup', function (e) {
+    // Jika Ctrl bukan lagi ditekan
+    if (!e.ctrlKey && !e.metaKey) {
+      isCtrlHeld = false;
+    }
+  });
+
+  // Implementasi anti-deselect: ketika klik diluar objek saat Ctrl held
+  // Panel1 (jika diluar objek) = abaikan (tetap nyala)
+  // Panel2, splitter, panel3 = abaikan sepenuhnya
+  document.addEventListener('click', function (e) {
+    if (!isCtrlHeld) return; // Normal behavior jika Ctrl tidak ditekan
+
+    const panel1 = document.getElementById('panel1');
+    const panel2 = document.getElementById('panel2');
+    const splitter = document.getElementById('splitter') || document.getElementById('splitterH');
+    const panel3 = document.getElementById('panel3');
+
+    // Panel2, splitter, panel3 = jangan deselect saat Ctrl held
+    if ((panel2 && panel2.contains(e.target)) ||
+      (splitter && splitter.contains(e.target)) ||
+      (panel3 && panel3.contains(e.target))) {
+      e.stopPropagation();
+      return;
     }
 
-    // Window-level pointer handlers untuk tracking movement & release
-    window.addEventListener('pointermove', onLayerPointerMove, { passive: false });
-    window.addEventListener('pointerup', onLayerPointerUp, { passive: false });
-    window.addEventListener('pointercancel', onLayerPointerUp, { passive: false });
+    // Panel1: jika klik diluar objek layer saat Ctrl held = jangan deselect
+    if (panel1 && panel1.contains(e.target)) {
+      const layerContainer = document.getElementById('panel1-layercontainer') || panel1;
+      const allLayers = layerContainer.querySelectorAll('.layer, .layer-group');
+      let isClickOnLayer = false;
 
-    // Initialize zoom input
-    const zoomInput = document.getElementById('zoomInput');
-    const zoomSlider = document.getElementById('zoomSlider');
-    if (zoomInput) {
-        zoomInput.value = '100%';
+      for (const layer of allLayers) {
+        if (layer.contains(e.target)) {
+          isClickOnLayer = true;
+          break;
+        }
+      }
+
+      // Jika klik diluar semua layer di panel1 saat Ctrl held = jangan trigger selectLayer (yang would deselect)
+      if (!isClickOnLayer) {
+        e.stopPropagation();
+        return;
+      }
     }
-    if (zoomSlider) {
-        zoomSlider.value = 100;
+  }, true); // Capture phase untuk intercept sebelum child handlers
+
+  // 🔥 NOTE: Click handler untuk multi-select sudah di-implement di function.js
+  // Jangan duplikasi di sini untuk avoid conflicts!
+  // Handler di function.js menggunakan event capture (true) untuk priority handler
+
+  // Tambahkan event listener untuk mencegah pointer-events pada panel2 ketika diseret penuh
+  panel2.addEventListener('mousemove', function (e) {
+    // Pastikan pointer-events tetap aktif saat panel2 penuh
+    if (panel2.style.height === '100%') {
+      panel2.style.pointerEvents = 'auto';
+    }
+  });
+
+  // Listen untuk message dari iframe
+  window.addEventListener('message', function (e) {
+    if (e.data && e.data.type === 'originChanged') {
+      console.log('Received originChanged message:', e.data);
+      const { centered } = e.data;
+      // Hitung offset berdasarkan panel1
+      const panel1 = document.getElementById('panel1');
+      if (panel1) {
+        const centerX = panel1.offsetWidth / 2;
+        const centerY = panel1.offsetHeight / 2;
+        window.originCentered = centered;
+        window.originOffsetX = centered ? centerX : 0;
+        window.originOffsetY = centered ? centerY : 0;
+        window.layers = layers; // EXPOSE GLOBAL
+        console.log('Offset set:', window.originOffsetX, window.originOffsetY);
+
+        // Update semua layers
+        layers.forEach(layer => {
+          if (layer.element && typeof layer.updateElement === 'function') {
+            layer.updateElement();
+          }
+        });
+      }
     }
 
-    // Initialize framework display di panel3
-    if (window.frameworkDisplay) {
-        window.frameworkDisplay.initialize(layers);
+    // Handle input change messages from iframe
+    if (e.data && e.data.type === 'handleLayerName') {
+      handleLayerName(e.data.value);
+      updateCoordInput(); // Sync back to iframe
     }
-
-    // Listen untuk selection perubahan di Panel2 (menulayer)
-    document.addEventListener('layerChildSelected', (e) => {
-        const layerData = e.detail.layerData;
-        const layerName = layerData?.name;
-        
-        if (layerName) {
-            // Cari layer dengan nama yang sama di array layers
-            const selectedLayer = layers.find(l => l.name === layerName);
-            if (selectedLayer) {
-                selectLayer(selectedLayer);
-            }
-        }
-    });
-
-    // Track Ctrl key state untuk anti-deselect behavior
-    document.addEventListener('keydown', function(e) {
-        if (e.ctrlKey || e.metaKey) {
-            isCtrlHeld = true;
-        }
-    });
-    
-    document.addEventListener('keyup', function(e) {
-        // Jika Ctrl bukan lagi ditekan
-        if (!e.ctrlKey && !e.metaKey) {
-            isCtrlHeld = false;
-        }
-    });
-
-    // Implementasi anti-deselect: ketika klik diluar objek saat Ctrl held
-    // Panel1 (jika diluar objek) = abaikan (tetap nyala)
-    // Panel2, splitter, panel3 = abaikan sepenuhnya
-    document.addEventListener('click', function(e) {
-        if (!isCtrlHeld) return; // Normal behavior jika Ctrl tidak ditekan
-        
-        const panel1 = document.getElementById('panel1');
-        const panel2 = document.getElementById('panel2');
-        const splitter = document.getElementById('splitter') || document.getElementById('splitterH');
-        const panel3 = document.getElementById('panel3');
-        
-        // Panel2, splitter, panel3 = jangan deselect saat Ctrl held
-        if ((panel2 && panel2.contains(e.target)) ||
-            (splitter && splitter.contains(e.target)) ||
-            (panel3 && panel3.contains(e.target))) {
-            e.stopPropagation();
-            return;
-        }
-        
-        // Panel1: jika klik diluar objek layer saat Ctrl held = jangan deselect
-        if (panel1 && panel1.contains(e.target)) {
-            const layerContainer = document.getElementById('panel1-layercontainer') || panel1;
-            const allLayers = layerContainer.querySelectorAll('.layer, .layer-group');
-            let isClickOnLayer = false;
-            
-            for (const layer of allLayers) {
-                if (layer.contains(e.target)) {
-                    isClickOnLayer = true;
-                    break;
-                }
-            }
-            
-            // Jika klik diluar semua layer di panel1 saat Ctrl held = jangan trigger selectLayer (yang would deselect)
-            if (!isClickOnLayer) {
-                e.stopPropagation();
-                return;
-            }
-        }
-    }, true); // Capture phase untuk intercept sebelum child handlers
-
-    // 🔥 NOTE: Click handler untuk multi-select sudah di-implement di function.js
-    // Jangan duplikasi di sini untuk avoid conflicts!
-    // Handler di function.js menggunakan event capture (true) untuk priority handler
-
-    // Tambahkan event listener untuk mencegah pointer-events pada panel2 ketika diseret penuh
-    panel2.addEventListener('mousemove', function(e) {
-        // Pastikan pointer-events tetap aktif saat panel2 penuh
-        if (panel2.style.height === '100%') {
-            panel2.style.pointerEvents = 'auto';
-        }
-    });
-
-    // Listen untuk message dari iframe
-    window.addEventListener('message', function(e) {
-        if (e.data && e.data.type === 'originChanged') {
-            console.log('Received originChanged message:', e.data);
-            const { centered } = e.data;
-            // Hitung offset berdasarkan panel1
-            const panel1 = document.getElementById('panel1');
-            if (panel1) {
-                const centerX = panel1.offsetWidth / 2;
-                const centerY = panel1.offsetHeight / 2;
-                window.originCentered = centered;
-                window.originOffsetX = centered ? centerX : 0;
-                window.originOffsetY = centered ? centerY : 0;
-                console.log('Offset set:', window.originOffsetX, window.originOffsetY);
-                
-                // Update semua layers
-                layers.forEach(layer => {
-                    if (layer.element && typeof layer.updateElement === 'function') {
-                        layer.updateElement();
-                    }
-                });
-            }
-        }
-        
-        // Handle input change messages from iframe
-        if (e.data && e.data.type === 'handleLayerName') {
-            handleLayerName(e.data.value);
-            updateCoordInput(); // Sync back to iframe
-        }
-        if (e.data && e.data.type === 'handleXCoord') {
-            handleXCoord(e.data.value);
-        }
-        if (e.data && e.data.type === 'handleYCoord') {
-            handleYCoord(e.data.value);
-        }
-        if (e.data && e.data.type === 'updateLayerSize') {
-            updateLayerSize(e.data.dimension, e.data.value);
-        }
-        if (e.data && e.data.type === 'handleScale') {
-            handleScale(e.data.value);
-        }
-        if (e.data && e.data.type === 'handleRotation') {
-            handleRotation(e.data.value);
-        }
-        if (e.data && e.data.type === 'handleFlipHorizontal') {
-            handleFlipHorizontal(e.data.value);
-        }
-        if (e.data && e.data.type === 'handleFlipVertical') {
-            handleFlipVertical(e.data.value);
-        }
-        if (e.data && e.data.type === 'handleSkewX') {
-            handleSkewX(e.data.value);
-        }
-        if (e.data && e.data.type === 'handleSkewXSlider') {
-            handleSkewXSlider(e.data.value);
-        }
-        if (e.data && e.data.type === 'handleSkewY') {
-            handleSkewY(e.data.value);
-        }
-        if (e.data && e.data.type === 'handleSkewYSlider') {
-            handleSkewYSlider(e.data.value);
-        }
-    });
+    if (e.data && e.data.type === 'handleXCoord') {
+      handleXCoord(e.data.value);
+    }
+    if (e.data && e.data.type === 'handleYCoord') {
+      handleYCoord(e.data.value);
+    }
+    if (e.data && e.data.type === 'updateLayerSize') {
+      updateLayerSize(e.data.dimension, e.data.value);
+    }
+    if (e.data && e.data.type === 'handleScale') {
+      handleScale(e.data.value);
+    }
+    if (e.data && e.data.type === 'handleRotation') {
+      handleRotation(e.data.value);
+    }
+    if (e.data && e.data.type === 'handleFlipHorizontal') {
+      handleFlipHorizontal(e.data.value);
+    }
+    if (e.data && e.data.type === 'handleFlipVertical') {
+      handleFlipVertical(e.data.value);
+    }
+    if (e.data && e.data.type === 'handleSkewX') {
+      handleSkewX(e.data.value);
+    }
+    if (e.data && e.data.type === 'handleSkewXSlider') {
+      handleSkewXSlider(e.data.value);
+    }
+    if (e.data && e.data.type === 'handleSkewY') {
+      handleSkewY(e.data.value);
+    }
+    if (e.data && e.data.type === 'handleSkewYSlider') {
+      handleSkewYSlider(e.data.value);
+    }
+  });
 });
 
 /**
@@ -1460,26 +1474,33 @@ document.addEventListener('DOMContentLoaded', function() {
  * Ctrl+Click sudah ditangani di onLayerPointerDown()
  */
 function addLayerClickHandler(layer) {
-    if (!layer.element) return;
+  if (!layer.element) return;
 
-    layer.element.addEventListener('click', function(e) {
-        try {
-            // CRITICAL: Cek Ctrl/Meta key - jika ada, SKIP handler karena sudah ditangani di pointerdown
-            const isCtrl = e.ctrlKey || e.metaKey;
-            if (isCtrl) {
-                e.preventDefault();
-                e.stopPropagation();
-                console.log('⏭️ Skip click handler, Ctrl+select sudah ditangani di pointerdown');
-                return;
-            }
+  layer.element.addEventListener('click', function (e) {
+    // Check if we just finished a drag - if so, IGNORE the click
+    if (window.justFinishedDrag) {
+      console.log('🛑 Click ignored because it was a drag operation');
+      e.stopPropagation();
+      return;
+    }
 
-            // Normal click (non-Ctrl): single select mode
-            selectLayer(layer);
-            e.stopPropagation();
-        } catch (err) {
-            console.error(`Error in click handler for "${layer.name}":`, err);
-        }
-    }, true); // Capture phase untuk priority
+    try {
+      // CRITICAL: Cek Ctrl/Meta key - jika ada, SKIP handler karena sudah ditangani di pointerdown
+      const isCtrl = e.ctrlKey || e.metaKey;
+      if (isCtrl) {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('⏭️ Skip click handler, Ctrl+select sudah ditangani di pointerdown');
+        return;
+      }
+
+      // Normal click (non-Ctrl): single select mode
+      selectLayer(layer);
+      e.stopPropagation();
+    } catch (err) {
+      console.error(`Error in click handler for "${layer.name}":`, err);
+    }
+  }, true); // Capture phase untuk priority
 }
 
 /**
@@ -1487,67 +1508,68 @@ function addLayerClickHandler(layer) {
  * Menampilkan count dan names
  */
 function updateMenuLayerSelectionForMultiSelect() {
-    if (!window.studioMenuLayer) return;
-    
-    const selectedElements = document.querySelectorAll('.layer.selected, .layer-group.selected');
-    const menuItems = document.querySelectorAll('.menulayer-item');
-    
-    // Clear semua selection di menulayer
-    menuItems.forEach(item => {
-        item.classList.remove('selected');
-    });
-    
-    // Tandai items yang match dengan selected elements
-    let selectedCount = 0;
-    selectedElements.forEach(selectedEl => {
-        const layer = window.layers && window.layers.find(l => l.element === selectedEl);
-        if (layer) {
-            selectedCount++;
-            for (const item of menuItems) {
-                const nameEl = item.querySelector('.menulayer-name');
-                if (nameEl && nameEl.textContent === layer.name) {
-                    item.classList.add('selected');
-                    break;
-                }
-            }
+  if (!window.studioMenuLayer) return;
+
+  const selectedElements = document.querySelectorAll('.layer.selected, .layer-group.selected');
+  const menuItems = document.querySelectorAll('.menulayer-item');
+
+  // Clear semua selection di menulayer
+  menuItems.forEach(item => {
+    item.classList.remove('selected');
+  });
+
+  // Tandai items yang match dengan selected elements
+  let selectedCount = 0;
+  selectedElements.forEach(selectedEl => {
+    const globalLayers = layers || window.layers || [];
+    const layer = globalLayers.find(l => l.element === selectedEl);
+    if (layer) {
+      selectedCount++;
+      for (const item of menuItems) {
+        const nameEl = item.querySelector('.menulayer-name');
+        if (nameEl && nameEl.textContent === layer.name) {
+          item.classList.add('selected');
+          break;
         }
-    });
-    
-    // Sinkronisasi framework display untuk multi-select juga
-    syncMultiSelectToFramework();
+      }
+    }
+  });
+
+  // Sinkronisasi framework display untuk multi-select juga
+  syncMultiSelectToFramework();
 }
 
 /**
  * Sinkronisasi multi-select state dengan framework display
  */
 function syncMultiSelectToFramework() {
-    if (!window.frameworkDisplay) return;
-    
-    const selectedElements = document.querySelectorAll('.layer.selected, .layer-group.selected');
-    const frameworkCards = document.querySelectorAll('.framework-card');
-    
-    frameworkCards.forEach(card => {
-        const labelEl = card.querySelector('.framework-label');
-        if (!labelEl) return;
-        
-        const layerName = labelEl.textContent;
-        let isSelected = false;
-        
-        // Check apakah layer ini selected
-        for (const selectedEl of selectedElements) {
-            const layer = layers.find(l => l.element === selectedEl);
-            if (layer && layer.name === layerName) {
-                isSelected = true;
-                break;
-            }
-        }
-        
-        if (isSelected) {
-            card.classList.add('framework-card-selected');
-        } else {
-            card.classList.remove('framework-card-selected');
-        }
-    });
+  if (!window.frameworkDisplay) return;
+
+  const selectedElements = document.querySelectorAll('.layer.selected, .layer-group.selected');
+  const frameworkCards = document.querySelectorAll('.framework-card');
+
+  frameworkCards.forEach(card => {
+    const labelEl = card.querySelector('.framework-label');
+    if (!labelEl) return;
+
+    const layerName = labelEl.textContent;
+    let isSelected = false;
+
+    // Check apakah layer ini selected
+    for (const selectedEl of selectedElements) {
+      const layer = layers.find(l => l.element === selectedEl);
+      if (layer && layer.name === layerName) {
+        isSelected = true;
+        break;
+      }
+    }
+
+    if (isSelected) {
+      card.classList.add('framework-card-selected');
+    } else {
+      card.classList.remove('framework-card-selected');
+    }
+  });
 }
 
 /**
@@ -1555,58 +1577,58 @@ function syncMultiSelectToFramework() {
  * @param {Layer} layer 
  */
 function selectLayer(layer) {
-    // Hanya deselect yang lain jika Ctrl TIDAK ditekan atau saat normal click
-    if (!isCtrlHeld) {
-        // Deselect semua layer lain dari DOM
-        document.querySelectorAll('.layer.selected, .layer-group.selected').forEach(el => {
-            if (el !== layer.element) {
-                el.classList.remove('selected');
-            }
-        });
+  // Hanya deselect yang lain jika Ctrl TIDAK ditekan atau saat normal click
+  if (!isCtrlHeld) {
+    // Deselect semua layer lain dari DOM
+    document.querySelectorAll('.layer.selected, .layer-group.selected').forEach(el => {
+      if (el !== layer.element) {
+        el.classList.remove('selected');
+      }
+    });
 
-        // Clear selector state when switching to single select
-        if (window.selectorInstance && Array.isArray(window.selectorInstance.selectedLayers)) {
-            window.selectorInstance.selectedLayers = [];
-        }
+    // Clear selector state when switching to single select
+    if (window.selectorInstance && Array.isArray(window.selectorInstance.selectedLayers)) {
+      window.selectorInstance.selectedLayers = [];
     }
+  }
 
-    // Select the current layer
-    layer.selected = true;
-    layer.element.classList.add('selected');
-    selected = layer;
-    window.selected = selected; // Make it globally accessible
+  // Select the current layer
+  layer.selected = true;
+  layer.element.classList.add('selected');
+  selected = layer;
+  window.selected = selected; // Make it globally accessible
 
-    updateCoordInput();
-    if (widthInput) widthInput.value = selected.element.clientWidth;
-    if (heightInput) heightInput.value = selected.element.clientHeight;
-    if (layerNameInput) layerNameInput.value = selected.name;
-    if (scaleInput) scaleInput.value = selected.scale;
-    if (rotationControl) rotationControl.value = selected.rotation;
-    if (flipHorizontal) flipHorizontal.checked = selected.isFlipX;
-    if (flipVertical) flipVertical.checked = selected.isFlipY;
-    if (rotationIndicator) rotationIndicator.innerText = selected.rotation;
-    
-    // Sinkronisasi selection di semua panel
-    syncLayerSelectionAcrossAllPanels(layer);
+  updateCoordInput();
+  if (widthInput) widthInput.value = selected.element.clientWidth;
+  if (heightInput) heightInput.value = selected.element.clientHeight;
+  if (layerNameInput) layerNameInput.value = selected.name;
+  if (scaleInput) scaleInput.value = selected.scale;
+  if (rotationControl) rotationControl.value = selected.rotation;
+  if (flipHorizontal) flipHorizontal.checked = selected.isFlipX;
+  if (flipVertical) flipVertical.checked = selected.isFlipY;
+  if (rotationIndicator) rotationIndicator.innerText = selected.rotation;
 
-    // Sync textshape if available
-    if (window.textShapeManager && typeof window.textShapeManager.syncTextInputFromLayer === 'function') {
-        console.log('selectLayer: Checking if layer is text layer:', layer.name);
-        if (layer && window.textShapeManager.isTextLayer(layer)) {
-            console.log('selectLayer: Is text layer, syncing input');
-            window.textShapeManager.syncTextInputFromLayer(layer);
-        } else {
-            console.log('selectLayer: Not a text layer, resetting to create mode');
-            window.textShapeManager.resetToCreateMode();
-        }
+  // Sinkronisasi selection di semua panel
+  syncLayerSelectionAcrossAllPanels(layer);
+
+  // Sync textshape if available
+  if (window.textShapeManager && typeof window.textShapeManager.syncTextInputFromLayer === 'function') {
+    console.log('selectLayer: Checking if layer is text layer:', layer.name);
+    if (layer && window.textShapeManager.isTextLayer(layer)) {
+      console.log('selectLayer: Is text layer, syncing input');
+      window.textShapeManager.syncTextInputFromLayer(layer);
     } else {
-        console.warn('selectLayer: TextShapeManager not available');
+      console.log('selectLayer: Not a text layer, resetting to create mode');
+      window.textShapeManager.resetToCreateMode();
     }
+  } else {
+    console.warn('selectLayer: TextShapeManager not available');
+  }
 
-    // Dispatch event for textshape sync
-    setTimeout(() => {
-        document.dispatchEvent(new CustomEvent('layerSelected', { detail: { layer: layer } }));
-    }, 100);
+  // Dispatch event for textshape sync
+  setTimeout(() => {
+    document.dispatchEvent(new CustomEvent('layerSelected', { detail: { layer: layer } }));
+  }, 100);
 }
 
 /**
@@ -1614,41 +1636,41 @@ function selectLayer(layer) {
  * @param {Layer} layer - Layer yang dipilih
  */
 function syncLayerSelectionAcrossAllPanels(layer) {
-    if (!layer || !layer.element) return;
-    
-    // 1. Update Panel1 visual (layer element classes)
-    document.querySelectorAll('.layer.selected, .layer-group.selected').forEach(el => {
-        if (el !== layer.element) {
-            el.classList.remove('selected');
-        }
+  if (!layer || !layer.element) return;
+
+  // 1. Update Panel1 visual (layer element classes)
+  document.querySelectorAll('.layer.selected, .layer-group.selected').forEach(el => {
+    if (el !== layer.element) {
+      el.classList.remove('selected');
+    }
+  });
+  layer.element.classList.add('selected');
+
+  // 2. Update Panel2 visual (menulayer)
+  if (window.studioMenuLayer) {
+    const menuItems = document.querySelectorAll('.menulayer-item');
+    const layerName = layer.name;
+
+    // Remove selected dari semua items
+    menuItems.forEach(item => {
+      item.classList.remove('selected');
     });
-    layer.element.classList.add('selected');
-    
-    // 2. Update Panel2 visual (menulayer)
-    if (window.studioMenuLayer) {
-        const menuItems = document.querySelectorAll('.menulayer-item');
-        const layerName = layer.name;
-        
-        // Remove selected dari semua items
-        menuItems.forEach(item => {
-            item.classList.remove('selected');
-        });
-        
-        // Find dan select item dengan nama yang sesuai
-        for (const item of menuItems) {
-            const nameEl = item.querySelector('.menulayer-name');
-            if (nameEl && nameEl.textContent === layerName) {
-                item.classList.add('selected');
-                window.studioMenuLayer.selectedLayer = item;
-                break;
-            }
-        }
+
+    // Find dan select item dengan nama yang sesuai
+    for (const item of menuItems) {
+      const nameEl = item.querySelector('.menulayer-name');
+      if (nameEl && nameEl.textContent === layerName) {
+        item.classList.add('selected');
+        window.studioMenuLayer.selectedLayer = item;
+        break;
+      }
     }
-    
-    // 3. Update Panel3 visual (framework)
-    if (window.frameworkDisplay) {
-        window.frameworkDisplay.updateSelectionVisuals();
-    }
+  }
+
+  // 3. Update Panel3 visual (framework)
+  if (window.frameworkDisplay) {
+    window.frameworkDisplay.updateSelectionVisuals();
+  }
 }
 
 /**
@@ -1660,299 +1682,300 @@ function syncLayerSelectionAcrossAllPanels(layer) {
  * - Array support: layer.name bisa jadi ["Kepala", "Head"] atau "Kepala"
  */
 function handleLayerName(value) {
-    const selectedLayers = getSelectedLayers();
-    if (selectedLayers.length === 0) return;
-    
-    // Parse input: bisa "Kepala" atau "Kepala, Badan, Kaki"
-    const inputNames = value.split(',').map(n => n.trim()).filter(n => n);
-    
-    if (selectedLayers.length === 1) {
-        // Single layer: set name (could be array jika user input multiple)
-        const layer = selectedLayers[0];
-        if (inputNames.length === 1) {
-            // Single name
-            layer.name = inputNames[0];
-        } else {
-            // Multiple names untuk single layer - store as array
-            layer.name = inputNames;
-        }
+  const selectedLayers = getSelectedLayers();
+  if (selectedLayers.length === 0) return;
+
+  // Parse input: bisa "Kepala" atau "Kepala, Badan, Kaki"
+  const inputNames = value.split(',').map(n => n.trim()).filter(n => n);
+
+  if (selectedLayers.length === 1) {
+    // Single layer: set name (could be array jika user input multiple)
+    const layer = selectedLayers[0];
+    if (inputNames.length === 1) {
+      // Single name
+      layer.name = inputNames[0];
     } else {
-        // Multi-select: apply names in order or same name to all
-        if (inputNames.length === selectedLayers.length) {
-            // Different name untuk setiap layer
-            for (let i = 0; i < selectedLayers.length; i++) {
-                selectedLayers[i].name = inputNames[i];
-            }
-        } else if (inputNames.length === 1) {
-            // Same name untuk semua
-            const name = inputNames[0];
-            for (const layer of selectedLayers) {
-                layer.name = name;
-            }
-        } else {
-            // Mixed scenario: apply first N names, repeat for rest
-            for (let i = 0; i < selectedLayers.length; i++) {
-                selectedLayers[i].name = inputNames[i % inputNames.length];
-            }
-        }
+      // Multiple names untuk single layer - store as array
+      layer.name = inputNames;
     }
-    
-    // Update display dan sync ke label
-    updateCoordInput();
-    updateFrameworkDisplay();
-    
-    // Record history
-    if (typeof window.HistoryManager !== 'undefined' && selectedLayers[0]) {
-        window.HistoryManager.recordAction('rename', {
-            layerName: Array.isArray(selectedLayers[0].name) ? selectedLayers[0].name.join(', ') : selectedLayers[0].name,
-            action: 'Layer name changed'
-        });
+  } else {
+    // Multi-select: apply names in order or same name to all
+    if (inputNames.length === selectedLayers.length) {
+      // Different name untuk setiap layer
+      for (let i = 0; i < selectedLayers.length; i++) {
+        selectedLayers[i].name = inputNames[i];
+      }
+    } else if (inputNames.length === 1) {
+      // Same name untuk semua
+      const name = inputNames[0];
+      for (const layer of selectedLayers) {
+        layer.name = name;
+      }
+    } else {
+      // Mixed scenario: apply first N names, repeat for rest
+      for (let i = 0; i < selectedLayers.length; i++) {
+        selectedLayers[i].name = inputNames[i % inputNames.length];
+      }
     }
+  }
+
+  // Update display dan sync ke label
+  updateCoordInput();
+  updateFrameworkDisplay();
+
+  // Record history
+  if (typeof window.HistoryManager !== 'undefined' && selectedLayers[0]) {
+    window.HistoryManager.recordAction('rename', {
+      layerName: Array.isArray(selectedLayers[0].name) ? selectedLayers[0].name.join(', ') : selectedLayers[0].name,
+      action: 'Layer name changed'
+    });
+  }
 }
 
 // Panggil fungsi ini saat objek tidak dipilih lagi
 function deselectLayer() {
-    if(!selected) return;
-    selected.selected = false;
-    selected = null;
-    window.selected = null; // Clear global reference
-    
-    // Sinkronisasi deselect di semua panel
-    syncDeselectionAcrossAllPanels();
+  if (!selected) return;
+  selected.selected = false;
+  selected = null;
+  window.selected = null; // Clear global reference
 
-    // Reset textshape if available
-    if (window.textShapeManager && typeof window.textShapeManager.resetToCreateMode === 'function') {
-        window.textShapeManager.resetToCreateMode();
-    }
+  // Sinkronisasi deselect di semua panel
+  syncDeselectionAcrossAllPanels();
 
-    // Dispatch event for textshape reset
-    setTimeout(() => {
-        document.dispatchEvent(new CustomEvent('layerDeselected'));
-    }, 100);
+  // Reset textshape if available
+  if (window.textShapeManager && typeof window.textShapeManager.resetToCreateMode === 'function') {
+    window.textShapeManager.resetToCreateMode();
+  }
+
+  // Dispatch event for textshape reset
+  setTimeout(() => {
+    document.dispatchEvent(new CustomEvent('layerDeselected'));
+  }, 100);
 }
 
 /**
  * Sinkronisasi deselection di Panel1, Panel2, dan Panel3
  */
 function syncDeselectionAcrossAllPanels() {
-    // 1. Clear Panel1 selection
-    document.querySelectorAll('.layer.selected, .layer-group.selected').forEach(el => {
-        el.classList.remove('selected');
+  // 1. Clear Panel1 selection
+  document.querySelectorAll('.layer.selected, .layer-group.selected').forEach(el => {
+    el.classList.remove('selected');
+  });
+
+  // 2. Clear Panel2 (menulayer) selection
+  if (window.studioMenuLayer) {
+    const menuItems = document.querySelectorAll('.menulayer-item.selected');
+    menuItems.forEach(item => {
+      item.classList.remove('selected');
     });
-    
-    // 2. Clear Panel2 (menulayer) selection
-    if (window.studioMenuLayer) {
-        const menuItems = document.querySelectorAll('.menulayer-item.selected');
-        menuItems.forEach(item => {
-            item.classList.remove('selected');
-        });
-        window.studioMenuLayer.selectedLayer = null;
-    }
-    
-    // 3. Clear Panel3 (framework) selection
-    if (window.frameworkDisplay) {
-        const frameworkCards = document.querySelectorAll('.framework-card-selected');
-        frameworkCards.forEach(card => {
-            card.classList.remove('framework-card-selected');
-        });
-    }
+    window.studioMenuLayer.selectedLayer = null;
+  }
+
+  // 3. Clear Panel3 (framework) selection
+  if (window.frameworkDisplay) {
+    const frameworkCards = document.querySelectorAll('.framework-card-selected');
+    frameworkCards.forEach(card => {
+      card.classList.remove('framework-card-selected');
+    });
+  }
 }
 
 /**
  * Helper function untuk update framework display setelah modifikasi layers
  */
 function updateFrameworkDisplay() {
-    if (window.frameworkDisplay) {
-        window.frameworkDisplay.update(layers);
-    }
+  if (window.frameworkDisplay) {
+    window.frameworkDisplay.update(layers);
+  }
 }
 
 // Helper: Get all currently selected layers (from DOM classes or selector)
 function getSelectedLayers() {
-    const selectedLayers = [];
-    
-    // Gather from DOM .selected classes - ini yang paling reliable
-    const selectedElements = document.querySelectorAll('.layer.selected, .layer-group.selected');
-    for (const el of selectedElements) {
-        if (el.__layerInstance) {
-            selectedLayers.push(el.__layerInstance);
-        } else {
-            // Find dari layers array
-            const found = window.layers && window.layers.find(l => l.element === el);
-            if (found) selectedLayers.push(found);
+  const selectedLayers = [];
+
+  // Gather from DOM .selected classes - ini yang paling reliable
+  const selectedElements = document.querySelectorAll('.layer.selected, .layer-group.selected');
+  for (const el of selectedElements) {
+    if (el.__layerInstance) {
+      selectedLayers.push(el.__layerInstance);
+    } else {
+      // Find dari layers array
+      const globalLayers = layers || window.layers || [];
+      const found = globalLayers.find(l => l.element === el);
+      if (found) selectedLayers.push(found);
+    }
+  }
+
+  // Jika DOM selection kosong, cek selector.selectedLayers
+  if (selectedLayers.length === 0) {
+    const selector = window.selectorInstance;
+    if (selector && Array.isArray(selector.selectedLayers)) {
+      for (const s of selector.selectedLayers) {
+        if (!s) continue;
+        if (s.__layerInstance) selectedLayers.push(s.__layerInstance);
+        else if (s instanceof Object && typeof s.x !== 'undefined') selectedLayers.push(s);
+        else {
+          const found = window.layers && window.layers.find(l => l.element === s);
+          if (found) selectedLayers.push(found);
         }
+      }
     }
-    
-    // Jika DOM selection kosong, cek selector.selectedLayers
-    if (selectedLayers.length === 0) {
-        const selector = window.selectorInstance;
-        if (selector && Array.isArray(selector.selectedLayers)) {
-            for (const s of selector.selectedLayers) {
-                if (!s) continue;
-                if (s.__layerInstance) selectedLayers.push(s.__layerInstance);
-                else if (s instanceof Object && typeof s.x !== 'undefined') selectedLayers.push(s);
-                else {
-                    const found = window.layers && window.layers.find(l => l.element === s);
-                    if (found) selectedLayers.push(found);
-                }
-            }
-        }
-    }
-    
-    // If still empty, use single selected variable
-    if (selectedLayers.length === 0 && selected) {
-        selectedLayers.push(selected);
-    }
-    
-    return selectedLayers;
+  }
+
+  // If still empty, use single selected variable
+  if (selectedLayers.length === 0 && selected) {
+    selectedLayers.push(selected);
+  }
+
+  return selectedLayers;
 }
 
 // Helper: Calculate bounding box for multiple layers
 function calculateBoundingBox(layerArray) {
-    if (!layerArray || layerArray.length === 0) return null;
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    
-    for (const layer of layerArray) {
-        if (!layer) continue;
-        const x = layer.x || 0;
-        const y = layer.y || 0;
-        const w = layer.element?.clientWidth || 0;
-        const h = layer.element?.clientHeight || 0;
-        
-        minX = Math.min(minX, x);
-        minY = Math.min(minY, y);
-        maxX = Math.max(maxX, x + w);
-        maxY = Math.max(maxY, y + h);
-    }
-    
-    if (minX === Infinity) return null;
-    
-    return {
-        x: minX,
-        y: minY,
-        width: maxX - minX,
-        height: maxY - minY
-    };
+  if (!layerArray || layerArray.length === 0) return null;
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+  for (const layer of layerArray) {
+    if (!layer) continue;
+    const x = layer.x || 0;
+    const y = layer.y || 0;
+    const w = layer.element?.clientWidth || 0;
+    const h = layer.element?.clientHeight || 0;
+
+    minX = Math.min(minX, x);
+    minY = Math.min(minY, y);
+    maxX = Math.max(maxX, x + w);
+    maxY = Math.max(maxY, y + h);
+  }
+
+  if (minX === Infinity) return null;
+
+  return {
+    x: minX,
+    y: minY,
+    width: maxX - minX,
+    height: maxY - minY
+  };
 }
 
 function updateCoordInput() {
-    const selectedLayers = getSelectedLayers();
-    
-    const updateData = {
-        type: 'updateLayerInputs',
-        layerName: '',
-        xCoord: '',
-        yCoord: '',
-        width: '',
-        height: '',
-        scale: '1',
-        rotation: '0',
-        skewX: '0',
-        skewY: '0'
-    };
-    
-    if (selectedLayers.length === 0) {
-        // No selection: clear all
-        if (xCoordInput) xCoordInput.value = '';
-        if (yCoordInput) yCoordInput.value = '';
-        if (widthInput) widthInput.value = '';
-        if (heightInput) heightInput.value = '';
-        if (scaleInput) scaleInput.value = '';
-        if (layerNameInput) layerNameInput.value = '';
-        if (skewXControl) skewXControl.value = '';
-        if (skewXSlider) skewXSlider.value = '';
-        if (skewYControl) skewYControl.value = '';
-        if (skewYSlider) skewYSlider.value = '';
-    } else if (selectedLayers.length === 1) {
-        // Single selection: show individual layer data
-        const layer = selectedLayers[0];
-        
-        console.log('Single layer selected:', layer.name, {
-            x: layer.x,
-            y: layer.y,
-            clientWidth: layer.element?.clientWidth,
-            clientHeight: layer.element?.clientHeight,
-            scale: layer.scale,
-            name: layer.name
-        });
-        if (xCoordInput) xCoordInput.value = layer.x || 0;
-        if (yCoordInput) yCoordInput.value = layer.y || 0;
-        if (widthInput) widthInput.value = layer.element?.clientWidth || '';
-        if (heightInput) heightInput.value = layer.element?.clientHeight || '';
-        if (scaleInput) scaleInput.value = layer.scale !== undefined ? layer.scale : '1';
-        if (layerNameInput) layerNameInput.value = layer.name || '';
-        if (skewXControl) skewXControl.value = layer.skewX || 0;
-        if (skewXSlider) skewXSlider.value = layer.skewX || 0;
-        if (skewYControl) skewYControl.value = layer.skewY || 0;
-        if (skewYSlider) skewYSlider.value = layer.skewY || 0;
-        
-        // Update iframe
-        updateData.layerName = layer.name || '';
-        updateData.xCoord = layer.x || 0;
-        updateData.yCoord = layer.y || 0;
-        updateData.width = layer.element?.clientWidth || '';
-        updateData.height = layer.element?.clientHeight || '';
-        updateData.scale = layer.scale !== undefined ? layer.scale : '1';
-        updateData.rotation = layer.rotation || '0';
-        updateData.skewX = layer.skewX || 0;
-        updateData.skewY = layer.skewY || 0;
+  const selectedLayers = getSelectedLayers();
+
+  const updateData = {
+    type: 'updateLayerInputs',
+    layerName: '',
+    xCoord: '',
+    yCoord: '',
+    width: '',
+    height: '',
+    scale: '1',
+    rotation: '0',
+    skewX: '0',
+    skewY: '0'
+  };
+
+  if (selectedLayers.length === 0) {
+    // No selection: clear all
+    if (xCoordInput) xCoordInput.value = '';
+    if (yCoordInput) yCoordInput.value = '';
+    if (widthInput) widthInput.value = '';
+    if (heightInput) heightInput.value = '';
+    if (scaleInput) scaleInput.value = '';
+    if (layerNameInput) layerNameInput.value = '';
+    if (skewXControl) skewXControl.value = '';
+    if (skewXSlider) skewXSlider.value = '';
+    if (skewYControl) skewYControl.value = '';
+    if (skewYSlider) skewYSlider.value = '';
+  } else if (selectedLayers.length === 1) {
+    // Single selection: show individual layer data
+    const layer = selectedLayers[0];
+
+    console.log('Single layer selected:', layer.name, {
+      x: layer.x,
+      y: layer.y,
+      clientWidth: layer.element?.clientWidth,
+      clientHeight: layer.element?.clientHeight,
+      scale: layer.scale,
+      name: layer.name
+    });
+    if (xCoordInput) xCoordInput.value = layer.x || 0;
+    if (yCoordInput) yCoordInput.value = layer.y || 0;
+    if (widthInput) widthInput.value = layer.element?.clientWidth || '';
+    if (heightInput) heightInput.value = layer.element?.clientHeight || '';
+    if (scaleInput) scaleInput.value = layer.scale !== undefined ? layer.scale : '1';
+    if (layerNameInput) layerNameInput.value = layer.name || '';
+    if (skewXControl) skewXControl.value = layer.skewX || 0;
+    if (skewXSlider) skewXSlider.value = layer.skewX || 0;
+    if (skewYControl) skewYControl.value = layer.skewY || 0;
+    if (skewYSlider) skewYSlider.value = layer.skewY || 0;
+
+    // Update iframe
+    updateData.layerName = layer.name || '';
+    updateData.xCoord = layer.x || 0;
+    updateData.yCoord = layer.y || 0;
+    updateData.width = layer.element?.clientWidth || '';
+    updateData.height = layer.element?.clientHeight || '';
+    updateData.scale = layer.scale !== undefined ? layer.scale : '1';
+    updateData.rotation = layer.rotation || '0';
+    updateData.skewX = layer.skewX || 0;
+    updateData.skewY = layer.skewY || 0;
+  } else {
+    // Multi selection: show bounding box + comma-separated names with count
+    const bbox = calculateBoundingBox(selectedLayers);
+    const layerNames = selectedLayers.map(l => l.name || '').join(', ');
+    const names = `${selectedLayers.length}: ${layerNames}`; // e.g., "3: Kepala, Badan, Kaki"
+
+    if (bbox) {
+      if (xCoordInput) xCoordInput.value = Math.round(bbox.x);
+      if (yCoordInput) yCoordInput.value = Math.round(bbox.y);
+      if (widthInput) widthInput.value = Math.round(bbox.width);
+      if (heightInput) heightInput.value = Math.round(bbox.height);
+
+      updateData.xCoord = Math.round(bbox.x);
+      updateData.yCoord = Math.round(bbox.y);
+      updateData.width = Math.round(bbox.width);
+      updateData.height = Math.round(bbox.height);
     } else {
-        // Multi selection: show bounding box + comma-separated names with count
-        const bbox = calculateBoundingBox(selectedLayers);
-        const layerNames = selectedLayers.map(l => l.name || '').join(', ');
-        const names = `${selectedLayers.length}: ${layerNames}`; // e.g., "3: Kepala, Badan, Kaki"
-        
-        if (bbox) {
-            if (xCoordInput) xCoordInput.value = Math.round(bbox.x);
-            if (yCoordInput) yCoordInput.value = Math.round(bbox.y);
-            if (widthInput) widthInput.value = Math.round(bbox.width);
-            if (heightInput) heightInput.value = Math.round(bbox.height);
-            
-            updateData.xCoord = Math.round(bbox.x);
-            updateData.yCoord = Math.round(bbox.y);
-            updateData.width = Math.round(bbox.width);
-            updateData.height = Math.round(bbox.height);
-        } else {
-            if (xCoordInput) xCoordInput.value = '';
-            if (yCoordInput) yCoordInput.value = '';
-            if (widthInput) widthInput.value = '';
-            if (heightInput) heightInput.value = '';
-        }
-        
-        if (layerNameInput) layerNameInput.value = names;
-        if (scaleInput) scaleInput.value = ''; // Multi-scale ambiguous, leave empty
-        if (skewXControl) skewXControl.value = '';
-        if (skewXSlider) skewXSlider.value = '';
-        if (skewYControl) skewYControl.value = '';
-        if (skewYSlider) skewYSlider.value = '';
-        
-        updateData.layerName = names;
-        updateData.scale = ''; // Multi-scale ambiguous
-        updateData.rotation = ''; // Multi-rotation ambiguous
-        updateData.skewX = '';
-        updateData.skewY = '';
+      if (xCoordInput) xCoordInput.value = '';
+      if (yCoordInput) yCoordInput.value = '';
+      if (widthInput) widthInput.value = '';
+      if (heightInput) heightInput.value = '';
     }
-    
-    // Send update to iframe
-    if (window.studioIframe) {
-        console.log('✓ studioIframe exists');
-        if (window.studioIframe.contentWindow) {
-            console.log('✓ contentWindow exists');
-            console.log('📤 Sending to iframe:', updateData);
-            try {
-                window.studioIframe.contentWindow.postMessage(updateData, '*');
-                console.log('✓ postMessage sent successfully');
-            } catch (err) {
-                console.error('✗ postMessage error:', err);
-            }
-        } else {
-            console.warn('⚠️ studioIframe.contentWindow is null/undefined');
-            console.log('studioIframe:', window.studioIframe);
-            console.log('studioIframe.contentWindow:', window.studioIframe.contentWindow);
-        }
+
+    if (layerNameInput) layerNameInput.value = names;
+    if (scaleInput) scaleInput.value = ''; // Multi-scale ambiguous, leave empty
+    if (skewXControl) skewXControl.value = '';
+    if (skewXSlider) skewXSlider.value = '';
+    if (skewYControl) skewYControl.value = '';
+    if (skewYSlider) skewYSlider.value = '';
+
+    updateData.layerName = names;
+    updateData.scale = ''; // Multi-scale ambiguous
+    updateData.rotation = ''; // Multi-rotation ambiguous
+    updateData.skewX = '';
+    updateData.skewY = '';
+  }
+
+  // Send update to iframe
+  if (window.studioIframe) {
+    console.log('✓ studioIframe exists');
+    if (window.studioIframe.contentWindow) {
+      console.log('✓ contentWindow exists');
+      console.log('📤 Sending to iframe:', updateData);
+      try {
+        window.studioIframe.contentWindow.postMessage(updateData, '*');
+        console.log('✓ postMessage sent successfully');
+      } catch (err) {
+        console.error('✗ postMessage error:', err);
+      }
     } else {
-        console.warn('⚠️ studioIframe not found');
+      console.warn('⚠️ studioIframe.contentWindow is null/undefined');
+      console.log('studioIframe:', window.studioIframe);
+      console.log('studioIframe.contentWindow:', window.studioIframe.contentWindow);
     }
+  } else {
+    console.warn('⚠️ studioIframe not found');
+  }
 }
 
 /**
@@ -1960,42 +1983,42 @@ function updateCoordInput() {
  * Support center origin conversion + multi-select + history recording
  */
 function handleXCoord(value) {
-    const selectedLayers = getSelectedLayers();
-    if (selectedLayers.length === 0) return;
-    
-    let xVal = parseFloat(value);
-    
-    // Convert dari display coord ke actual coord jika center origin aktif
-    if (typeof convertDisplayToActualCoord === 'function') {
-        xVal = convertDisplayToActualCoord(xVal, selectedLayers[0].y || 0).x;
+  const selectedLayers = getSelectedLayers();
+  if (selectedLayers.length === 0) return;
+
+  let xVal = parseFloat(value);
+
+  // Convert dari display coord ke actual coord jika center origin aktif
+  if (typeof convertDisplayToActualCoord === 'function') {
+    xVal = convertDisplayToActualCoord(xVal, selectedLayers[0].y || 0).x;
+  }
+
+  if (selectedLayers.length === 1) {
+    // Single layer: set absolute position
+    selectedLayers[0].x = xVal;
+  } else {
+    // Multi-select: move all relative to current min position
+    let minX = Infinity;
+    for (const layer of selectedLayers) {
+      minX = Math.min(minX, layer.x || 0);
     }
-    
-    if (selectedLayers.length === 1) {
-        // Single layer: set absolute position
-        selectedLayers[0].x = xVal;
-    } else {
-        // Multi-select: move all relative to current min position
-        let minX = Infinity;
-        for (const layer of selectedLayers) {
-            minX = Math.min(minX, layer.x || 0);
-        }
-        const offset = xVal - minX;
-        for (const layer of selectedLayers) {
-            layer.x = (layer.x || 0) + offset;
-        }
+    const offset = xVal - minX;
+    for (const layer of selectedLayers) {
+      layer.x = (layer.x || 0) + offset;
     }
-    
-    // Update display untuk reflect changes
-    updateCoordInput();
-    
-    // Record history
-    if (typeof window.HistoryManager !== 'undefined' && selectedLayers[0]) {
-        window.HistoryManager.recordAction('move', {
-            layerName: Array.isArray(selectedLayers[0].name) ? selectedLayers[0].name.join(', ') : selectedLayers[0].name,
-            x: selectedLayers[0].x,
-            action: 'X Position changed'
-        });
-    }
+  }
+
+  // Update display untuk reflect changes
+  updateCoordInput();
+
+  // Record history
+  if (typeof window.HistoryManager !== 'undefined' && selectedLayers[0]) {
+    window.HistoryManager.recordAction('move', {
+      layerName: Array.isArray(selectedLayers[0].name) ? selectedLayers[0].name.join(', ') : selectedLayers[0].name,
+      x: selectedLayers[0].x,
+      action: 'X Position changed'
+    });
+  }
 }
 
 /**
@@ -2003,42 +2026,42 @@ function handleXCoord(value) {
  * Support center origin conversion + multi-select + history recording
  */
 function handleYCoord(value) {
-    const selectedLayers = getSelectedLayers();
-    if (selectedLayers.length === 0) return;
-    
-    let yVal = parseFloat(value);
-    
-    // Convert dari display coord ke actual coord jika center origin aktif
-    if (typeof convertDisplayToActualCoord === 'function') {
-        yVal = convertDisplayToActualCoord(selectedLayers[0].x || 0, yVal).y;
+  const selectedLayers = getSelectedLayers();
+  if (selectedLayers.length === 0) return;
+
+  let yVal = parseFloat(value);
+
+  // Convert dari display coord ke actual coord jika center origin aktif
+  if (typeof convertDisplayToActualCoord === 'function') {
+    yVal = convertDisplayToActualCoord(selectedLayers[0].x || 0, yVal).y;
+  }
+
+  if (selectedLayers.length === 1) {
+    // Single layer: set absolute position
+    selectedLayers[0].y = yVal;
+  } else {
+    // Multi-select: move all relative to current min position
+    let minY = Infinity;
+    for (const layer of selectedLayers) {
+      minY = Math.min(minY, layer.y || 0);
     }
-    
-    if (selectedLayers.length === 1) {
-        // Single layer: set absolute position
-        selectedLayers[0].y = yVal;
-    } else {
-        // Multi-select: move all relative to current min position
-        let minY = Infinity;
-        for (const layer of selectedLayers) {
-            minY = Math.min(minY, layer.y || 0);
-        }
-        const offset = yVal - minY;
-        for (const layer of selectedLayers) {
-            layer.y = (layer.y || 0) + offset;
-        }
+    const offset = yVal - minY;
+    for (const layer of selectedLayers) {
+      layer.y = (layer.y || 0) + offset;
     }
-    
-    // Update display untuk reflect changes
-    updateCoordInput();
-    
-    // Record history
-    if (typeof window.HistoryManager !== 'undefined' && selectedLayers[0]) {
-        window.HistoryManager.recordAction('move', {
-            layerName: Array.isArray(selectedLayers[0].name) ? selectedLayers[0].name.join(', ') : selectedLayers[0].name,
-            y: selectedLayers[0].y,
-            action: 'Y Position changed'
-        });
-    }
+  }
+
+  // Update display untuk reflect changes
+  updateCoordInput();
+
+  // Record history
+  if (typeof window.HistoryManager !== 'undefined' && selectedLayers[0]) {
+    window.HistoryManager.recordAction('move', {
+      layerName: Array.isArray(selectedLayers[0].name) ? selectedLayers[0].name.join(', ') : selectedLayers[0].name,
+      y: selectedLayers[0].y,
+      action: 'Y Position changed'
+    });
+  }
 };
 
 /**
@@ -2046,96 +2069,96 @@ function handleYCoord(value) {
  * Support multi-select + display update + history
  */
 function handleRotation(value) {
-    const selectedLayers = getSelectedLayers();
-    if (selectedLayers.length === 0) return;
-    const rotValue = parseFloat(value) % 360;
-    
-    for (const layer of selectedLayers) {
-        layer.rotation = rotValue;
-    }
-    
-    // Update rotation indicator
-    if (rotationIndicator) rotationIndicator.innerText = rotValue;
-    
-    // Update display untuk multi-select
-    updateCoordInput();
-    
-    // Record history
-    if (typeof window.HistoryManager !== 'undefined' && selectedLayers[0]) {
-        window.HistoryManager.recordAction('rotate', {
-            layerName: Array.isArray(selectedLayers[0].name) ? selectedLayers[0].name.join(', ') : selectedLayers[0].name,
-            rotation: selectedLayers[0].rotation,
-            action: 'Rotated'
-        });
-    }
+  const selectedLayers = getSelectedLayers();
+  if (selectedLayers.length === 0) return;
+  const rotValue = parseFloat(value) % 360;
+
+  for (const layer of selectedLayers) {
+    layer.rotation = rotValue;
+  }
+
+  // Update rotation indicator
+  if (rotationIndicator) rotationIndicator.innerText = rotValue;
+
+  // Update display untuk multi-select
+  updateCoordInput();
+
+  // Record history
+  if (typeof window.HistoryManager !== 'undefined' && selectedLayers[0]) {
+    window.HistoryManager.recordAction('rotate', {
+      layerName: Array.isArray(selectedLayers[0].name) ? selectedLayers[0].name.join(', ') : selectedLayers[0].name,
+      rotation: selectedLayers[0].rotation,
+      action: 'Rotated'
+    });
+  }
 }
 
 function handleSkewX(value) {
-    const selectedLayers = getSelectedLayers();
-    if (selectedLayers.length === 0) return;
-    const skewValue = parseFloat(value);
-    
-    for (const layer of selectedLayers) {
-        layer.skewX = skewValue;
-    }
-    
-    // Update slider jika ada
-    const slider = document.getElementById('skewXSlider');
-    if (slider) slider.value = skewValue;
-    
-    // Update display untuk multi-select
-    updateCoordInput();
+  const selectedLayers = getSelectedLayers();
+  if (selectedLayers.length === 0) return;
+  const skewValue = parseFloat(value);
+
+  for (const layer of selectedLayers) {
+    layer.skewX = skewValue;
+  }
+
+  // Update slider jika ada
+  const slider = document.getElementById('skewXSlider');
+  if (slider) slider.value = skewValue;
+
+  // Update display untuk multi-select
+  updateCoordInput();
 }
 
 function handleSkewXSlider(value) {
-    const selectedLayers = getSelectedLayers();
-    if (selectedLayers.length === 0) return;
-    const skewValue = parseFloat(value);
-    
-    for (const layer of selectedLayers) {
-        layer.skewX = skewValue;
-    }
-    
-    // Update text input
-    const input = document.getElementById('skewXControl');
-    if (input) input.value = skewValue;
-    
-    // Update display untuk multi-select
-    updateCoordInput();
+  const selectedLayers = getSelectedLayers();
+  if (selectedLayers.length === 0) return;
+  const skewValue = parseFloat(value);
+
+  for (const layer of selectedLayers) {
+    layer.skewX = skewValue;
+  }
+
+  // Update text input
+  const input = document.getElementById('skewXControl');
+  if (input) input.value = skewValue;
+
+  // Update display untuk multi-select
+  updateCoordInput();
 }
 
 function handleSkewY(value) {
-    const selectedLayers = getSelectedLayers();
-    if (selectedLayers.length === 0) return;
-    const skewValue = parseFloat(value);
-    
-    for (const layer of selectedLayers) {
-        layer.skewY = skewValue;
-    }
-    
-    // Update slider jika ada
-    const slider = document.getElementById('skewYSlider');
-    if (slider) slider.value = skewValue;
-    
-    // Update display untuk multi-select
-    updateCoordInput();
+  const selectedLayers = getSelectedLayers();
+  if (selectedLayers.length === 0) return;
+  const skewValue = parseFloat(value);
+
+  for (const layer of selectedLayers) {
+    layer.skewY = skewValue;
+  }
+
+  // Update slider jika ada
+  const slider = document.getElementById('skewYSlider');
+  if (slider) slider.value = skewValue;
+
+  // Update display untuk multi-select
+  updateCoordInput();
 }
 
 function handleSkewYSlider(value) {
-    const selectedLayers = getSelectedLayers();
-    if (selectedLayers.length === 0) return;
-    const skewValue = parseFloat(value);
-    
-    for (const layer of selectedLayers) {
-        layer.skewY = skewValue;
-    }
-    
-    // Update text input
-    const input = document.getElementById('skewYControl');
-    if (input) input.value = skewValue;
-    
-    // Update display untuk multi-select
-    updateCoordInput();
+  const selectedLayers = getSelectedLayers();
+  if (selectedLayers.length === 0) return;
+  const skewValue = parseFloat(value);
+
+  for (const layer of selectedLayers) {
+    layer.skewY = skewValue;
+  }
+
+  // Update text input
+  const input = document.getElementById('skewYControl');
+  if (input) input.value = skewValue;
+
+  // Update display untuk multi-select
+  updateCoordInput();
 }
 
 /**
@@ -2143,128 +2166,197 @@ function handleSkewYSlider(value) {
  * Support multi-select + display update
  */
 function handleScale(value) {
-    const selectedLayers = getSelectedLayers();
-    if (selectedLayers.length === 0) return;
-    
-    const scaleValue = parseFloat(value);
-    for (const layer of selectedLayers) {
-        layer.scale = scaleValue;
-    }
-    
-    // Update display untuk multi-select
-    updateCoordInput();
+  const selectedLayers = getSelectedLayers();
+  if (selectedLayers.length === 0) return;
+
+  const scaleValue = parseFloat(value);
+  for (const layer of selectedLayers) {
+    layer.scale = scaleValue;
+  }
+
+  // Update display untuk multi-select
+  updateCoordInput();
 }
 
 function handleFlipHorizontal(value) {
-    const selectedLayers = getSelectedLayers();
-    if (selectedLayers.length === 0) return;
-    
-    for (const layer of selectedLayers) {
-        layer.flipX = value;
-    }
-    
-    // Update display untuk multi-select
-    updateCoordInput();
+  const selectedLayers = getSelectedLayers();
+  if (selectedLayers.length === 0) return;
+
+  for (const layer of selectedLayers) {
+    layer.flipX = value;
+  }
+
+  // Update display untuk multi-select
+  updateCoordInput();
 }
 
 function handleFlipVertical(value) {
-    const selectedLayers = getSelectedLayers();
-    if (selectedLayers.length === 0) return;
-    
-    for (const layer of selectedLayers) {
-        layer.flipY = value;
-    }
-    
-    // Update display untuk multi-select
-    updateCoordInput();
+  const selectedLayers = getSelectedLayers();
+  if (selectedLayers.length === 0) return;
+
+  for (const layer of selectedLayers) {
+    layer.flipY = value;
+  }
+
+  // Update display untuk multi-select
+  updateCoordInput();
 }
 
 // Fungsi untuk mengatur ukuran layer (width atau height)
 // Fungsi untuk mengatur ukuran layer (width atau height)
 function updateLayerSize(dimension, value) {
-    if (!selected) {
-        console.warn("Tidak ada layer yang dipilih.");
-        return;
-    }
+  if (!selected) {
+    console.warn("Tidak ada layer yang dipilih.");
+    return;
+  }
 
-    value = parseFloat(value);
-    
-    // Pastikan value yang diberikan adalah angka valid
-    if (isNaN(value)) {
-        console.error("Nilai yang dimasukkan bukan angka.");
-        return;
-    }
+  value = parseFloat(value);
 
-    // Mengatur lebar atau tinggi dari layer yang dipilih
-    if (dimension === 'width') {
-        selected.width = value;
-    } else if (dimension === 'height') {
-        selected.height = value;
-    } else {
-        console.error("Dimensi tidak valid. Harus 'width' atau 'height'.");
-        return;
-    }
+  // Pastikan value yang diberikan adalah angka valid
+  if (isNaN(value)) {
+    console.error("Nilai yang dimasukkan bukan angka.");
+    return;
+  }
 
-    // Pastikan `selected` adalah objek layer yang valid dengan properti `src`
-    if (selected && selected.src && Array.isArray(selected.src)) {
-        // Memanggil fungsi renderLayer untuk memperbarui tampilan
-        renderLayer(selected);
-    } else {
-        console.error("Layer yang dipilih tidak memiliki properti `src` yang valid.");
-    }
+  // Mengatur lebar atau tinggi dari layer yang dipilih
+  if (dimension === 'width') {
+    selected.width = value;
+  } else if (dimension === 'height') {
+    selected.height = value;
+  } else {
+    console.error("Dimensi tidak valid. Harus 'width' atau 'height'.");
+    return;
+  }
+
+  // Pastikan `selected` adalah objek layer yang valid dengan properti `src`
+  if (selected && selected.src && Array.isArray(selected.src)) {
+    // Memanggil fungsi renderLayer untuk memperbarui tampilan
+    renderLayer(selected);
+  } else {
+    console.error("Layer yang dipilih tidak memiliki properti `src` yang valid.");
+  }
 }
 
 function moveLayerUp() {
-    if (!selected) return;
-    const currentIndex = layers.indexOf(selected);
-    if (currentIndex < layers.length - 1) {
-        const temp = layers[currentIndex];
-        layers[currentIndex] = layers[currentIndex + 1];
-        layers[currentIndex + 1] = temp;
-        renderLayer();
+  const selectedLayers = getSelectedLayers();
+  if (selectedLayers.length === 0) return;
+
+  // Sort selected layers by index descending (bottom to top) to avoid index shifting issues
+  const sortedLayers = [...selectedLayers].sort((a, b) => layers.indexOf(b) - layers.indexOf(a));
+
+  // Check if we can move (only if the top-most selected is not at the very top)
+  // Wait, "Up" usually means higher index (rendered later/on top) or lower index?
+  // In DOM: appendChild puts at end (top). So higher index = top.
+  // "Move Up" = Increase Index.
+
+  // Sort descending (highest index first)
+  const sortedByHighest = [...selectedLayers].sort((a, b) => layers.indexOf(b) - layers.indexOf(a));
+
+  // Can we move up? Check if the highest selected is at the last index
+  const highestIdx = layers.indexOf(sortedByHighest[0]);
+  if (highestIdx === -1 || highestIdx >= layers.length - 1) return; // Already at top or not found
+
+  // Move each layer up, starting from the highest index
+  sortedByHighest.forEach(layer => {
+    const currentIdx = layers.indexOf(layer);
+    if (currentIdx < layers.length - 1) {
+      // Swap with next
+      const nextLayer = layers[currentIdx + 1];
+
+      // If next layer is ALSO selected, we don't swap (they move together as block)
+      // But we iterate from top, so if we move top one, fine.
+
+      // Actually, standard logic for moving block:
+      // Find the block of non-selected items immediately above (higher index) the selected block?
+      // Simplest: Just swap with neighbor if neighbor is NOT selected. 
+      // If neighbor IS selected, they bubble up together? 
+
+      // Standard approach: Remove all selected, calculate new insertion point?
+      // Let's stick to simple swap for now, but handle contiguous blocks.
+
+      // If we just swap, and we have [A, B(selected), C(selected), D], moving up:
+      // C swaps with D -> [A, B, D, C]
+      // B swaps with D -> [A, D, B, C]
+      // Result: [A, D, B, C]. Correct.
+
+      // We must iterate from highest index downwards.
+
+      const nextIdx = currentIdx + 1;
+      // Only swap if next one is NOT selected (to push selection block through)
+      // OR if we just blindly swap, a selected layer might swap with another selected layer?
+      // If sortedByHighest: C (idx 2), B (idx 1).
+      // 1. C (2) swaps with D (3). Layers: A, B, D, C.
+      // 2. B (1) swaps with D (2). Layers: A, D, B, C.
+      // Correct.
+
+      // Implementation:
+      const temp = layers[currentIdx];
+      layers[currentIdx] = layers[nextIdx];
+      layers[nextIdx] = temp;
     }
+  });
+
+  renderLayer();
 }
 
 function moveLayerDown() {
-    if (!selected) return;
-    const currentIndex = layers.indexOf(selected);
-    if (currentIndex > 0) {
-        const temp = layers[currentIndex];
-        layers[currentIndex] = layers[currentIndex - 1];
-        layers[currentIndex - 1] = temp;
-        renderLayer();
+  const selectedLayers = getSelectedLayers();
+  if (selectedLayers.length === 0) return;
+
+  // "Move Down" = Decrease Index.
+  // Sort ascending (lowest index first)
+  const sortedByLowest = [...selectedLayers].sort((a, b) => layers.indexOf(a) - layers.indexOf(b));
+
+  // Can we move down? Check if lowest selected is at 0
+  const lowestIdx = layers.indexOf(sortedByLowest[0]);
+  if (lowestIdx === -1 || lowestIdx <= 0) return; // Already at bottom or not found
+
+  // Move each layer down, starting from lowest index
+  sortedByLowest.forEach(layer => {
+    const currentIdx = layers.indexOf(layer);
+    if (currentIdx > 0) {
+      const prevIdx = currentIdx - 1;
+      // Swap
+      const temp = layers[currentIdx];
+      layers[currentIdx] = layers[prevIdx];
+      layers[prevIdx] = temp;
     }
+  });
+
+  renderLayer();
 }
 
 function renderLayer(layer) {
-    const container = document.getElementById('panel1-layercontainer') || document.getElementById('panel1') || document.querySelector('.container'); // Container tempat layer ditampilkan
+  const container = document.getElementById('panel1-layercontainer') || document.getElementById('panel1') || document.querySelector('.container'); // Container tempat layer ditampilkan
 
-    if (!container) {
-        console.error('Container not found for rendering');
-        return;
+  if (!container) {
+    console.error('Container not found for rendering');
+    return;
+  }
+
+  if (!layer) {
+    // Render all layers by reordering
+    // appendChild on an existing child moves it to the end of the list.
+    // By iterating in order, we ensure the DOM order matches the layers array order.
+    layers.forEach(l => {
+      if (l && l.element) {
+        container.appendChild(l.element);
+      }
+    });
+  } else {
+    if (layer.element.parentElement !== container) {
+      container.appendChild(layer.element);
     }
 
-    if (!layer) {
-        // Render all layers by reordering
-        layers.forEach(l => {
-            if (l.element.parentElement !== container) {
-                container.appendChild(l.element);
-            }
-        });
-    } else {
-        if (layer.element.parentElement !== container) {
-            container.appendChild(layer.element);
-        }
+    // Ensure layer.element is attached to container if not already
 
-        // Ensure layer.element is attached to container if not already
-       
-        if (!container.contains(layer.element)) {
-            container.appendChild(layer.element);
-        }
+    if (!container.contains(layer.element)) {
+      container.appendChild(layer.element);
     }
-    
-    // Update framework display otomatis setiap kali layer di-render
-    updateFrameworkDisplay();
+  }
+
+  // Update framework display otomatis setiap kali layer di-render
+  updateFrameworkDisplay();
 }
 
 // ------------------ Group / Duplicate / Copy / Delete helpers ------------------
@@ -2275,24 +2367,13 @@ const clipboardLayers = [];
  * Src akan diurutkan berdasarkan posisi Y (tinggi-rendah)
  * Layer name diambil dari layer yang paling atas (Y paling kecil)
  * 
- * Contoh:
- * Sebelum (multi-select):
- *   - Head (Y: 50, src: head.svg)
- *   - Torso (Y: 100, src: torso.svg)
- *   - Legs (Y: 150, src: legs.svg)
- * 
- * Sesudah (klik "Gabung Src"):
- *   - Head (src: [head.svg, torso.svg, legs.svg])
+ * Note: Ini menggabungkan src dari beberapa layer menjadi 1 layer dengan banyak src.
+ * Ideal untuk menggabungkan parts yang memiliki origin sama (misal: mata kiri + mata kanan -> mata).
+ * Jika layer memiliki posisi berbeda, logic ini saat ini akan menyatukan mereka ke origin layer paling atas.
+ * TODO: Support relative positioning via srcProperties jika diperlukan kedepannya.
  */
 function mergeSelectedLayersSrc() {
-  // Ambil semua selected layers dari DOM
-  const selectedElements = document.querySelectorAll('.layer.selected');
-  const layersToMerge = [];
-  
-  selectedElements.forEach(el => {
-    const layer = layers.find(l => l.element === el);
-    if (layer) layersToMerge.push(layer);
-  });
+  const layersToMerge = getSelectedLayers();
 
   if (layersToMerge.length < 2) {
     console.warn('Please select at least 2 layers to merge');
@@ -2301,50 +2382,89 @@ function mergeSelectedLayersSrc() {
 
   const container = document.getElementById('panel1') || document.querySelector('.container');
 
-  // Sort layers berdasarkan Y position (tinggi-rendah)
+  // Sort layers berdasarkan Y position (tinggi-rendah) untuk menentukan base layer
   const sortedLayers = [...layersToMerge].sort((a, b) => a.y - b.y);
 
-  // Layer pertama (paling atas) menjadi base
+  // Layer pertama (paling atas/kiri) menjadi base
+  // Kita gunakan logic min X dan min Y untuk origin baru
+  const minX = Math.min(...layersToMerge.map(l => l.x));
+  const minY = Math.min(...layersToMerge.map(l => l.y));
+
+  // Base layer (untuk nama dll) adalah yang pertama di sorted
   const baseLayer = sortedLayers[0];
-  const baseIndex = layers.indexOf(baseLayer);
+  const baseIndex = layers.indexOf(baseLayer); // Location to insert new layer
 
   // Kumpulkan semua src dari semua layers
   const allSrcs = [];
-  sortedLayers.forEach(layer => {
-    const imgs = Array.from(layer.element.querySelectorAll('img'));
-    imgs.forEach(img => {
-      if (img.src && !allSrcs.includes(img.src)) {
-        allSrcs.push(img.src);
-      }
+  // Kita kumpulkan src dari setiap layer
+  // Urutan src: dari layer terbawah (secara visual / index terbesar) ke teratas?
+  // Atau berdasarkan sorted Y? Biasanya "Group" menumpuk sesuai urutan visual.
+  // Urutan visual di array `layers` menentukan z-index (makin besar makin atas).
+  // Src di dalam layer: index 0 = paling bawah, index N = paling atas.
+
+  // Jadi kita harus sort layers berdasarkan index mereka di `layers` array (ASC).
+  const layersSortedByIndex = [...layersToMerge].sort((a, b) => layers.indexOf(a) - layers.indexOf(b));
+
+  layersSortedByIndex.forEach(layer => {
+    // Ambil src dari properti layer, bukan DOM, agar lebih akurat dengan state logic
+    const srcs = layer.src || [];
+    srcs.forEach(src => {
+      allSrcs.push(src);
     });
+
+    // Fallback if layer.src is empty but DOM has imgs (legacy method?)
+    if (srcs.length === 0) {
+      const imgs = Array.from(layer.element.querySelectorAll('img'));
+      imgs.forEach(img => {
+        if (img.src) allSrcs.push(img.src);
+      });
+    }
   });
 
   if (allSrcs.length === 0) return;
 
+  // Nama layer baru
+  const newName = baseLayer.name + "_merged";
+
   // Create merged layer dengan semua src
-  const mergedLayer = new Layer(baseLayer.name, allSrcs, {
+  // Posisi diambil dari minX, minY agar tidak loncat terlalu jauh,
+  // TAPI: Src didalamnya tidak punya relative offset logic disini.
+  // Jadi untuk sekarang kita pakai posisi baseLayer agar konsisten dengan logic lama,
+  // atau user harus memposisikan ulang.
+  // Existing logic uses baseLayer.x/y. Let's stick to that for now to allow simple merging of aligned parts.
+
+  const mergedLayer = new Layer(newName, allSrcs, {
     x: baseLayer.x,
-    y: baseLayer.y
+    y: baseLayer.y,
+    width: baseLayer.width, // Gunakan dimensi base dulu
+    height: baseLayer.height
   }, []);
 
   // Replace base layer dengan merged layer
-  if (baseIndex !== -1) {
-    layers[baseIndex] = mergedLayer;
+  // Kita hapus semua layer lama, lalu insert mergedLayer di posisi salah satu layer (misal paling bawah)
+
+  // Cari index terkecil (layer terbawah)
+  const lowestIndex = Math.min(...layersToMerge.map(l => layers.indexOf(l)));
+
+  // Hapus semua layer lama
+  layersToMerge.forEach(layer => {
+    const idx = layers.indexOf(layer);
+    if (idx !== -1) layers.splice(idx, 1);
+    layer.detach(); // Hapus element visual
+  });
+
+  // Insert new layer di posisi lowestIndex
+  if (lowestIndex !== -1) {
+    layers.splice(lowestIndex, 0, mergedLayer);
   } else {
     layers.push(mergedLayer);
   }
 
-  // Hapus layer lain yang di-merge
-  sortedLayers.slice(1).forEach(layer => {
-    const idx = layers.indexOf(layer);
-    if (idx !== -1) layers.splice(idx, 1);
-  });
-
-  // Detach semua dan attach merged layer
-  sortedLayers.forEach(layer => layer.detach());
-  // 🔥 USE UNIFIED API untuk multi-drag support
+  // Attach merged layer
+  if (container) container.appendChild(mergedLayer.element);
   attachLayerToPointerSystem(mergedLayer);
 
+  // Select layer baru
   selectLayer(mergedLayer);
   renderLayer();
 }
@@ -2396,18 +2516,18 @@ function resetStudio() {
  */
 function confirmResetStudio() {
   console.log('🔄 Resetting studio...');
-  
+
   // Reset center origin dulu sebelum reload
   if (typeof resetCenterOrigin === 'function') {
     resetCenterOrigin();
     console.log('✅ Center origin reset before reload');
   }
-  
+
   // Close the dialog window
   if (window.__resetWindowId) {
     window.closeWindow(window.__resetWindowId);
   }
-  
+
   // Small delay to ensure reset completes
   setTimeout(() => {
     // Refresh halaman untuk re-init semua
@@ -2427,110 +2547,174 @@ function confirmResetStudio() {
  *   - Kepala_2 (src: head3.svg)
  */
 function ungroupSrcLayers() {
-  if (!selected) return;
-  
-  const imgs = Array.from(selected.element.querySelectorAll('img'));
-  if (imgs.length <= 1) {
-    console.warn('Layer has only one source, cannot ungroup');
-    return;
-  }
+  const selectedLayers = getSelectedLayers();
+
+  if (selectedLayers.length === 0) return;
 
   const container = document.getElementById('panel1') || document.querySelector('.container');
-  const originalLayer = selected;
-  const baseX = originalLayer.x;
-  const baseY = originalLayer.y;
-  const originalIndex = layers.indexOf(originalLayer);
-  const originalName = originalLayer.name;
+  const allNewLayers = [];
 
-  // Create separate layers untuk setiap src
-  const newLayers = imgs.map((img, idx) => {
-    const newLayerName = `${originalName}_${idx}`;
-    const newLayer = new Layer(newLayerName, [img.src], {
-      x: baseX,
-      y: baseY
-    }, []);
-    return newLayer;
+  // Iterate backwards to safely splice/insert safely?
+  // Or just process each, collecting actions, then apply.
+
+  selectedLayers.forEach(originalLayer => {
+    const srcCount = originalLayer.src ? originalLayer.src.length : 0;
+
+    // Skip if single src or no src (unless user wants to "ungroup" single src to refresh it? No point.)
+    if (srcCount <= 1) {
+      // Keep it as is
+      return;
+    }
+
+    const baseX = originalLayer.x;
+    const baseY = originalLayer.y;
+    const originalIndex = layers.indexOf(originalLayer);
+    const originalName = originalLayer.name;
+
+    const srcs = originalLayer.src;
+
+    // Create separate layers
+    const newLayersForThis = srcs.map((srcUrl, idx) => {
+      const newLayerName = `${originalName}_${idx}`;
+      const newLayer = new Layer(newLayerName, [srcUrl], {
+        x: baseX,
+        y: baseY,
+        width: originalLayer.width,
+        height: originalLayer.height
+      });
+      // Copy other props if needed
+      return newLayer;
+    });
+
+    allNewLayers.push(...newLayersForThis);
+
+    // Replace original layer with new layers in `layers` array
+    if (originalIndex !== -1) {
+      // Remove original
+      layers.splice(originalIndex, 1);
+      // Insert new ones at same position
+      newLayersForThis.forEach((l, i) => {
+        layers.splice(originalIndex + i, 0, l);
+        // Attach pointer events
+        attachLayerToPointerSystem(l);
+        if (container && l.element) container.appendChild(l.element);
+      });
+    }
+
+    // Detach detail original
+    originalLayer.detach();
   });
 
-  // Hapus original layer dari layers array
-  if (originalIndex !== -1) {
-    layers.splice(originalIndex, 1);
+  // Select all new layers
+  if (allNewLayers.length > 0) {
+    if (window.selectorInstance) {
+      window.selectorInstance.clearSelection();
+      allNewLayers.forEach(l => {
+        l.element.classList.add('selected');
+        window.selectorInstance.selectedLayers.push(l);
+      });
+      selected = allNewLayers[0];
+      window.selected = selected;
+      updateCoordInput();
+    } else {
+      selectLayer(allNewLayers[0]);
+    }
+    renderLayer();
   }
-
-  // Tambah semua layer baru di posisi original
-  newLayers.forEach((layer, idx) => {
-    layers.splice(originalIndex + idx, 0, layer);
-  });
-
-  // Detach original dan attach semua layer baru
-  originalLayer.detach();
-  newLayers.forEach(layer => {
-    // 🔥 USE UNIFIED API untuk multi-drag support
-    attachLayerToPointerSystem(layer);
-  });
-
-  // Select layer pertama
-  selectLayer(newLayers[0]);
-  renderLayer();
 }
 
 /**
  * Wrap selected layer(s) dalam group baru
  * Bisa handle single selection atau multi-selection dari selector
  */
-function groupSelectedLayer() {
+/**
+ * Wrap selected layer(s) dalam group baru
+ * Bisa handle single selection atau multi-selection dari selector
+ */
+function groupSelectedLayers() {
   const container = document.getElementById('panel1') || document.querySelector('.container');
-  
+
   // Cek apakah ada multi-selection dari selector
-  const selectedElements = document.querySelectorAll('.layer.selected');
-  const layersToGroup = [];
-  
-  if (selectedElements.length > 1) {
-    // Multi-select dari selector: kumpulkan semua selected layers
-    selectedElements.forEach(el => {
-      const layer = layers.find(l => l.element === el);
-      if (layer) layersToGroup.push(layer);
-    });
-  } else if (selected) {
-    // Single select: gunakan selected variable
-    layersToGroup.push(selected);
-  } else {
-    return;
-  }
+  const layersToGroup = getSelectedLayers();
 
   if (layersToGroup.length === 0) return;
 
-  // Hitung min position
-  const minX = Math.min(...layersToGroup.map(l => l.x));
-  const minY = Math.min(...layersToGroup.map(l => l.y));
+  // Hitung bounding box untuk group
+  // Kita perlu mencari minX, minY, maxX, maxY dari semua layer
+  let minX = Infinity, minY = Infinity;
+  let maxX = -Infinity, maxY = -Infinity;
 
-  // Hitung posisi absolut grup sebelum reset
-  const groupAbsoluteX = minX;
-  const groupAbsoluteY = minY;
+  layersToGroup.forEach(l => {
+    // Get bounding rect logic
+    // Note: l.x, l.y are top/left. We need width/height for right/bottom.
+    const x = l.x || 0;
+    const y = l.y || 0;
+    const w = l.element ? l.element.offsetWidth : (l.width || 0);
+    const h = l.element ? l.element.offsetHeight : (l.height || 0);
 
-  // Reset posisi relative terhadap group
+    if (x < minX) minX = x;
+    if (y < minY) minY = y;
+    if ((x + w) > maxX) maxX = x + w;
+    if ((y + h) > maxY) maxY = y + h;
+  });
+
+  // Jika infinity (misal element belum render atau 0 size), fallback ke 0
+  if (minX === Infinity) minX = 0;
+  if (minY === Infinity) minY = 0;
+
+  // Hitung lebar dan tinggi group
+  const groupW = (maxX > minX) ? (maxX - minX) : 100;
+  const groupH = (maxY > minY) ? (maxY - minY) : 100;
+
+  // Nama untuk grup baru
+  const groupName = `Group (${layersToGroup.length})`;
+
+  // Reset posisi children relative terhadap group
   const childrenForGroup = layersToGroup.map(layer => {
-    layer.x -= minX;
-    layer.y -= minY;
+    // Simpan posisi global saat ini
+    const globalX = layer.x || 0;
+    const globalY = layer.y || 0;
+
+    // Hitung posisi relative
+    // child.relativeX = child.globalX - group.globalX
+    layer.x = globalX - minX;
+    layer.y = globalY - minY;
+
     return layer;
   });
 
-  // Buat grup baru
-  const newGroup = new LayerGroup(childrenForGroup);
-  newGroup.x = groupAbsoluteX; // Tetapkan posisi absolut grup
-  newGroup.y = groupAbsoluteY;
-
-  // Tambahkan grup ke container
-  container.appendChild(newGroup.element);
-  layers.push(newGroup);
-
-  // Hapus layer lama dari array (elemen sudah dipindahkan ke dalam grup)
+  // Hapus layer lama dari global array layers
   layersToGroup.forEach(layer => {
     const index = layers.indexOf(layer);
     if (index > -1) {
       layers.splice(index, 1);
     }
+    // Detach from DOM karena akan di-attach ulang ke dalam grup
+    if (layer.element && layer.element.parentNode) {
+      layer.element.parentNode.removeChild(layer.element);
+    }
   });
+
+  // Buat grup baru menggunakan class Layer
+  // Parameter: name, src (empty array), options (x, y, width, height), childLayers
+  const newGroup = new Layer(groupName, [], {
+    x: minX,
+    y: minY,
+    width: groupW,
+    height: groupH
+  }, childrenForGroup);
+
+  // Attach new group to unified pointer system
+  attachLayerToPointerSystem(newGroup);
+
+  // Tambahkan grup ke global layers
+  layers.push(newGroup);
+
+  // Attach group ke container
+  // Note: Layer constructor might not attach automatically if we handle it manually
+  if (newGroup.element && !newGroup.element.parentElement) {
+    container.appendChild(newGroup.element);
+  }
 
   // Pilih grup baru
   selectLayer(newGroup);
@@ -2541,135 +2725,272 @@ function groupSelectedLayer() {
  * Ungroup: keluar satu level dari hierarchy
  * Jika selected adalah group, ambil childLayers dan pindahkan ke parent level
  */
-function ungroupSelectedLayer() {
-  if (!selected || !selected.childLayers || selected.childLayers.length === 0) {
-    console.warn('Selected layer is not a group, try ungroupSrcLayers() instead');
+/**
+ * Ungroup: keluar satu level dari hierarchy
+ * Mengembalikan children ke root layer dengan posisi global yang benar
+ */
+function ungroupSelectedLayers() {
+  const selectedLayers = getSelectedLayers();
+
+  // Filter hanya layer yang memiliki childLayers (grup)
+  const groupsToUngroup = selectedLayers.filter(l => l.childLayers && l.childLayers.length > 0);
+
+  if (groupsToUngroup.length === 0) {
+    console.warn('No groups selected to ungroup');
+    // Jika user select layer biasa yang punya src banyak, tawarkan/panggil ungroupSrcLayers
+    if (selectedLayers.length === 1 && selectedLayers[0].src && selectedLayers[0].src.length > 1) {
+      console.log('Redirecting to ungroupSrcLayers...');
+      ungroupSrcLayers();
+    }
     return;
   }
 
   const container = document.getElementById('panel1') || document.querySelector('.container');
-  const groupLayer = selected;
-  const groupIndex = layers.indexOf(groupLayer);
-  const groupX = groupLayer.x;
-  const groupY = groupLayer.y;
+  const allNewChildren = [];
 
-  // Ambil semua child dan hitung posisi absolutnya
-  const childrenToAdd = [];
-  groupLayer.childLayers.forEach(child => {
-    child.x += groupX;  // Posisi absolute
-    child.y += groupY;
-    childrenToAdd.push(child);
+  groupsToUngroup.forEach(groupLayer => {
+    const groupIndex = layers.indexOf(groupLayer);
+    const groupX = groupLayer.x || 0;
+    const groupY = groupLayer.y || 0;
+
+    // Ambil semua child dan hitung posisi absolutnya
+    // child.globalX = group.globalX + child.relativeX
+    const children = [...groupLayer.childLayers]; // copy array
+
+    const restoredChildren = children.map(child => {
+      child.x = groupX + (child.x || 0);
+      child.y = groupY + (child.y || 0);
+      return child;
+    });
+
+    allNewChildren.push(...restoredChildren);
+
+    // Detach group (remove visual element)
+    groupLayer.detach();
+
+    // Hapus group dari global layers
+    if (groupIndex !== -1) {
+      layers.splice(groupIndex, 1);
+    }
+
+    // Masukkan children kembali ke global layers
+    // Kita masukkan di posisi group index agar urutan layer terjaga
+    // Tapi karena kita loop, index bisa bergeser. Simplify dengan push/splice carefully.
+    // Sederhananya, insert di tempat group berada
+
+    // Note: splice in a loop modifies array length, so we rely on groupIndex which is fresh
+    restoredChildren.forEach((child, idx) => {
+      layers.splice(groupIndex + idx, 0, child);
+      // Attach to global container
+      if (container && child.element) {
+        container.appendChild(child.element);
+      }
+      // Attach to pointer system
+      attachLayerToPointerSystem(child);
+    });
   });
 
-  // Detach group
-  groupLayer.detach();
-
-  // Hapus group dari layers
-  if (groupIndex !== -1) {
-    layers.splice(groupIndex, 1);
+  // Select semua children yang baru di-ungroup
+  // Clear selection first
+  if (window.selectorInstance) {
+    window.selectorInstance.clearSelection();
+    // Manually select
+    allNewChildren.forEach(c => {
+      // Add 'selected' class
+      c.element.classList.add('selected');
+      // Add to selector instance if exists
+      if (window.selectorInstance) window.selectorInstance.selectedLayers.push(c);
+    });
+    // Set global selected to first one
+    if (allNewChildren.length > 0) {
+      selected = allNewChildren[0];
+      window.selected = selected;
+      updateCoordInput();
+    }
+  } else {
+    // Fallback single select first child
+    if (allNewChildren.length > 0) {
+      selectLayer(allNewChildren[0]);
+    }
   }
 
-  // Add semua children ke layers di posisi group yang lama
-  childrenToAdd.forEach((child, idx) => {
-    layers.splice(groupIndex + idx, 0, child);  // Insert di posisi original
-    // 🔥 USE UNIFIED API untuk multi-drag support
-    attachLayerToPointerSystem(child);
-  });
-
-  deselectLayer();
   renderLayer();
 }
 
 function deleteSelectedLayer() {
-  if (!selected) return;
-  const layerName = selected.layerName || selected.name;
-  const idx = layers.indexOf(selected);
-  if (idx !== -1) layers.splice(idx, 1);
-  selected.detach();
-  selected = null;
-  
+  const selectedLayers = getSelectedLayers();
+  if (selectedLayers.length === 0) return;
+
+  // Confirm delete? For now just delete.
+
+  // Clone array to iterate safely while modifying original
+  [...selectedLayers].forEach(layer => {
+    const idx = layers.indexOf(layer);
+    if (idx !== -1) layers.splice(idx, 1);
+    layer.detach();
+  });
+
+  // Clear selection
+  if (selectedLayers.includes(selected)) {
+    selected = null;
+    window.selected = null;
+  }
+
+  if (window.selectorInstance) {
+    window.selectorInstance.clearSelection();
+  }
+
   // Record history
   if (typeof window.HistoryManager !== 'undefined') {
+    const names = selectedLayers.map(l => l.name).join(', ');
     window.HistoryManager.recordAction('delete', {
-      layerName: layerName,
-      action: 'Layer deleted'
+      layerName: names,
+      action: 'Layers deleted'
     });
   }
+
+  // Update UI
+  updateCoordInput();
+  if (typeof syncDeselectionAcrossAllPanels === 'function') syncDeselectionAcrossAllPanels();
 }
 
 function duplicateSelectedLayers() {
-  if (!selected) return;
+  const selectedLayers = getSelectedLayers();
+  if (selectedLayers.length === 0) return;
+
   const container = document.getElementById('panel1') || document.querySelector('.container');
-  
-  // Collect img srcs from DOM
-  const imgs = Array.from(selected.element.querySelectorAll('img'));
-  const srcClone = imgs.map(i => i.src);
-  const newLayer = new Layer(selected.name + '_copy', srcClone, {
-    x: selected.x,
-    y: selected.y,
-    rotation: selected.rotation,
-    scale: selected.scale,
-    flipX: selected.isFlipX,
-    flipY: selected.isFlipY,
-    width: selected.width,
-    height: selected.height
+  const newLayers = [];
+
+  selectedLayers.forEach(layer => {
+    // Collect img srcs from DOM
+    const imgs = Array.from(layer.element.querySelectorAll('img'));
+    const srcClone = imgs.map(i => i.src);
+
+    const newLayer = new Layer(layer.name + '_copy', srcClone, {
+      x: (layer.x || 0) + 10, // Offset sedikit
+      y: (layer.y || 0) + 10,
+      rotation: layer.rotation,
+      scale: layer.scale,
+      flipX: layer.isFlipX,
+      flipY: layer.isFlipY,
+      width: layer.width,
+      height: layer.height
+      // Note: skew, opacity etc need to be copied?
+      // Layer class constructor might need update for full options, but this is consistent with existing code
+    });
+    // Copy extra properties manually if needed
+    newLayer.skewX = layer.skewX;
+    newLayer.skewY = layer.skewY;
+
+    layers.push(newLayer);
+    newLayers.push(newLayer);
+
+    // 🔥 USE UNIFIED API untuk multi-drag support
+    attachLayerToPointerSystem(newLayer);
+    renderLayer(newLayer);
   });
-  layers.push(newLayer);
-  // 🔥 USE UNIFIED API untuk multi-drag support
-  attachLayerToPointerSystem(newLayer);
-  renderLayer(newLayer);
-  
+
+  // Select newly duplicated layers
+  if (window.selectorInstance) {
+    window.selectorInstance.clearSelection();
+    newLayers.forEach(l => {
+      l.element.classList.add('selected');
+      window.selectorInstance.selectedLayers.push(l);
+    });
+    if (newLayers.length > 0) {
+      selected = newLayers[0];
+      window.selected = selected;
+    }
+    updateCoordInput();
+  }
+
   // Record history
   if (typeof window.HistoryManager !== 'undefined') {
     window.HistoryManager.recordAction('duplicate', {
-      layerName: newLayer.name,
-      originalName: selected.name,
-      action: 'Layer duplicated'
+      layerName: newLayers.length > 1 ? `${newLayers.length} Layers` : newLayers[0].name,
+      originalName: selectedLayers[0].name, // approximate
+      action: 'Layers duplicated'
     });
   }
 }
 
 function copySelectedLayers() {
-  if (!selected) return;
+  const selectedLayers = getSelectedLayers();
+  if (selectedLayers.length === 0) return;
+
   clipboardLayers.length = 0;
-  
-  const imgs = Array.from(selected.element.querySelectorAll('img'));
-  const src = imgs.map(i => i.src);
-  clipboardLayers.push({
-    name: selected.name,
-    src: src,
-    options: {
-      x: selected.x,
-      y: selected.y,
-      rotation: selected.rotation,
-      scale: selected.scale,
-      flipX: selected.isFlipX,
-      flipY: selected.isFlipY,
-      width: selected.width,
-      height: selected.height
-    }
+
+  selectedLayers.forEach(layer => {
+    const imgs = Array.from(layer.element.querySelectorAll('img'));
+    const src = imgs.map(i => i.src);
+    clipboardLayers.push({
+      name: layer.name,
+      src: src,
+      options: {
+        x: layer.x,
+        y: layer.y,
+        rotation: layer.rotation,
+        scale: layer.scale,
+        flipX: layer.isFlipX,
+        flipY: layer.isFlipY,
+        width: layer.width,
+        height: layer.height,
+        skewX: layer.skewX,
+        skewY: layer.skewY
+      }
+    });
   });
+  console.log(`Copied ${clipboardLayers.length} layers`);
 }
 
 function pasteCopiedLayers() {
   if (!clipboardLayers.length) return;
+
   const container = document.getElementById('panel1') || document.querySelector('.container');
+  const newLayers = [];
+
   clipboardLayers.forEach(data => {
-    const newLayer = new Layer(data.name + '_paste', data.src.slice(), data.options || {});
+    // Clone options to avoid reference issues
+    const opts = { ...(data.options || {}) };
+    opts.x = (opts.x || 0) + 20; // Offset paste
+    opts.y = (opts.y || 0) + 20;
+
+    // Pass everything valid to constructor options
+    const newLayer = new Layer(data.name + '_paste', data.src.slice(), opts);
+
+    // Manual property set if constructor misses them
+    if (opts.skewX) newLayer.skewX = opts.skewX;
+    if (opts.skewY) newLayer.skewY = opts.skewY;
+
     layers.push(newLayer);
+    newLayers.push(newLayer);
+
     // 🔥 USE UNIFIED API untuk multi-drag support
     attachLayerToPointerSystem(newLayer);
     renderLayer(newLayer); // Render the new layer
-    
-    // Record history
-    if (typeof window.HistoryManager !== 'undefined') {
-      window.HistoryManager.recordAction('paste', {
-        layerName: newLayer.name,
-        originalName: data.name,
-        action: 'Layer pasted'
-      });
-    }
   });
+
+  // Select pasted layers
+  if (window.selectorInstance) {
+    window.selectorInstance.clearSelection();
+    newLayers.forEach(l => {
+      l.element.classList.add('selected');
+      window.selectorInstance.selectedLayers.push(l);
+    });
+    if (newLayers.length > 0) {
+      selected = newLayers[0];
+      window.selected = selected;
+    }
+    updateCoordInput();
+  }
+
+  // Record history
+  if (typeof window.HistoryManager !== 'undefined') {
+    window.HistoryManager.recordAction('paste', {
+      layerName: newLayers.length > 1 ? `${newLayers.length} Layers` : newLayers[0].name,
+      action: 'Layers pasted'
+    });
+  }
 }
 
 /**
@@ -2753,7 +3074,7 @@ function openSettingsWindow() {
       document.getElementById('sfxVolumeSlider').value = Math.round(window.AudioSettings.sfxVolume * 100);
       document.getElementById('uiVolumeSlider').value = Math.round(window.AudioSettings.uiVolume * 100);
       document.getElementById('bgmSwitch').checked = !!window.AudioSettings.bgmEnabled;
-      
+
       // Update percentage displays
       document.getElementById('masterVolumePercentage').textContent = Math.round(window.AudioSettings.masterVolume * 100) + '%';
       document.getElementById('bgmVolumePercentage').textContent = Math.round(window.AudioSettings.bgmVolume * 100) + '%';
@@ -2762,52 +3083,52 @@ function openSettingsWindow() {
     }
 
     // Attach event listeners
-    document.getElementById('masterVolumeSlider')?.addEventListener('input', function(e) {
+    document.getElementById('masterVolumeSlider')?.addEventListener('input', function (e) {
       var val = e.target.value / 100;
       window.AudioSettings.masterVolume = val;
       document.getElementById('masterVolumePercentage').textContent = Math.round(val * 100) + '%';
       broadcastAudioSettings();
     });
 
-    document.getElementById('bgmVolumeSlider')?.addEventListener('input', function(e) {
+    document.getElementById('bgmVolumeSlider')?.addEventListener('input', function (e) {
       var val = e.target.value / 100;
       window.AudioSettings.bgmVolume = val;
       document.getElementById('bgmVolumePercentage').textContent = Math.round(val * 100) + '%';
       broadcastAudioSettings();
     });
 
-    document.getElementById('sfxVolumeSlider')?.addEventListener('input', function(e) {
+    document.getElementById('sfxVolumeSlider')?.addEventListener('input', function (e) {
       var val = e.target.value / 100;
       window.AudioSettings.sfxVolume = val;
       document.getElementById('sfxVolumePercentage').textContent = Math.round(val * 100) + '%';
       broadcastAudioSettings();
     });
 
-    document.getElementById('uiVolumeSlider')?.addEventListener('input', function(e) {
+    document.getElementById('uiVolumeSlider')?.addEventListener('input', function (e) {
       var val = e.target.value / 100;
       window.AudioSettings.uiVolume = val;
       document.getElementById('uiVolumePercentage').textContent = Math.round(val * 100) + '%';
       broadcastAudioSettings();
     });
 
-    document.getElementById('bgmSwitch')?.addEventListener('change', function(e) {
+    document.getElementById('bgmSwitch')?.addEventListener('change', function (e) {
       window.AudioSettings.bgmEnabled = !!e.target.checked;
       broadcastAudioSettings();
     });
 
     // BGM navigation
-    document.getElementById('prevStudioAudioBGM')?.addEventListener('click', function() {
+    document.getElementById('prevStudioAudioBGM')?.addEventListener('click', function () {
       document.dispatchEvent(new CustomEvent('changeStudioBGM', { detail: { direction: 'prev' } }));
       updateStudioBGMTitleInSettings();
     });
 
-    document.getElementById('nextStudioAudioBGM')?.addEventListener('click', function() {
+    document.getElementById('nextStudioAudioBGM')?.addEventListener('click', function () {
       document.dispatchEvent(new CustomEvent('changeStudioBGM', { detail: { direction: 'next' } }));
       updateStudioBGMTitleInSettings();
     });
 
     // Exit studio button
-    document.getElementById('exitStudioBtn')?.addEventListener('click', function() {
+    document.getElementById('exitStudioBtn')?.addEventListener('click', function () {
       console.log('studiopose.js: Exit studio button clicked');
       if (typeof window.openExitStudioDialog === 'function') {
         window.openExitStudioDialog();
@@ -2845,8 +3166,8 @@ function broadcastAudioSettings() {
   localStorage.setItem('sfxVolume', window.AudioSettings.sfxVolume);
   localStorage.setItem('uiVolume', window.AudioSettings.uiVolume);
   localStorage.setItem('bgmEnabled', window.AudioSettings.bgmEnabled);
-  document.dispatchEvent(new CustomEvent('audioSettingsChanged', { 
-    detail: Object.assign({}, window.AudioSettings) 
+  document.dispatchEvent(new CustomEvent('audioSettingsChanged', {
+    detail: Object.assign({}, window.AudioSettings)
   }));
 }
 
@@ -2895,96 +3216,96 @@ function openExitStudioDialog() {
  * @param {Layer} layer - Layer yang dipilih
  */
 function syncLayerSelectionAcrossAllPanels(layer) {
-    if (!layer) return;
-    
-    // Visual update Panel1
-    const allLayers = document.querySelectorAll('.layer, .layer-group');
-    allLayers.forEach(el => {
-        if (el === layer.element) {
-            el.classList.add('selected');
-        } else {
-            el.classList.remove('selected');
-        }
-    });
+  if (!layer) return;
 
-    // Update Panel2 inputs
-    updateCoordInput();
-    
-    // Update Panel3 framework display
-    if (window.frameworkDisplay && typeof window.frameworkDisplay.updateSelectionVisuals === 'function') {
-        window.frameworkDisplay.updateSelectionVisuals();
+  // Visual update Panel1
+  const allLayers = document.querySelectorAll('.layer, .layer-group');
+  allLayers.forEach(el => {
+    if (el === layer.element) {
+      el.classList.add('selected');
+    } else {
+      el.classList.remove('selected');
     }
+  });
 
-    // Update menulayer jika ada
-    if (typeof updateMenuLayerSelectionForMultiSelect === 'function') {
-        updateMenuLayerSelectionForMultiSelect();
-    }
+  // Update Panel2 inputs
+  updateCoordInput();
 
-    console.log('✅ Synced selection across panels:', layer.name);
+  // Update Panel3 framework display
+  if (window.frameworkDisplay && typeof window.frameworkDisplay.updateSelectionVisuals === 'function') {
+    window.frameworkDisplay.updateSelectionVisuals();
+  }
+
+  // Update menulayer jika ada
+  if (typeof updateMenuLayerSelectionForMultiSelect === 'function') {
+    updateMenuLayerSelectionForMultiSelect();
+  }
+
+  console.log('✅ Synced selection across panels:', layer.name);
 }
 
 /**
  * 🔥 NEW: Multi-select controller untuk Ctrl+A dan other bulk operations  
  */
 function selectAllLayersUnified() {
-    if (typeof layers === 'undefined') return;
+  if (typeof layers === 'undefined') return;
 
-    // Collect semua layers
-    const allLayersArray = [];
-    layers.forEach(l => {
-        if (l && l.element) {
-            l.element.classList.add('selected');
-            l.selected = true;
-            allLayersArray.push(l);
-        }
-    });
-
-    // Sync dengan selector.selectedLayers
-    const selector = window.selectorInstance;
-    if (selector && Array.isArray(selector.selectedLayers)) {
-        selector.selectedLayers = allLayersArray.slice();
+  // Collect semua layers
+  const allLayersArray = [];
+  layers.forEach(l => {
+    if (l && l.element) {
+      l.element.classList.add('selected');
+      l.selected = true;
+      allLayersArray.push(l);
     }
+  });
 
-    // Update selected parameter untuk panel2
-    if (allLayersArray.length > 0) {
-        selected = allLayersArray[0];
-        window.selected = selected;
-    }
+  // Sync dengan selector.selectedLayers
+  const selector = window.selectorInstance;
+  if (selector && Array.isArray(selector.selectedLayers)) {
+    selector.selectedLayers = allLayersArray.slice();
+  }
 
-    // Update all panel displays
-    if (typeof updateMenuLayerSelectionForMultiSelect === 'function') updateMenuLayerSelectionForMultiSelect();
-    if (typeof syncMultiSelectToFramework === 'function') syncMultiSelectToFramework();
-    if (typeof updateCoordInput === 'function') updateCoordInput();
+  // Update selected parameter untuk panel2
+  if (allLayersArray.length > 0) {
+    selected = allLayersArray[0];
+    window.selected = selected;
+  }
 
-    console.log('✅ Ctrl+A: All layers selected (' + allLayersArray.length + ') - Ready to drag immediately');
+  // Update all panel displays
+  if (typeof updateMenuLayerSelectionForMultiSelect === 'function') updateMenuLayerSelectionForMultiSelect();
+  if (typeof syncMultiSelectToFramework === 'function') syncMultiSelectToFramework();
+  if (typeof updateCoordInput === 'function') updateCoordInput();
+
+  console.log('✅ Ctrl+A: All layers selected (' + allLayersArray.length + ') - Ready to drag immediately');
 }
 
 /**
  * Deselect semua layer dan sync dengan selector
  */
 function deselectAllLayersUnified() {
-    if (typeof layers === 'undefined') return;
+  if (typeof layers === 'undefined') return;
 
-    layers.forEach(l => {
-        if (l && l.element) {
-            l.element.classList.remove('selected');
-            l.selected = false;
-        }
-    });
-
-    selected = null;
-    window.selected = null;
-
-    // Sync dengan selector
-    const selector = window.selectorInstance;
-    if (selector && Array.isArray(selector.selectedLayers)) {
-        selector.selectedLayers = [];
+  layers.forEach(l => {
+    if (l && l.element) {
+      l.element.classList.remove('selected');
+      l.selected = false;
     }
+  });
 
-    // Update displays
-    if (typeof syncDeselectionAcrossAllPanels === 'function') syncDeselectionAcrossAllPanels();
-    
-    console.log('✅ All layers deselected');
+  selected = null;
+  window.selected = null;
+
+  // Sync dengan selector
+  const selector = window.selectorInstance;
+  if (selector && Array.isArray(selector.selectedLayers)) {
+    selector.selectedLayers = [];
+  }
+
+  // Update displays
+  if (typeof syncDeselectionAcrossAllPanels === 'function') syncDeselectionAcrossAllPanels();
+
+  console.log('✅ All layers deselected');
 }
 
 /**
@@ -2992,7 +3313,7 @@ function deselectAllLayersUnified() {
  */
 function confirmExitStudio() {
   console.log('studiopose.js: Confirming exit from studio');
-  
+
   // Stop studio BGM
   if (typeof window.stopStudioBGMWithFade === 'function') {
     try {
@@ -3005,14 +3326,14 @@ function confirmExitStudio() {
   // Dispatch exit event
   try {
     document.dispatchEvent(new Event('studioExit'));
-  } catch (e) {}
+  } catch (e) { }
 
   // Navigate back to mainmenu
   setTimeout(() => {
     // Method 1: Using history.back() if available
     if (window.history && window.history.back) {
       window.history.back();
-    } 
+    }
     // Method 2: Navigate to mainmenu.html
     else if (window.location) {
       window.location.href = 'mainmenu.html';

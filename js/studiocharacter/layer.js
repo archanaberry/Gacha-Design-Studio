@@ -44,6 +44,11 @@ class Layer {
     #relativeX = 0; // Posisi relatif terhadap parent (hanya berlaku jika punya parent)
     #relativeY = 0; // Posisi relatif terhadap parent (hanya berlaku jika punya parent)
     #contentWrapper = null; // Wrapper untuk child agar terlindungi dari parent transform
+    #minX = 0; // Bounding box min X relative to layer origin
+    #minY = 0; // Bounding box min Y
+    #maxX = 0; // Bounding box max X
+    #maxY = 0; // Bounding box max Y
+    #hasFinalBounds = false; // Flag if bounds are calculated from loaded images
     options = {};
 
     constructor(name, src, options = {}, childLayers = []) {
@@ -69,6 +74,9 @@ class Layer {
             }
         });
 
+        // Initialize bounds based on property offsets immediately (naturalWidth unknown yet)
+        this.#initBoundsFromProperties();
+
         // Set initial options SEBELUM initElement agar color dan per-src properties siap
         if (options) {
             // Simpan options untuk referensi eksternal (selected.options dll.)
@@ -78,28 +86,28 @@ class Layer {
             if ('x' in options) this.#x = options.x; // Backward compatibility
             if ('posY' in options) this.#y = options.posY;
             if ('y' in options) this.#y = options.y; // Backward compatibility
-            
+
             // Transformasi
             if ('rotation' in options) this.#rotation = options.rotation;
             if ('rotate' in options) this.#rotation = options.rotate;
             if ('scale' in options) this.#scale = options.scale;
             if ('skewX' in options) this.#skewX = options.skewX;
             if ('skewY' in options) this.#skewY = options.skewY;
-            
+
             // Flip
             if ('flipX' in options) this.#flipX = options.flipX;
             if ('flipY' in options) this.#flipY = options.flipY;
-            
+
             // Ukuran
             if ('width' in options && !this.#width) this.#width = options.width;
             if ('height' in options && !this.#height) this.#height = options.height;
-            
+
             // Warna - parse color0, color1, color2, dst
             this.#parseColorOptions(options);
-            
+
             // Per-src properties - parse posX0, posY1, opacity2, dst
             this.#parseSrcProperties(options);
-            
+
             // Opacity
             if ('opacity' in options) {
                 // Expect value 0-1; if user provided 0-100, normalize
@@ -119,7 +127,7 @@ class Layer {
         if ('color' in options && options.color !== null) {
             this.#color = options.color;
         }
-        
+
         // Parse color per src (color0, color1, color2, dst)
         for (let i = 0; i < this.#src.length; i++) {
             const colorKey = `color${i}`;
@@ -151,12 +159,12 @@ class Layer {
             height: null,
             color: null
         };
-        
+
         for (let i = 0; i < this.#src.length; i++) {
             if (!this.#srcProperties[i]) {
                 this.#srcProperties[i] = {};
             }
-            
+
             // Parse setiap property dengan suffix nomor src, atau set default
             srcPropertyNames.forEach(prop => {
                 const keyWithSuffix = `${prop}${i}`;
@@ -178,12 +186,12 @@ class Layer {
         if (srcIndex in this.#srcProperties && propertyName in this.#srcProperties[srcIndex]) {
             return this.#srcProperties[srcIndex][propertyName];
         }
-        
+
         // Jika tidak ada per-src, gunakan global
         if (globalValue !== undefined && globalValue !== null) {
             return globalValue;
         }
-        
+
         // Terakhir gunakan default
         return defaultValue;
     }
@@ -191,17 +199,17 @@ class Layer {
     #getColorForSrc(index) {
         // Return warna spesifik untuk src, dengan precedence:
         // Per-Src Color (#srcProperties) > Per-Src Color (#srcColors) > Global Color
-        
+
         // Check di #srcProperties dulu (hasil dari #parseSrcProperties)
         if (index in this.#srcProperties && 'color' in this.#srcProperties[index]) {
             return this.#srcProperties[index]['color'];
         }
-        
+
         // Lalu check #srcColors (hasil dari #parseColorOptions - backward compat)
         if (index in this.#srcColors) {
             return this.#srcColors[index];
         }
-        
+
         // Terakhir gunakan global color
         return this.#color;
     }
@@ -219,7 +227,7 @@ class Layer {
             flipHorizontal: document.getElementById('flipHorizontal'),
             flipVertical: document.getElementById('flipVertical'),
         };
-    
+
         if (elements.layerName) elements.layerName.value = '';
         if (elements.xCoord) elements.xCoord.value = '';
         if (elements.yCoord) elements.yCoord.value = '';
@@ -230,7 +238,7 @@ class Layer {
         if (elements.rotationIndicator) elements.rotationIndicator.innerText = '0';
         if (elements.flipHorizontal) elements.flipHorizontal.checked = false;
         if (elements.flipVertical) elements.flipVertical.checked = false;
-    }    
+    }
 
     //
     #initElement() {
@@ -239,7 +247,19 @@ class Layer {
         this.element.classList.add('layer');
         // Ensure absolute positioning so child offsets are relative and bounds calc works
         this.element.style.position = 'absolute';
-        
+
+        // 🔥 Root Guard: Transparent div agar drag area akurat dan tidak "bolong"
+        const rootGuard = document.createElement('div');
+        rootGuard.classList.add('layer-guard');
+        rootGuard.style.position = 'absolute';
+        rootGuard.style.top = '0';
+        rootGuard.style.left = '0';
+        rootGuard.style.width = '100%';
+        rootGuard.style.height = '100%';
+        rootGuard.style.zIndex = '-1'; // Behind content
+        rootGuard.style.pointerEvents = 'auto';
+        this.element.appendChild(rootGuard);
+
         if (this.#childLayers.length > 0) {
             console.log(`[DEBUG] Layer "${this.#name}" has ${this.#childLayers.length} children - creating wrapper`);
             this.element.classList.add('layer-group');
@@ -271,36 +291,68 @@ class Layer {
         } else {
             console.log(`[DEBUG] Layer "${this.#name}" has no children - no wrapper needed`);
         }
-        
+
         let maxWidth = 0, maxHeight = 0;
         let imageDimensions = [];
-        
+
         this.#src.forEach((src, index) => {
             const imgElement = document.createElement('img');
             imgElement.draggable = false;
             imgElement.classList.add('src-item');
             imgElement.dataset.index = index; // Tambahkan indeks untuk identifikasi
-            
+
             // Set z-index berdasarkan urutan src untuk memastikan rendering order yang benar
             // src0 (index 0) = z-index 0, src1 (index 1) = z-index 1, dst
             imgElement.style.zIndex = index;
-            
+
             // Load image to get dimensions
             const img = new Image();
             img.onload = () => {
                 imageDimensions[index] = { width: img.naturalWidth, height: img.naturalHeight };
-                if (img.naturalWidth > maxWidth || img.naturalHeight > maxHeight) {
-                    maxWidth = Math.max(maxWidth, img.naturalWidth);
-                    maxHeight = Math.max(maxHeight, img.naturalHeight);
-                    // Auto-set layer dimensions ke largest image jika belum ada
-                    if (!this.#width) this.#width = maxWidth;
-                    if (!this.#height) this.#height = maxHeight;
+
+                // Get offsets for this src (EXTENT logic)
+                const offX = this.#getPropertyForSrc('posX', index, 0, 0);
+                const offY = this.#getPropertyForSrc('posY', index, 0, 0);
+
+                // Right/Bottom edges determine the required width/height relative to (0,0)
+                const rightEdge = offX + img.naturalWidth;
+                const bottomEdge = offY + img.naturalHeight;
+
+                // Update min/max tracker
+                if (!this.#hasFinalBounds) {
+                    this.#minX = offX;
+                    this.#minY = offY;
+                    this.#maxX = rightEdge;
+                    this.#maxY = bottomEdge;
+                    this.#hasFinalBounds = true;
+                } else {
+                    this.#minX = Math.min(this.#minX, offX);
+                    this.#minY = Math.min(this.#minY, offY);
+                    this.#maxX = Math.max(this.#maxX, rightEdge);
+                    this.#maxY = Math.max(this.#maxY, bottomEdge);
                 }
+
+                // Update container width/height only if not set manually
+                if (this.#width === null || this.#width === 0) {
+                    this.element.style.width = (this.#maxX - this.#minX) + 'px';
+                }
+                if (this.#height === null || this.#height === 0) {
+                    this.element.style.height = (this.#maxY - this.#minY) + 'px';
+                }
+
+                // Re-position images to compensate for shifted container origin
+                const allImgs = this.element.querySelectorAll('img.src-item');
+                allImgs.forEach((el, idx) => {
+                    this.#applySrcProperties(el, idx);
+                });
+
+                // Update container position
+                this.#updateElement();
             };
             img.onerror = () => {
                 console.warn(`Failed to load image: ${src}`);
             };
-            
+
             const colorForThis = this.#getColorForSrc(index);
             if (src.endsWith('.svg')) {
                 // Always fetch SVG to potentially recolor
@@ -308,21 +360,21 @@ class Layer {
                     // Jika ada warna untuk src ini, aplikasikan ke SVG menggunakan DOM parsing
                     if (colorForThis) {
                         console.log(`[Layer: ${this.#name}] src${index} - Applying color ${colorForThis}`);
-                        
+
                         // Debug: tampilkan SVG sebelum di-ubah
                         const beforeFills = (svgText.match(/fill\s*[:=]/gi) || []).length;
                         const beforeStrokes = (svgText.match(/stroke\s*[:=]/gi) || []).length;
                         const beforeStopColors = (svgText.match(/stop-color\s*[:=]/gi) || []).length;
                         console.log(`[Layer: ${this.#name}] src${index} BEFORE - Fill: ${beforeFills}, Stroke: ${beforeStrokes}, StopColor: ${beforeStopColors}`);
-                        
+
                         const recoloredSVG = this.#recolorSVG(svgText, colorForThis);
-                        
+
                         // Debug: count setelah perubahan
                         const afterFills = (recoloredSVG.match(/fill\s*[:=]/gi) || []).length;
                         const afterStrokes = (recoloredSVG.match(/stroke\s*[:=]/gi) || []).length;
                         const afterStopColors = (recoloredSVG.match(/stop-color\s*[:=]/gi) || []).length;
                         console.log(`[Layer: ${this.#name}] src${index} AFTER - Fill: ${afterFills}, Stroke: ${afterStrokes}, StopColor: ${afterStopColors}`);
-                        
+
                         svgText = recoloredSVG;
                     } else {
                         console.warn(`[Layer: ${this.#name}] src${index} - No color defined, using original`);
@@ -339,30 +391,40 @@ class Layer {
                 imgElement.src = src;
                 img.src = src; // Load untuk get dimensions
             }
-            
+
             // Append ke content wrapper jika group, atau ke element jika standalone
             const attachTarget = this.#contentWrapper || this.element;
             attachTarget.appendChild(imgElement);
             console.log(`[DEBUG] Image src${index} appended to ${this.#contentWrapper ? 'contentWrapper' : 'element'} for layer "${this.#name}"`);
-            
+
             // Terapkan per-src properties pada img element
             this.#applySrcProperties(imgElement, index);
-            
+
             // Tambahkan event listener untuk seleksi
             imgElement.addEventListener('click', (e) => {
-                // 🔥 CRITICAL: Check Ctrl key - if Ctrl, let it bubble to layer handler for multi-select!
+                // 🔥 CRITICAL modification for selection logic:
+                // If Ctrl key pressed, let it bubble to layer handler for multi-select (already handled).
+                // If layer is NOT selected, let it bubble to layer handler to select the layer first.
+                // If layer IS selected, stop propagation to handle sub-selection (specific image).
+
                 const isCtrl = e.ctrlKey || e.metaKey;
                 if (!isCtrl) {
-                    e.stopPropagation(); // Hindari seleksi layer utama (for normal click)
+                    // Always select the specific image part internally
                     this.#selectImage(index);
+
+                    // Only stop bubbling if we are already selected (sub-selection mode)
+                    if (this.selected) {
+                        e.stopPropagation();
+                    }
+                    // Otherwise, let bubble to layer.element to trigger SelectLayer()
                 }
-                // If Ctrl pressed, let click bubble up to layer.element handler to handle multi-select toggle
+                // Ctrl case bubbles automatically
             });
             // Terapkan opacity per src pada saat inisialisasi
             const opacityForSrc = this.#getPropertyForSrc('opacity', index, this.#opacity, 1);
             imgElement.style.opacity = opacityForSrc;
         });
-    
+
         // Inisialisasi child layers
         this.#childLayers.forEach(child => {
             // Attach child ke content wrapper (jika ada) agar terlindungi dari parent transform
@@ -370,9 +432,9 @@ class Layer {
             child.attach(attachTarget);
             console.log(`[DEBUG] Child layer "${child.name}" attached to ${this.#contentWrapper ? 'contentWrapper' : 'element'}`);
         });
-    }    
+    }
     //
-    
+
     //
     #applySrcProperties(imgElement, srcIndex) {
         /**
@@ -380,10 +442,10 @@ class Layer {
          * Ini memungkinkan setiap src punya positioning, scale, opacity berbeda
          */
         if (!imgElement || srcIndex === undefined) return;
-        
+
         // Create transform untuk src ini jika ada per-src properties
         const transforms = [];
-        
+
         // Check per-src transform properties
         const scaleForSrc = this.#getPropertyForSrc('scale', srcIndex, null, 1);
         const rotationForSrc = this.#getPropertyForSrc('rotation', srcIndex, null, 0);
@@ -391,45 +453,83 @@ class Layer {
         const skewYForSrc = this.#getPropertyForSrc('skewY', srcIndex, null, 0);
         const flipXForSrc = this.#getPropertyForSrc('flipX', srcIndex, null, false);
         const flipYForSrc = this.#getPropertyForSrc('flipY', srcIndex, null, false);
-        
+
         if (rotationForSrc !== 0) transforms.push(`rotate(${rotationForSrc}deg)`);
         if (scaleForSrc !== 1) transforms.push(`scale(${scaleForSrc})`);
         if (flipXForSrc) transforms.push('scaleX(-1)');
         if (flipYForSrc) transforms.push('scaleY(-1)');
         if (skewXForSrc !== 0) transforms.push(`skewX(${skewXForSrc}deg)`);
         if (skewYForSrc !== 0) transforms.push(`skewY(${skewYForSrc}deg)`);
-        
+
         if (transforms.length > 0) {
             imgElement.style.transform = transforms.join(' ');
         }
-        
+
         // Per-src positioning dengan offset
         const posXForSrc = this.#getPropertyForSrc('posX', srcIndex, null, null);
         const posYForSrc = this.#getPropertyForSrc('posY', srcIndex, null, null);
-        
+
         // Set position absolute untuk positioning relatif di dalam layer
         imgElement.style.position = 'absolute';
-        imgElement.style.left = (posXForSrc ?? 0) + 'px';
-        imgElement.style.top = (posYForSrc ?? 0) + 'px';
-        
+
+        // Adjust left/top by subtracting the container's relative origin (minX/minY)
+        // This ensures the container correctly encompasses images and the VISUAL position remains stable.
+        const adjLeft = (posXForSrc ?? 0) - this.#minX;
+        const adjTop = (posYForSrc ?? 0) - this.#minY;
+
+        imgElement.style.left = adjLeft + 'px';
+        imgElement.style.top = adjTop + 'px';
+
+        // Ukuran per-src (opsional)
+        const widthForSrc = this.#getPropertyForSrc('width', srcIndex, null, null);
+        const heightForSrc = this.#getPropertyForSrc('height', srcIndex, null, null);
+        if (widthForSrc !== null) imgElement.style.width = widthForSrc + 'px';
+        if (heightForSrc !== null) imgElement.style.height = heightForSrc + 'px';
+
         // Store per-src offset untuk digunakan di #updateElement
         imgElement.dataset.posXOffset = posXForSrc ?? 0;
         imgElement.dataset.posYOffset = posYForSrc ?? 0;
     }
-    
+
+    #initBoundsFromProperties() {
+        // Estimate bounds from property offsets if we haven't loaded images yet
+        let minX = 0, minY = 0, maxX = 0, maxY = 0;
+        let set = false;
+
+        for (let i = 0; i < this.#src.length; i++) {
+            const x = this.#getPropertyForSrc('posX', i, 0, 0);
+            const y = this.#getPropertyForSrc('posY', i, 0, 0);
+            if (!set) {
+                minX = maxX = x;
+                minY = maxY = y;
+                set = true;
+            } else {
+                minX = Math.min(minX, x);
+                minY = Math.min(minY, y);
+                maxX = Math.max(maxX, x); // widths unknown yet
+                maxY = Math.max(maxY, y);
+            }
+        }
+
+        this.#minX = minX;
+        this.#minY = minY;
+        this.#maxX = maxX;
+        this.#maxY = maxY;
+    }
+
     //
     #selectSrc(imgElement, index) {
-    // Hapus seleksi pada semua elemen src (gunakan class baru `item-selected`)
-    this.element.querySelectorAll('.src-item').forEach(img => {
-        img.classList.remove('item-selected');
-        img.dataset.selected = 'false';
-    });
+        // Hapus seleksi pada semua elemen src (gunakan class baru `item-selected`)
+        this.element.querySelectorAll('.src-item').forEach(img => {
+            img.classList.remove('item-selected');
+            img.dataset.selected = 'false';
+        });
 
-    // Tandai elemen yang dipilih
-    imgElement.classList.add('item-selected');
-    imgElement.dataset.selected = 'true';
-    console.log(`Selected src at index ${index} for layer "${this.#name}"`);
-}
+        // Tandai elemen yang dipilih
+        imgElement.classList.add('item-selected');
+        imgElement.dataset.selected = 'true';
+        console.log(`Selected src at index ${index} for layer "${this.#name}"`);
+    }
     //
 
     #updateElement() {
@@ -437,11 +537,11 @@ class Layer {
             console.warn('Element is not defined for layer:', this.#name);
             return; // Keluar jika elemen tidak ada
         }
-    
+
         // Jika ini child layer, gunakan relative position; jika root, gunakan absolute + render offset
         let posX = this.#x;
         let posY = this.#y;
-        
+
         if (this.#parentLayer) {
             // Child layer: gunakan relative offset terhadap parent
             posX = this.#relativeX;
@@ -458,11 +558,18 @@ class Layer {
             posX += offsetX;
             posY += offsetY;
         }
-        
+
+        // 🔥 Correct visual position to account for the internal minX/minY offset
+        // We want the layer's origin (baseX, baseY) to correspond to (0,0) in the property coordinate system.
+        // Since the container physically starts at minX/minY relative to (0,0), we must add those offsets here.
+        // This applies to BOTH root and child layers.
+        posX += this.#minX;
+        posY += this.#minY;
+
         // Atur posisi elemen utama
         this.element.style.left = posX + 'px'; // Posisi horizontal
         this.element.style.top = posY + 'px'; // Posisi vertikal
-        
+
         // Jika ini adalah grouped layer, hitung bounding box dari children
         if (this.#childLayers.length > 0) {
             const bounds = this.#calculateGroupBounds();
@@ -476,7 +583,7 @@ class Layer {
             this.element.style.pointerEvents = 'auto';
             // Set transform-origin ke top-left (0, 0) agar child positioning tidak terganggu
             this.element.style.transformOrigin = '0px 0px';
-            
+
             // Update content wrapper sizing dan control pointer-events
             if (this.#contentWrapper) {
                 this.#contentWrapper.style.width = bounds.width + 'px';
@@ -493,17 +600,18 @@ class Layer {
             this.element.style.pointerEvents = 'auto';
             this.element.style.transformOrigin = '0px 0px';
         }
-    
+
         // Cari elemen gambar di dalam elemen utama (hanya untuk non-grouped layers)
         if (this.#childLayers.length === 0) {
             const imgElements = this.element.querySelectorAll('img.src-item');
-        
+
             // Periksa keberadaan imgElements sebelum mengakses style-nya
             if (imgElements && imgElements.length > 0) {
                 imgElements.forEach((imgElement, index) => {
-                    if (this.#width) imgElement.style.width = this.#width + 'px';
-                    if (this.#height) imgElement.style.height = this.#height + 'px';
-                    
+                    // 🔥 JANGAN paksa width/height layer ke semua image!
+                    // Image harus punya ukurannya sendiri kecuali user specify per-src width.
+                    // Baris ini dihapus karena merusak proporsi gambar individual di multi-src layer.
+
                     // Update per-src properties jika ada perubahan
                     this.#applySrcProperties(imgElement, index);
                 });
@@ -511,7 +619,7 @@ class Layer {
                 console.warn('Image element not found in layer:', this.#name);
             }
         }
-    
+
         // Terapkan transformasi (rotasi, skala, flip, skew)
         // Terapkan opacity
         this.element.style.opacity = this.#opacity;
@@ -525,14 +633,14 @@ class Layer {
         if (this.#skewX !== 0) transforms.push(`skewX(${this.#skewX}deg)`);
         if (this.#skewY !== 0) transforms.push(`skewY(${this.#skewY}deg)`);
         this.element.style.transform = transforms.join(' ');
-    
+
         // Perbarui label nama layer
         const nameLabel = this.element.querySelector('.layer-name');
         if (nameLabel) {
             nameLabel.textContent = this.#name;
         }
     }
-    
+
     #calculateGroupBounds() {
         // Hitung bounding box dari semua child layers untuk menentukan ukuran & posisi grup
         let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -543,21 +651,25 @@ class Layer {
             // Gunakan relativeX/Y jika child punya parent, atau x/y jika tidak
             const x = child.#parentLayer ? child.#relativeX : child.#x;
             const y = child.#parentLayer ? child.#relativeY : child.#y;
-            const width = child.element.clientWidth || child.width || child.element.offsetWidth || 0;
-            const height = child.element.clientHeight || child.height || child.element.offsetHeight || 0;
 
-            minX = Math.min(minX, x);
-            minY = Math.min(minY, y);
-            maxX = Math.max(maxX, x + width);
-            maxY = Math.max(maxY, y + height);
+            // Adjust bounds based on child's internal tracked min/max
+            const childMinX = x + (child.minX || 0);
+            const childMinY = y + (child.minY || 0);
+            const childMaxX = x + (child.maxX || 0);
+            const childMaxY = y + (child.maxY || 0);
+
+            minX = Math.min(minX, childMinX);
+            minY = Math.min(minY, childMinY);
+            maxX = Math.max(maxX, childMaxX);
+            maxY = Math.max(maxY, childMaxY);
         });
-        
+
         // Pastikan bounds valid
         if (minX === Infinity) minX = 0;
         if (minY === Infinity) minY = 0;
         if (maxX === -Infinity) maxX = 0;
         if (maxY === -Infinity) maxY = 0;
-        
+
         return {
             x: minX,
             y: minY,
@@ -572,56 +684,56 @@ class Layer {
             // Gunakan metode publik untuk memanggil pembaruan elemen
             this.#parentLayer.updateElement();
         }
-    }   
-    
+    }
+
     #selectImage(index) {
         // Reset seleksi semua gambar dalam layer
         this.element.querySelectorAll('.src-item').forEach(img => {
             img.classList.remove('item-selected');
             img.dataset.selected = 'false';
         });
-    
+
         // Tandai gambar yang dipilih
         const selectedImage = this.element.querySelector(`.src-item[data-index="${index}"]`);
         if (selectedImage) {
             selectedImage.classList.add('item-selected');
             selectedImage.dataset.selected = 'true';
         }
-    
+
         // Simpan status seleksi jika diperlukan
         this.#selectedImageIndex = index;
-    
-        console.log(`Image ${index} selected in layer "${this.#name}"`);
-    }    
 
-    
+        console.log(`Image ${index} selected in layer "${this.#name}"`);
+    }
+
+
 
     get name() {
         return this.#name;
     }
-    
+
     get x() {
         // Return posisi yang sesuai konteks: relative jika punya parent, absolute jika root
         return this.#parentLayer ? this.#relativeX : this.#x;
     }
-    
+
     get y() {
         // Return posisi yang sesuai konteks: relative jika punya parent, absolute jika root
         return this.#parentLayer ? this.#relativeY : this.#y;
     }
-    
+
     get rotation() {
         return this.#rotation;
     }
-    
+
     get scale() {
         return this.#scale;
     }
-    
+
     get isFlipX() {
         return this.#flipX;
     }
-    
+
     get isFlipY() {
         return this.#flipY;
     }
@@ -633,6 +745,11 @@ class Layer {
     get skewY() {
         return this.#skewY;
     }
+
+    get minX() { return this.#minX; }
+    get minY() { return this.#minY; }
+    get maxX() { return this.#maxX; }
+    get maxY() { return this.#maxY; }
 
     get selectedImageIndex() {
         return this.#selectedImageIndex;
@@ -653,7 +770,7 @@ class Layer {
         this.#updateElement(); // Perbarui posisi elemen DOM
         this.#notifyParentUpdate(); // Beritahu parent jika ada
     }
-    
+
     set y(value) {
         if (this.#parentLayer) {
             // Jika punya parent, update relative position
@@ -665,22 +782,22 @@ class Layer {
         this.#updateElement(); // Perbarui posisi elemen DOM
         this.#notifyParentUpdate(); // Beritahu parent jika ada
     }
-    
+
     set rotation(value) {
         this.#rotation = value;
         this.#updateElement(); // Perbarui rotasi elemen DOM
     }
-    
+
     set scale(value) {
         this.#scale = value;
         this.#updateElement(); // Perbarui skala elemen DOM
     }
-    
+
     set flipX(value) {
         this.#flipX = value;
         this.#updateElement(); // Perbarui status flipX elemen DOM
     }
-    
+
     set flipY(value) {
         this.#flipY = value;
         this.#updateElement(); // Perbarui status flipY elemen DOM
@@ -703,7 +820,7 @@ class Layer {
 
     get srcColors() {
         return this.#srcColors;
-    }      
+    }
 
     get src() {
         return this.#src;
@@ -796,6 +913,37 @@ class Layer {
             this.options[`posY${index}`] = this.#srcProperties[index].posY;
             this.#updateElement();
         }
+    }
+
+    /**
+     * Update layer options secara dinamis dan re-parse properties
+     * Penting untuk TextShapeManager yang mengubah struktur src/options
+     */
+    updateOptions(newOptions) {
+        if (!newOptions) return;
+
+        // Merge options
+        this.options = Object.assign(this.options || {}, newOptions);
+
+        // Update basic properties if present
+        if ('name' in newOptions) this.#name = newOptions.name;
+        if ('x' in newOptions) this.x = newOptions.x;
+        if ('y' in newOptions) this.y = newOptions.y;
+        if ('rotation' in newOptions) this.rotation = newOptions.rotation;
+        if ('scale' in newOptions) this.scale = newOptions.scale;
+        if ('skewX' in newOptions) this.skewX = newOptions.skewX;
+        if ('skewY' in newOptions) this.skewY = newOptions.skewY;
+
+        // Update dimensions if present (allow null to reset)
+        if ('width' in newOptions) this.width = newOptions.width;
+        if ('height' in newOptions) this.height = newOptions.height;
+
+        // Re-parse complex properties
+        this.#parseColorOptions(this.options);
+        this.#parseSrcProperties(this.options);
+
+        // Force update visual
+        this.#updateElement();
     }
 
     set width(value) {
@@ -992,25 +1140,25 @@ class Layer {
         try {
             // APPROACH 1: Smart regex replacement untuk solid colors di fill/stroke
             // Pattern: cari fill="COLOR" atau stroke="COLOR" tapi SKIP url(#...) references
-            
+
             let modified = svgText;
-            
+
             // 1. Replace fill attributes yang bukan reference (url)
             modified = modified.replace(/fill="(?!url|none|currentColor)([^"]*)"/gi, `fill="${newColor}"`);
-            
+
             // 2. Replace stroke attributes yang bukan reference (url)  
             modified = modified.replace(/stroke="(?!url|none|currentColor)([^"]*)"/gi, `stroke="${newColor}"`);
-            
+
             // 3. Replace fill dalam inline styles
             modified = modified.replace(/fill:\s*(?!url|none|currentColor)([^;]+)/gi, `fill: ${newColor}`);
-            
+
             // 4. Replace stroke dalam inline styles
             modified = modified.replace(/stroke:\s*(?!url|none|currentColor)([^;]+)/gi, `stroke: ${newColor}`);
-            
+
             // 5. Replace stop-color untuk gradasi
             modified = modified.replace(/stop-color="(?!url|none|currentColor)([^"]*)"/gi, `stop-color="${newColor}"`);
             modified = modified.replace(/stop-color:\s*(?!url|none|currentColor)([^;]+)/gi, `stop-color: ${newColor}`);
-            
+
             console.log(`[Layer: ${this.#name}] SVG recolored with regex approach - target color ${newColor}`);
             return modified;
         } catch (error) {
