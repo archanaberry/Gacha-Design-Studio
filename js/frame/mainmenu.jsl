@@ -1,7 +1,7 @@
 /* frame/mainmenu.js
    Simple fallback UI to show when resources missing
 */
-(function(){
+(function () {
   window.FrameMainMenu = {
     init(container) {
       container.style.padding = '20px';

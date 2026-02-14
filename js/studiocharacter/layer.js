@@ -261,35 +261,21 @@ class Layer {
         this.element.appendChild(rootGuard);
 
         if (this.#childLayers.length > 0) {
-            console.log(`[DEBUG] Layer "${this.#name}" has ${this.#childLayers.length} children - creating wrapper`);
             this.element.classList.add('layer-group');
-            // Create content wrapper untuk protect child dari parent transform
-            const contentWrapper = document.createElement('div');
-            contentWrapper.classList.add('layer-group-content');
-            contentWrapper.style.position = 'absolute';
-            contentWrapper.style.left = '0px';
-            contentWrapper.style.top = '0px';
-            contentWrapper.style.width = '100%';
-            contentWrapper.style.height = '100%';
-            contentWrapper.style.pointerEvents = 'none'; // Default: block pointer until selected
+            // Create content wrapper for protection from parent transforms
+            this.#contentWrapper = document.createElement('div');
+            this.#contentWrapper.className = 'layer-group-content';
+            this.#contentWrapper.style.position = 'absolute';
+            this.#contentWrapper.style.left = '0px';
+            this.#contentWrapper.style.top = '0px';
+            this.#contentWrapper.style.width = '100%';
+            this.#contentWrapper.style.height = '100%';
+            this.#contentWrapper.style.pointerEvents = 'none';
+            this.element.appendChild(this.#contentWrapper);
 
-            // Group innerchild secara eksplisit
-            this.#childLayers.forEach(child => {
-                const childGroup = document.createElement('div');
-                childGroup.classList.add('innerchild-group');
-                childGroup.style.position = 'absolute';
-                childGroup.style.left = `${child.offsetLeft}px`;
-                childGroup.style.top = `${child.offsetTop}px`;
-                childGroup.appendChild(child.element);
-                contentWrapper.appendChild(childGroup);
-            });
-
-            // Store wrapper reference untuk anak di-attach ke sini
-            this.#contentWrapper = contentWrapper;
-            this.element.appendChild(contentWrapper);
-            console.log(`[DEBUG] Content wrapper created for layer "${this.#name}"`);
-        } else {
-            console.log(`[DEBUG] Layer "${this.#name}" has no children - no wrapper needed`);
+            // Children will be attached to #contentWrapper in the attach() method
+            // which is called recursively. We don't append them here anymore
+            // to avoid double appending or using unreliable offsetLeft values.
         }
 
         let maxWidth = 0, maxHeight = 0;
@@ -710,6 +696,14 @@ class Layer {
 
     get name() {
         return this.#name;
+    }
+
+    set parentLayer(value) {
+        this.#parentLayer = value;
+    }
+
+    get parentLayer() {
+        return this.#parentLayer;
     }
 
     get x() {

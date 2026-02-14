@@ -7,8 +7,8 @@
 // ✅ Loading screen tetap ada & otomatis hilang
 // ✅ splitter.js tetap bisa drag dari posisi initial ini (persis seperti HTML asli jika ada initial di sana)
 (function () {
-  // ========== FULL HTML STRING ==========
-  const fullHTML = `<!DOCTYPE html>
+    // ========== FULL HTML STRING ==========
+    const fullHTML = `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -286,8 +286,8 @@
         
         <br>
         <button id="toggleSelectorBtn">Nyalakan Seleksi</button>
-        <button id="groupBtn" onclick="groupSelectedLayer()">Grupkan</button>
-        <button id="ungroupBtn" onclick="ungroupSelectedLayer()">Pisahkan Grup</button>
+        <button id="groupBtn" onclick="groupSelectedLayers()">Grupkan</button>
+        <button id="ungroupBtn" onclick="ungroupSelectedLayers()">Pisahkan Grup</button>
         <button id="ungroupSrcBtn" onclick="ungroupSrcLayers()">Pisahkan Src</button>
         <button id="mergeBtn" onclick="mergeSelectedLayersSrc()">Gabung Src</button>
         <button id="duplicateBtn" onclick="duplicateSelectedLayers()">Duplikasi</button>
@@ -687,39 +687,39 @@
     </script>
 </html>`;
 
-  // ========== INIT FUNCTION ==========
-  function init(container) {
-    container.innerHTML = '';
+    // ========== INIT FUNCTION ==========
+    function init(container) {
+        container.innerHTML = '';
 
-    const iframe = document.createElement('iframe');
-    iframe.style.position = 'absolute';
-    iframe.style.top = '0';
-    iframe.style.left = '0';
-    iframe.style.width = '100%';
-    iframe.style.height = '100%';
-    iframe.style.border = 'none';
-    iframe.style.background = 'white';
+        const iframe = document.createElement('iframe');
+        iframe.style.position = 'absolute';
+        iframe.style.top = '0';
+        iframe.style.left = '0';
+        iframe.style.width = '100%';
+        iframe.style.height = '100%';
+        iframe.style.border = 'none';
+        iframe.style.background = 'white';
 
-    iframe.srcdoc = fullHTML;
+        iframe.srcdoc = fullHTML;
 
-    container.appendChild(iframe);
+        container.appendChild(iframe);
 
-    // Simpan referensi iframe untuk akses dari parent
-    window.studioIframe = iframe;
+        // Simpan referensi iframe untuk akses dari parent
+        window.studioIframe = iframe;
 
-    const cleanup = () => {
-      if (iframe.parentNode) iframe.remove();
-      window.removeEventListener('studiooverlay:hide', cleanup);
-    };
-    window.addEventListener('studiooverlay:hide', cleanup);
-  }
+        const cleanup = () => {
+            if (iframe.parentNode) iframe.remove();
+            window.removeEventListener('studiooverlay:hide', cleanup);
+        };
+        window.addEventListener('studiooverlay:hide', cleanup);
+    }
 
-  // ========== REGISTER ==========
-  if (typeof window.registerStudioFrame === 'function') {
-    window.registerStudioFrame('studiopose', init);
-  } else {
-    window.__pendingStudioPose = init;
-  }
+    // ========== REGISTER ==========
+    if (typeof window.registerStudioFrame === 'function') {
+        window.registerStudioFrame('studiopose', init);
+    } else {
+        window.__pendingStudioPose = init;
+    }
 
-  console.log('✓ Studio Pose Frame (iframe) ready!');
+    console.log('✓ Studio Pose Frame (iframe) ready!');
 })();

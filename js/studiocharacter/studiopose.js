@@ -2632,30 +2632,28 @@ function ungroupSrcLayers() {
  * Bisa handle single selection atau multi-selection dari selector
  */
 function groupSelectedLayers() {
-  const container = document.getElementById('panel1') || document.querySelector('.container');
+  const container = document.getElementById('panel1-layercontainer') || document.getElementById('panel1') || document.querySelector('.container');
 
   // Cek apakah ada multi-selection dari selector
   const layersToGroup = getSelectedLayers();
 
   if (layersToGroup.length === 0) return;
 
-  // Hitung bounding box untuk group
-  // Kita perlu mencari minX, minY, maxX, maxY dari semua layer
+  // Hitung bounding box untuk group menggunakan tracked bounds (minX, minY, dst.)
   let minX = Infinity, minY = Infinity;
   let maxX = -Infinity, maxY = -Infinity;
 
   layersToGroup.forEach(l => {
-    // Get bounding rect logic
-    // Note: l.x, l.y are top/left. We need width/height for right/bottom.
-    const x = l.x || 0;
-    const y = l.y || 0;
-    const w = l.element ? l.element.offsetWidth : (l.width || 0);
-    const h = l.element ? l.element.offsetHeight : (l.height || 0);
+    // Posisi visual murni: layer.x + layer.minX
+    const lMinX = (l.x || 0) + (l.minX || 0);
+    const lMinY = (l.y || 0) + (l.minY || 0);
+    const lMaxX = (l.x || 0) + (l.maxX || 0);
+    const lMaxY = (l.y || 0) + (l.maxY || 0);
 
-    if (x < minX) minX = x;
-    if (y < minY) minY = y;
-    if ((x + w) > maxX) maxX = x + w;
-    if ((y + h) > maxY) maxY = y + h;
+    if (lMinX < minX) minX = lMinX;
+    if (lMinY < minY) minY = lMinY;
+    if (lMaxX > maxX) maxX = lMaxX;
+    if (lMaxY > maxY) maxY = lMaxY;
   });
 
   // Jika infinity (misal element belum render atau 0 size), fallback ke 0
@@ -2670,15 +2668,19 @@ function groupSelectedLayers() {
   const groupName = `Group (${layersToGroup.length})`;
 
   // Reset posisi children relative terhadap group
+  // globalX = layer.x + layer.minX
+  // relativeOffset = globalX - groupOriginX (minX)
+  // layer.x = relativeOffset - layer.minX
+  // Simplified: layer.x = (layer.x + layer.minX - minX) - layer.minX = layer.x - minX 
+  // Tunggu, layer.x setter di Layer.js akan menampung posisi origin.
+  // Origin (0,0) di layer property space harus bergeser sebesar (layer.x - minX)
   const childrenForGroup = layersToGroup.map(layer => {
-    // Simpan posisi global saat ini
-    const globalX = layer.x || 0;
-    const globalY = layer.y || 0;
+    const oldX = layer.x || 0;
+    const oldY = layer.y || 0;
 
-    // Hitung posisi relative
-    // child.relativeX = child.globalX - group.globalX
-    layer.x = globalX - minX;
-    layer.y = globalY - minY;
+    // child.x = globalPosition - groupOrigin
+    layer.x = oldX - minX;
+    layer.y = oldY - minY;
 
     return layer;
   });
@@ -2689,14 +2691,9 @@ function groupSelectedLayers() {
     if (index > -1) {
       layers.splice(index, 1);
     }
-    // Detach from DOM karena akan di-attach ulang ke dalam grup
-    if (layer.element && layer.element.parentNode) {
-      layer.element.parentNode.removeChild(layer.element);
-    }
   });
 
   // Buat grup baru menggunakan class Layer
-  // Parameter: name, src (empty array), options (x, y, width, height), childLayers
   const newGroup = new Layer(groupName, [], {
     x: minX,
     y: minY,
@@ -2704,17 +2701,11 @@ function groupSelectedLayers() {
     height: groupH
   }, childrenForGroup);
 
-  // Attach new group to unified pointer system
-  attachLayerToPointerSystem(newGroup);
-
   // Tambahkan grup ke global layers
   layers.push(newGroup);
 
-  // Attach group ke container
-  // Note: Layer constructor might not attach automatically if we handle it manually
-  if (newGroup.element && !newGroup.element.parentElement) {
-    container.appendChild(newGroup.element);
-  }
+  // Attach new group properly (ini akan set parent reference ke children secara rekursif)
+  attachLayerToPointerSystem(newGroup);
 
   // Pilih grup baru
   selectLayer(newGroup);
@@ -2754,12 +2745,20 @@ function ungroupSelectedLayers() {
     const groupY = groupLayer.y || 0;
 
     // Ambil semua child dan hitung posisi absolutnya
-    // child.globalX = group.globalX + child.relativeX
     const children = [...groupLayer.childLayers]; // copy array
 
     const restoredChildren = children.map(child => {
-      child.x = groupX + (child.x || 0);
-      child.y = groupY + (child.y || 0);
+      // Hitung global position sebelum clearing parent
+      const globalX = groupX + (child.x || 0);
+      const globalY = groupY + (child.y || 0);
+
+      // Clear parent reference agar setter layer.x/y tidak lagi mengupdate relativeX/Y
+      child.parentLayer = null;
+
+      // Set global positions
+      child.x = globalX;
+      child.y = globalY;
+
       return child;
     });
 
@@ -2774,18 +2773,9 @@ function ungroupSelectedLayers() {
     }
 
     // Masukkan children kembali ke global layers
-    // Kita masukkan di posisi group index agar urutan layer terjaga
-    // Tapi karena kita loop, index bisa bergeser. Simplify dengan push/splice carefully.
-    // Sederhananya, insert di tempat group berada
-
-    // Note: splice in a loop modifies array length, so we rely on groupIndex which is fresh
     restoredChildren.forEach((child, idx) => {
       layers.splice(groupIndex + idx, 0, child);
-      // Attach to global container
-      if (container && child.element) {
-        container.appendChild(child.element);
-      }
-      // Attach to pointer system
+      // Re-attach to global container (this will also update its internals since parent is now null)
       attachLayerToPointerSystem(child);
     });
   });
