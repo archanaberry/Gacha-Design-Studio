@@ -100,6 +100,9 @@
     const panel3 = document.getElementById('panel3');
     const splitter = document.getElementById('splitter');
 
+    // 🔥 Fix: Jika selector aktif atau baru selesai drag, abaikan deselect global
+    if (window.__selectorActive || window.justFinishedDrag) return;
+
     // 🔥 CRITICAL: Check if Ctrl is pressed - if so, skip ALL deselect logic to allow multi-select!
     const isCtrl = e.ctrlKey || e.metaKey;
     if (isCtrl) {
@@ -126,7 +129,10 @@
     if (panel1 && panel1.contains(e.target)) {
       const layerEl = e.target.closest('.layer, .layer-group');
       if (!layerEl) {
-        // Only deselect if clicked truly empty area, not on a layer element
+        // 🔥 Fix: Check if we just finished a drag. If it was a real drag, maybe ignore the sync click.
+        // But for background "deselect" click, we usually want it to work.
+        // If the user says it takes "two clicks", the first one might be ignored by a flag.
+
         console.log('🏜️ Clicked empty area in panel1');
         deselectAllLayers();
         if (typeof window.updateLayerNameInputFromSelection === 'function') window.updateLayerNameInputFromSelection();

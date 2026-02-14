@@ -164,10 +164,12 @@ input {
     pointer-events: none;
 }
 
+/*
 .layer-group.selected {
     border: 1px solid red !important;
     pointer-events: auto;
 }
+*/
 
 .layer > :not(:first-child) {
     position: absolute;

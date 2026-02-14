@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Advanced Layer Manager — Responsive</title>
+    <style>
+        :root {
+            --border-color: #333;
+            --bg-color: #fff;
+            --item-size: 45px;
+            --folder-bg: #e8f0fe;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            padding: 10px;
+            background: #f0f0f0;
+            touch-action: manipulation;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+        }
+
+        /* MAIN CONTAINER: responsive width, tetap mempertahankan max-width default */
+        .main-container {
+            width: calc(100% - 20px);
+            max-width: 500px;
+            margin: auto;
+            border: 2px solid var(--border-color);
+            background: var(--bg-color);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            border-radius: 8px;
+            transition: max-width 0.18s ease, transform 0.18s ease;
+        }
+
+        /* Header Utama */
+        .header {
+            display: flex; align-items: center; padding: 12px;
+            background: #fff; border-bottom: 2px solid var(--border-color);
+            cursor: pointer; z-index: 20;
+        }
+        .icon-box { border: 1px solid #000; padding: 2px 6px; margin-right: 10px; font-weight: bold; }
+        .title { flex-grow: 1; font-weight: bold; }
+        .arrow-main {
+            width: 0; height: 0; border-left: 6px solid transparent;
+            border-right: 6px solid transparent; border-top: 8px solid black;
+            transition: transform 0.24s;
+        }
+        .main-container.open .arrow-main { transform: rotate(180deg); }
+
+        /* Grid Section (10x3) */
+        .grid-wrapper {
+            max-height: 165px; transition: max-height 0.32s ease, opacity 0.28s ease;
+            overflow-x: auto; background: #fff;
+        }
+        .main-container.open .grid-wrapper { max-height: 0; opacity: 0; pointer-events: none; }
+
+        .grid-content {
+            display: grid; grid-template-rows: repeat(3, var(--item-size));
+            grid-auto-flow: column; gap: 4px; padding: 10px; width: max-content;
+            transition: gap 0.18s, padding 0.18s;
+        }
+
+        /* Compact grid only (rapatkan ketika grid tampil / aktif) */
+        .grid-content.compact {
+            gap: 2px;
+            padding: 6px;
+            --item-size: 36px; /* lokal override untuk ukuran item */
+        }
+
+        .grid-item {
+            width: var(--item-size); height: var(--item-size);
+            background: #f9f9f9; border: 1px solid #ccc;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 11px; user-select: none;
+            border-radius: 4px;
+        }
+
+        /* Layer List Section */
+        .layer-wrapper {
+            max-height: 0; opacity: 0; transition: max-height 0.36s ease, opacity 0.28s ease, padding 0.18s;
+            overflow-y: auto; background: #fafafa;
+            pointer-events: none;
+        }
+        .main-container.open .layer-wrapper { max-height: 600px; opacity: 1; pointer-events: auto; }
+
+        /* compact untuk layer wrapper (aktif kalau layer < 10) */
+        .layer-wrapper.compact { padding: 6px; }
+
+        .layer-list { padding: 8px; position: relative; }
+
+        /* Item Row Style */
+        .item-row {
+            display: flex; align-items: center; padding: 10px;
+            margin-bottom: 6px; background: #fff; border: 1px solid #ddd;
+            border-radius: 4px; user-select: none; touch-action: pan-y;
+            transition: padding 0.14s, margin-bottom 0.14s, transform 0.12s;
+        }
+        .item-row.dragging {
+            opacity: 0.75; background: #d1e7ff; box-shadow: 0 6px 16px rgba(0,0,0,0.18);
+            z-index: 1000; position: relative;
+        }
+
+        /* Compact layer rows style */
+        .layer-wrapper.compact .item-row {
+            padding: 6px;
+            margin-bottom: 4px;
+            font-size: 13px;
+        }
+        .layer-wrapper.compact .item-row .handle { padding: 6px 10px; }
+
+        /* Folder Specific */
+        .folder-item { background: var(--folder-bg); font-weight: bold; border-left: 4px solid #1a73e8; }
+        .folder-toggle {
+            cursor: pointer; margin-right: 8px; font-size: 10px;
+            transition: transform 0.18s; display: inline-block;
+        }
+        .folder-item.collapsed + .nested-group { display: none; }
+        .folder-item.collapsed .folder-toggle { transform: rotate(-90deg); }
+
+        /* Nesting Group */
+        .nested-group { margin-left: 25px; border-left: 1px dashed #ccc; padding-left: 8px; }
+        .is-nested { margin-left: 5px; background: #fff; }
+
+        .layer-icon { margin-right: 10px; }
+        .layer-name { flex-grow: 1; pointer-events: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        /* Hamburger Handle */
+        .handle {
+            cursor: grab; padding: 5px 12px; font-size: 18px;
+            color: #666; background: #f0f0f0; border-radius: 3px;
+            margin-left: 8px;
+        }
+        .handle:active { cursor: grabbing; }
+
+        /* Small screens: hide icon to save space */
+        @media (max-width: 420px) {
+            .icon-box { display: none; }
+            .header { padding: 8px; }
+            .title { font-size: 14px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="main-container" id="widget">
+    <div class="header" id="headerToggle">
+        <div class="icon-box">☰</div>
+        <div class="title">ALL LAYERS</div>
+        <div class="arrow-main"></div>
+    </div>
+
+    <div class="grid-wrapper" id="gridWrapper">
+        <div class="grid-content" id="gridContent"></div>
+    </div>
+
+    <div class="layer-wrapper" id="layerWrapper">
+        <div class="layer-list" id="layerList">
+            <div class="item-row folder-item" data-type="folder" id="f1">
+                <span class="folder-toggle">▼</span>
+                <span class="layer-icon">📁</span>
+                <span class="layer-name">Folder Background</span>
+                <span class="handle">☰</span>
+            </div>
+            <div class="nested-group" id="g1"></div>
+
+            <div class="item-row folder-item" data-type="folder" id="f2">
+                <span class="folder-toggle">▼</span>
+                <span class="layer-icon">📁</span>
+                <span class="layer-name">Folder Assets</span>
+                <span class="handle">☰</span>
+            </div>
+            <div class="nested-group" id="g2"></div>
+
+            <div class="item-row folder-item" data-type="folder" id="f3">
+                <span class="folder-toggle">▼</span>
+                <span class="layer-icon">📁</span>
+                <span class="layer-name">Folder Effects</span>
+                <span class="handle">☰</span>
+            </div>
+            <div class="nested-group" id="g3"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const widget = document.getElementById('widget');
+    const headerToggle = document.getElementById('headerToggle');
+    const gridContent = document.getElementById('gridContent');
+    const gridWrapper = document.getElementById('gridWrapper');
+    const layerWrapper = document.getElementById('layerWrapper');
+    const layerList = document.getElementById('layerList');
+
+    // 1) GENERATE GRID (10x3)
+    for (let i = 1; i <= 60; i++) {
+        const item = document.createElement('div');
+        item.className = 'grid-item';
+        item.textContent = `[${i}]`;
+        const blockIdx = Math.floor((i-1) / 30);
+        const localIdx = (i-1) % 30;
+        item.style.gridRow = Math.floor(localIdx / 10) + 1;
+        item.style.gridColumn = (blockIdx * 10) + (localIdx % 10) + 1;
+        gridContent.appendChild(item);
+    }
+
+    // 2) GENERATE 16 LAYERS DISTRIBUTED KE NESTED GROUPS
+    const groups = [document.getElementById('g1'), document.getElementById('g2'), document.getElementById('g3')];
+    for (let i = 0; i < 16; i++) {
+        const row = document.createElement('div');
+        row.className = 'item-row is-nested';
+        row.innerHTML = `<span class="layer-icon">🖼️</span><span class="layer-name">Layer ${i+1}</span><span class="handle">☰</span>`;
+        groups[i % 3].appendChild(row);
+    }
+
+    // ---------- Toggle main menu (grid <=> layer) ----------
+    headerToggle.onclick = () => {
+        widget.classList.toggle('open');
+        // recompute compactness each toggle
+        updateResponsive();
+    };
+
+    // ---------- Folder toggle (collapse/expand) ----------
+    layerList.addEventListener('click', (e) => {
+        const toggle = e.target.closest('.folder-toggle');
+        if (!toggle) return;
+        const folder = toggle.closest('.folder-item');
+        folder.classList.toggle('collapsed');
+        // recompute since collapsed groups affect visible layer count
+        updateResponsive();
+    });
+
+    // ---------- Drag & Drop (pointer) ----------
+    let dragItem = null;
+    let lastPointerMoveRaf = null;
+
+    layerList.addEventListener('pointerdown', (e) => {
+        const handle = e.target.closest('.handle');
+        if (!handle) return;
+
+        dragItem = handle.closest('.item-row');
+        dragItem.classList.add('dragging');
+        try { layerList.setPointerCapture(e.pointerId); } catch (_){}
+
+        e.preventDefault();
+    });
+
+    layerList.addEventListener('pointermove', (e) => {
+        if (!dragItem) return;
+        // throttle by RAF to avoid heavy layout thrash
+        if (lastPointerMoveRaf) cancelAnimationFrame(lastPointerMoveRaf);
+        lastPointerMoveRaf = requestAnimationFrame(() => {
+            const y = e.clientY;
+            const rows = [...layerList.querySelectorAll('.item-row:not(.dragging)')];
+
+            const targetRow = rows.find(row => {
+                const rect = row.getBoundingClientRect();
+                return y > rect.top && y < rect.bottom;
+            });
+
+            if (!targetRow) return;
+
+            const rect = targetRow.getBoundingClientRect();
+            const midpoint = (rect.top + rect.bottom) / 2;
+            const isFolder = targetRow.classList.contains('folder-item');
+            const isCollapsed = targetRow.classList.contains('collapsed');
+
+            if (isFolder) {
+                const group = targetRow.nextElementSibling;
+                if (y > midpoint) {
+                    if (isCollapsed) {
+                        // jika folder tertutup, letakkan setelah grup (tidak masuk nested)
+                        group.after(dragItem);
+                        dragItem.classList.remove('is-nested');
+                    } else {
+                        // jika terbuka -> masukkan ke depan grup (nested)
+                        group.prepend(dragItem);
+                        dragItem.classList.add('is-nested');
+                    }
+                } else {
+                    targetRow.before(dragItem);
+                    dragItem.classList.remove('is-nested');
+                }
+            } else {
+                if (y > midpoint) targetRow.after(dragItem);
+                else targetRow.before(dragItem);
+
+                // tetap jaga apakah parent adalah nested-group
+                if (dragItem.parentElement.classList.contains('nested-group')) {
+                    dragItem.classList.add('is-nested');
+                } else {
+                    dragItem.classList.remove('is-nested');
+                }
+            }
+        });
+    });
+
+    layerList.addEventListener('pointerup', (e) => {
+        if (!dragItem) return;
+
+        // finalize nested class depending parent
+        const parent = dragItem.parentElement;
+        if (parent && parent.classList.contains('nested-group')) dragItem.classList.add('is-nested');
+        else dragItem.classList.remove('is-nested');
+
+        dragItem.classList.remove('dragging');
+        try { layerList.releasePointerCapture(e.pointerId); } catch (_){}
+        dragItem = null;
+
+        // update responsive after reorder
+        updateResponsive();
+    });
+
+    // ---------- RESPONSIVE LOGIC ----------
+    // Count visible layer items (exclude folder headers; ignore items inside collapsed folders)
+    function countVisibleLayers() {
+        const allRows = [...layerList.querySelectorAll('.item-row')];
+        let count = 0;
+        allRows.forEach(row => {
+            if (row.classList.contains('folder-item')) return; // skip folder header
+            // determine visibility: check ancestor nested-group previous sibling folder collapsed state
+            let visible = true;
+            let p = row.parentElement;
+            while (p && p !== layerList) {
+                if (p.classList && p.classList.contains('nested-group')) {
+                    const prev = p.previousElementSibling;
+                    if (prev && prev.classList.contains('folder-item') && prev.classList.contains('collapsed')) {
+                        visible = false;
+                        break;
+                    }
+                }
+                p = p.parentElement;
+            }
+            if (visible) count++;
+        });
+        return count;
+    }
+
+    function updateResponsive() {
+        // GRID: compact when visible (widget NOT open)
+        const gridIsVisible = !widget.classList.contains('open') && gridContent.children.length > 0;
+        if (gridIsVisible) gridContent.classList.add('compact');
+        else gridContent.classList.remove('compact');
+
+        // LAYERS: when open, check visible layer count; compact if < 10
+        const layersVisible = widget.classList.contains('open');
+        if (layersVisible) {
+            const visibleCount = countVisibleLayers();
+            if (visibleCount < 10) {
+                layerWrapper.classList.add('compact');
+            } else {
+                layerWrapper.classList.remove('compact');
+            }
+        } else {
+            layerWrapper.classList.remove('compact');
+        }
+    }
+
+    // initial compute
+    updateResponsive();
+
+    // observe layerList mutations (new layers, reorder, folder collapse affect counts)
+    const mo = new MutationObserver(() => {
+        updateResponsive();
+    });
+    mo.observe(layerList, { childList: true, subtree: true });
+
+    // window resize: slight debounce
+    let rz;
+    window.addEventListener('resize', () => {
+        clearTimeout(rz);
+        rz = setTimeout(updateResponsive, 120);
+    });
+
+    // Expose helper for debugging / external calls:
+    window.layerWidgetUpdate = updateResponsive;
+
+    // Keep default :root values unchanged; we only toggle classes to override locally.
+</script>
+</body>
+</html>

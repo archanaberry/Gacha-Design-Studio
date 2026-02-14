@@ -4,26 +4,66 @@
 //  Version resource: v0.001_alpha                              //
 //  File: upload.js                                             //
 //  Type: module[design]                                        //
-//  Desc: Handling multi selection layer                        //
+//  Desc: Handling file uploads (SVG/Images) and Drag n Drop    //
 //                                                              //
 //  ----------------------------------------------------------  //
-//                                                              //
-//  ---- Do not use this as a gacha design game as        ----  //
-//  ---- template, or modifying it to make a other        ----  //
-//  ---- version, than this without Archana Berry's       ----  //
-//  ---- permission's, except to help with repairs or     ----  //
-//  ---- updates art assets and etc with contributing     ----  //
-//                                                              //
-//**************************************************************//
-// Please patient for release Gacha Design Studio in Playstore UwU
-
-//upload.js
 
 // Helper function untuk mendapatkan panel1-layercontainer
 function getPanel1LayerContainer() {
-    return document.getElementById('panel1-layercontainer') || 
-           document.getElementById('panel1') || 
-           document.querySelector('.container');
+    return document.getElementById('panel1-layercontainer') ||
+        document.getElementById('panel1') ||
+        document.querySelector('.container');
+}
+
+/**
+ * Helper terpadu untuk memproses layer baru setelah dibuat
+ * Memastikan layer terhubung ke sistem pointer, selector, dan framework
+ */
+function finalizeNewLayer(newLayer) {
+    const container = getPanel1LayerContainer();
+    if (!container) {
+        console.error('Container not found for adding layer');
+        return;
+    }
+
+    // 1. Tambahkan ke array global layers
+    if (window.layers) {
+        window.layers.push(newLayer);
+    } else if (typeof layers !== 'undefined') {
+        layers.push(newLayer);
+    }
+
+    // 2. Hubungkan ke Unified Pointer System (Multi-touch, drag, selection)
+    if (typeof attachLayerToPointerSystem === 'function') {
+        attachLayerToPointerSystem(newLayer);
+    } else {
+        // Fallback jika unified API belum siap
+        newLayer.attach(container, typeof onlayerdragstart === 'function' ? onlayerdragstart : null);
+    }
+
+    // 3. Pastikan layer berada di container yang tepat (panel1-layercontainer)
+    if (newLayer.element.parentElement !== container) {
+        container.appendChild(newLayer.element);
+    }
+
+    // 4. Sinkronisasi dengan Selector state
+    if (window.__selectorActive) {
+        newLayer.element.style.pointerEvents = 'none';
+    } else {
+        newLayer.element.style.pointerEvents = 'auto';
+    }
+
+    // 5. Otomatis pilih layer yang baru di-import agar user bisa langsung edit
+    if (typeof selectLayer === 'function') {
+        selectLayer(newLayer);
+    }
+
+    // 6. Update framework display di panel3
+    if (window.frameworkDisplay && typeof window.frameworkDisplay.update === 'function') {
+        window.frameworkDisplay.update(window.layers || layers);
+    }
+
+    console.log(`✅ Layer "${newLayer.name}" imported and finalized.`);
 }
 
 // Accept multiple SVG files, parse _lX suffix to order layers
@@ -45,7 +85,6 @@ async function addSVGFiles(files) {
             base = m[1];
             idx = parseInt(m[2], 10);
         } else {
-            // no suffix, treat whole name (without extension) as base and index 0
             base = f.name.replace(/\.svg$/i, '');
             idx = 0;
         }
@@ -54,32 +93,30 @@ async function addSVGFiles(files) {
         groups[base].push({ file: f, index: idx });
     });
 
-    const container = document.querySelector('.container') || getPanel1LayerContainer();
-
-    // Jika container tidak ada, abort
-    if (!container) {
-        console.error('Container not found for adding images');
-        return;
-    }
     for (const base of Object.keys(groups)) {
-        // Sort by index DESC so that lower index (0) will be appended last -> topmost
+        // Sort by index DESC so that lower index (0) will be topmost (appended last or high z-index)
+        // Standard in this studio: lower index = base, higher = top parts
         groups[base].sort((a, b) => b.index - a.index);
 
         const dataUrls = await Promise.all(groups[base].map(entry => readFileAsDataURL(entry.file)));
 
         const newLayer = new Layer(base, dataUrls);
-        layers.push(newLayer);
-        newLayer.attach(container, onlayerdragstart);
-        
-        // Jika selector aktif, set pointer-events ke none
-        if (window.__selectorActive) {
-            newLayer.element.style.pointerEvents = 'none';
-        }
+        finalizeNewLayer(newLayer);
+    }
+}
 
-        // Update framework display di panel3
-        if (window.frameworkDisplay) {
-            window.frameworkDisplay.update(layers);
-        }
+// Accept multiple image files
+async function addImageFiles(files) {
+    if (!files || files.length === 0) return;
+
+    const imageFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
+    if (!imageFiles.length) return;
+
+    for (const file of imageFiles) {
+        const dataUrl = await readFileAsDataURL(file);
+        const name = file.name.replace(/\.[^/.]+$/, '');
+        const newLayer = new Layer(name, [dataUrl]);
+        finalizeNewLayer(newLayer);
     }
 }
 
@@ -92,87 +129,43 @@ function readFileAsDataURL(file) {
     });
 }
 
-// Drag & drop support on panel1 for unlimited files
+// Drag & drop support
 document.addEventListener('DOMContentLoaded', () => {
-    const panel = document.getElementById('panel1') || document.querySelector('.container');
+    // Listen on panel1 root or layercontainer
+    const panel = document.getElementById('panel1') || document.getElementById('panel1-layercontainer');
     if (!panel) return;
 
     panel.addEventListener('dragover', (e) => {
         e.preventDefault();
+        e.dataTransfer.dropEffect = 'copy';
     });
 
     panel.addEventListener('drop', (e) => {
         e.preventDefault();
         const dt = e.dataTransfer;
-        if (!dt) return;
-        const files = dt.files;
-        addFiles(files);
+        if (!dt || !dt.files || dt.files.length === 0) return;
+        addFiles(dt.files);
     });
 });
 
 // Function to add files, detecting SVG or image
 async function addFiles(files) {
-    if (!files) return;
-    const hasSVG = Array.from(files).some(f => f.name.toLowerCase().endsWith('.svg'));
-    if (hasSVG) {
-        addSVGFiles(files);
-    } else {
-        addImageFiles(files);
-    }
-}
-
-// Accept multiple image files
-async function addImageFiles(files) {
     if (!files || files.length === 0) return;
 
-    // Filter only image files
-    const imageFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
-    if (!imageFiles.length) return;
+    // Process mix of SVGs and images
+    const fileList = Array.from(files);
+    const svgFiles = fileList.filter(f => f.name.toLowerCase().endsWith('.svg'));
+    const imageFiles = fileList.filter(f => f.type.startsWith('image/') && !f.name.toLowerCase().endsWith('.svg'));
 
-    const container = document.querySelector('.container') || getPanel1LayerContainer();
-
-    // Jika container tidak ada, abort
-    if (!container) {
-        console.error('Container not found for adding images');
-        return;
-    }
-
-    for (const file of imageFiles) {
-        const dataUrl = await readFileAsDataURL(file);
-        const newLayer = new Layer(file.name.replace(/\.[^/.]+$/, ''), [dataUrl]);
-        layers.push(newLayer);
-        newLayer.attach(container, onlayerdragstart);
-        
-        // Jika selector aktif, set pointer-events ke none
-        if (window.__selectorActive) {
-            newLayer.element.style.pointerEvents = 'none';
-        }
-    }
-
-    // Update framework display di panel3
-    if (window.frameworkDisplay) {
-        window.frameworkDisplay.update(layers);
-    }
+    if (svgFiles.length > 0) await addSVGFiles(svgFiles);
+    if (imageFiles.length > 0) await addImageFiles(imageFiles);
 }
 
-// Backwards-compatible single-file handler (used by frame HTML button)
+// Backwards-compatible single-file handler (used by HTML input onchange)
 function addImage(event) {
-    const files = event.target.files;
-    if (!files) return;
-    // Check if SVG or image
-    const hasSVG = Array.from(files).some(f => f.name.toLowerCase().endsWith('.svg'));
-    if (hasSVG) {
-        addSVGFiles(files);
-    } else {
-        addImageFiles(files);
-    }
+    if (!event || !event.target || !event.target.files) return;
+    addFiles(event.target.files);
+    // Reset input value so same file can be uploaded again
+    event.target.value = '';
 }
 
-function updateLayerElement(layer, key, src) {
-    const imgElement = document.createElement('img');
-    imgElement.src = src;
-    imgElement.alt = key;
-    imgElement.classList.add(key);
-    imgElement.draggable = false;
-    layer.element.appendChild(imgElement);
-}

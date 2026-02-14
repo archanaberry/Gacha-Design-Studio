@@ -119,6 +119,16 @@ class Layer {
 
         // Initialize element SETELAH semua options sudah di-parse
         this.#initElement();
+
+        // Initialize Multiplier (Mirror/Tile feature)
+        if (typeof LayerMultiplier !== 'undefined') {
+            this.multiplier = new LayerMultiplier(this);
+            // If options has multiplier config, apply it
+            if (options.multiplier) {
+                this.multiplier.setOptions(options.multiplier);
+            }
+        }
+
         this.#updateElement();
     }
 
@@ -259,6 +269,9 @@ class Layer {
         rootGuard.style.zIndex = '-1'; // Behind content
         rootGuard.style.pointerEvents = 'auto';
         this.element.appendChild(rootGuard);
+
+        // 🔥 Fix for selector.js: Attach instance to DOM element so selector can find it
+        this.element.__layerInstance = this;
 
         if (this.#childLayers.length > 0) {
             this.element.classList.add('layer-group');
@@ -582,7 +595,8 @@ class Layer {
         } else {
             this.element.style.width = this.#width + 'px'; // Lebar
             this.element.style.height = this.#height + 'px'; // Tinggi
-            this.element.style.border = 'none';
+            // 🔥 Fix: Don't force 'none', use empty string so .selected class in CSS can apply border
+            this.element.style.border = '';
             this.element.style.pointerEvents = 'auto';
             this.element.style.transformOrigin = '0px 0px';
         }
@@ -624,6 +638,11 @@ class Layer {
         const nameLabel = this.element.querySelector('.layer-name');
         if (nameLabel) {
             nameLabel.textContent = this.#name;
+        }
+
+        // Apply visual multiplier update
+        if (this.multiplier) {
+            this.multiplier.update();
         }
     }
 
@@ -932,6 +951,11 @@ class Layer {
         if ('width' in newOptions) this.width = newOptions.width;
         if ('height' in newOptions) this.height = newOptions.height;
 
+        // Update multiplier options
+        if ('multiplier' in newOptions && this.multiplier) {
+            this.multiplier.setOptions(newOptions.multiplier);
+        }
+
         // Re-parse complex properties
         this.#parseColorOptions(this.options);
         this.#parseSrcProperties(this.options);
@@ -1002,6 +1026,10 @@ class Layer {
         if (this.element) {
             if (value) {
                 this.element.classList.add('selected');
+                // Ensure pointerEvents is auto while selected, especially in selector mode
+                if (window.__selectorActive) {
+                    this.element.style.pointerEvents = 'auto';
+                }
                 // Jika ini group layer, tampilkan border
                 if (this.#childLayers.length > 0) {
                     this.element.style.border = '2px solid #007bff';
@@ -1014,10 +1042,18 @@ class Layer {
                 });
             } else {
                 this.element.classList.remove('selected');
+                // If selector is active, unselected layers should be none to let box selection pass
+                if (window.__selectorActive) {
+                    this.element.style.pointerEvents = 'none';
+                }
                 // Jika ini group layer, hapus border
                 if (this.#childLayers.length > 0) {
                     this.element.style.border = 'none';
-                    this.element.style.pointerEvents = 'none';
+                    if (window.__selectorActive) {
+                        this.element.style.pointerEvents = 'none';
+                    } else {
+                        this.element.style.pointerEvents = 'auto';
+                    }
                 }
                 this.element.querySelectorAll('.src-item').forEach(img => {
                     img.classList.remove('item-selected');
@@ -1104,6 +1140,12 @@ class Layer {
                 child.element.dataset.innerchild = 'true';
             }
         });
+
+        // 🔥 CRITICAL: Trigger multiplier update after attaching to DOM
+        // Since multiplier.update() requires parentNode to exist.
+        if (this.multiplier) {
+            this.multiplier.update();
+        }
     }
 
     detach() {

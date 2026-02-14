@@ -28,7 +28,7 @@ const css = `
     border: 2px dashed blue;
     background: rgba(173, 216, 230, 0.5);
     pointer-events: none;
-    z-index: 5;
+    z-index: 10000;
 }
 .selector-container {
     position: relative;
@@ -55,7 +55,7 @@ class Selector {
         this.startY = 0;
         this.isDragging = false;
         this.selectedLayers = [];
-        
+
         // 🔥 NEW: Track drag containers untuk multi-panel selector support
         this.dragContainers = [container];
         this.dragContainers.forEach(c => {
@@ -71,10 +71,10 @@ class Selector {
             this.dragContainers.push(layerPanlock);
             layerPanlock.style.touchAction = 'none';
         }
-        
+
         // 🔥 NEW: Unified pointer state tracking (mouse, touch, pen)
         this.pointerDownState = new Map();
-        
+
         // Bind handlers untuk document-level events
         this.onDocumentPointerMove = this.onPointerMove.bind(this);
         this.onDocumentPointerUp = this.onPointerUp.bind(this);
@@ -86,14 +86,14 @@ class Selector {
         }
 
         this.button.addEventListener('click', this.toggleSelector.bind(this));
-        
+
         // 🔥 NEW: Use unified PointerEvent system instead of separate mouse/touch handlers
         this.dragContainers.forEach(c => {
             if (c) {
                 c.addEventListener('pointerdown', this.onPointerDown.bind(this), { passive: false });
             }
         });
-        
+
         // Keyboard events
         document.addEventListener('keydown', this.onKeyDown.bind(this));
 
@@ -138,65 +138,76 @@ class Selector {
         this.selectorActive = !this.selectorActive;
         // Set global flag untuk memblokir layer drag saat selector aktif
         window.__selectorActive = this.selectorActive;
-        
+
         // Toggle pointer-events pada semua layer agar event bisa pass through saat selector aktif
         const layers = document.querySelectorAll('.layer, .layer-group');
         layers.forEach(layer => {
             if (this.selectorActive) {
-                // Saat selector aktif: non-aktifkan interactions kecuali layer yang sudah dipilih
-                if (layer.classList && layer.classList.contains('selected')) {
-                    layer.style.pointerEvents = 'auto';
-                } else {
-                    layer.style.pointerEvents = 'none';
-                }
+                // 🔥 CRITICAL: Semua layer dibikin none agar drag bisa mulai dari mana saja (bahkan di atas objek)
+                // untuk memicu selection box.
+                layer.style.pointerEvents = 'none';
             } else {
                 // Saat selector mati: layer bisa di-interact normal
                 layer.style.pointerEvents = 'auto';
             }
         });
-        
+
         if (this.selectorActive) {
             this.button.textContent = "Matikan Seleksi";
         } else {
             this.button.textContent = "Nyalakan Seleksi";
             this.clearSelectionBox();
-            this.deselectAllLayers();
         }
     }
 
     selectLayersInBox(box) {
-        this.selectedLayers = [];
+        const newSelectedLayers = [];
         const elems = document.querySelectorAll('.layer, .layer-group');
+
         elems.forEach(el => {
             const layerRect = el.getBoundingClientRect();
-            if (box.left <= layerRect.right && box.right >= layerRect.left && 
-                box.top <= layerRect.bottom && box.bottom >= layerRect.top) {
-                // prefer instance pointer if available
-                const inst = el.__layerInstance || (window.layers && window.layers.find(l => l.element === el));
+            const inst = el.__layerInstance || (window.layers && window.layers.find(l => l.element === el));
+
+            // Check intersection (overlap)
+            const isIntersecting = box.left <= layerRect.right &&
+                box.right >= layerRect.left &&
+                box.top <= layerRect.bottom &&
+                box.bottom >= layerRect.top;
+
+            if (isIntersecting) {
                 if (inst) {
                     inst.selected = true;
-                    // 🔥 Add to DOM class too
                     el.classList.add('selected');
-                    this.selectedLayers.push(inst);
+                    // Ensure pointer events allowed for dragging while selected
+                    el.style.pointerEvents = 'auto';
+                    newSelectedLayers.push(inst);
                 } else {
-                    // fallback to DOM selection if no instance present
                     el.classList.add('selected');
-                    this.selectedLayers.push(el);
+                    el.style.pointerEvents = 'auto';
+                    newSelectedLayers.push(el);
                 }
+            } else {
+                // 🔥 Un-select if no longer in box
+                if (inst) inst.selected = false;
+                el.classList.remove('selected');
+                // Back to none if selector active to allow box selection to pass through
+                if (this.selectorActive) el.style.pointerEvents = 'none';
             }
         });
-        
+
+        this.selectedLayers = newSelectedLayers;
+
         // 🔥 CRITICAL: Sync selector.selectedLayers untuk bisa di-access dari studiopose.js
         if (window.selectorInstance && window.selectorInstance !== this) {
             // Copy ke global selector instance jika ada
             window.selectorInstance.selectedLayers = this.selectedLayers.slice();
         }
-        
+
         // Sinkronisasi ke panel lain setelah selection di selector
         if (typeof updateMenuLayerSelectionForMultiSelect === 'function') {
             updateMenuLayerSelectionForMultiSelect();
         }
-        
+
         // 🔥 CRITICAL: Update Panel2 display dengan color indicator (BLUE untuk grouped selection)
         if (typeof updateCoordInput === 'function') {
             setTimeout(() => updateCoordInput(), 10);  // Delay sedikit untuk ensure state updated
@@ -208,7 +219,14 @@ class Selector {
     }
 
     deselectAllLayers() {
-        // Deselect instances first
+        // 🔥 Use unified deselect if available to ensure all states are cleared
+        if (typeof deselectAllLayersUnified === 'function') {
+            deselectAllLayersUnified();
+            this.selectedLayers = [];
+            return;
+        }
+
+        // Fallback: Deselect instances first
         if (this.selectedLayers && this.selectedLayers.length) {
             this.selectedLayers.forEach(s => {
                 if (s && typeof s.selected !== 'undefined') {
@@ -226,7 +244,8 @@ class Selector {
         });
 
         this.selectedLayers = [];
-        
+        window.selected = null;
+
         // Sinkronisasi deselect ke semua panel
         if (typeof syncDeselectionAcrossAllPanels === 'function') {
             syncDeselectionAcrossAllPanels();
@@ -251,27 +270,29 @@ class Selector {
     // 🔥 NEW: Unified pointerdown handler (works for mouse, touch, and pen)
     onPointerDown(e) {
         if (!this.selectorActive) return;
-        
-        e.preventDefault();
+
+        // e.preventDefault(); // 🔥 Remove to allow synthesized click events for deselection logic
         try { e.target.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
-        
+
         const pid = e.pointerId;
+
         const containerRect = this.container.getBoundingClientRect();
         this.startX = e.clientX - containerRect.left;
         this.startY = e.clientY - containerRect.top;
-        
+
         // 🔥 NEW: Store pointer state in Map
         this.pointerDownState.set(pid, {
             isDragging: true,
             startX: this.startX,
             startY: this.startY,
-            container: this.container
+            container: this.container,
+            hasClearedSelection: false // Track jika sudah reset seleksi untuk drag baru
         });
-        
+
         this.isDragging = true;
         this.clearSelectionBox();
-        this.deselectAllLayers();
-        
+        // REMOVED: this.deselectAllLayers(); // 🔥 JANGAN deselect di sini, biar bisa tap-to-select atau drag-select murni
+
         // 🔥 CRITICAL: Untuk layerContainer - pastikan selection box di-attach ke container yang tepat
         const container = e.currentTarget;
         if (container && container !== this.container) {
@@ -281,15 +302,14 @@ class Selector {
                 this.currentDragContainer = container;
             }
         }
-        
+
         // 🔥 NEW: Disable scroll pada container ketika selector drag aktif
         this.dragContainers.forEach(c => {
             if (c) {
                 c.classList.add('selector-active-drag');
-                c.style.pointerEvents = 'none';
             }
         });
-        
+
         // Attach document-level listeners untuk capture movement di atas semua elemen
         document.addEventListener('pointermove', this.onDocumentPointerMove, { passive: false });
         document.addEventListener('pointerup', this.onDocumentPointerUp, { passive: false });
@@ -300,65 +320,142 @@ class Selector {
     onPointerMove(e) {
         const pid = e.pointerId;
         if (!this.pointerDownState.has(pid) || !this.selectorActive || !this.isDragging) return;
-        
+
         e.preventDefault();
-        
+
         const state = this.pointerDownState.get(pid);
         const containerRect = this.container.getBoundingClientRect();
         const currentX = e.clientX - containerRect.left;
         const currentY = e.clientY - containerRect.top;
         const width = currentX - state.startX;
         const height = currentY - state.startY;
-        
-        this.setSelectionBox(state.startX, state.startY, width, height);
+
+        // Hitung jarak gerakan
+        const dist = Math.sqrt(Math.pow(width, 2) + Math.pow(height, 2));
+
+        // 🔥 JANGAN mulai seleksi kotak jika gerakan terlalu kecil
+        if (dist > 5) {
+            // Jika ini gerakan pertama yang valid, hapus seleksi lama (start fresh selection box)
+            if (!state.hasClearedSelection) {
+                this.deselectAllLayers();
+                state.hasClearedSelection = true;
+            }
+
+            this.setSelectionBox(state.startX, state.startY, width, height);
+
+            // 🔥 Real-time multi-select: Hitung seleksi saat drag berlangsung
+            const x1 = state.startX + containerRect.left;
+            const y1 = state.startY + containerRect.top;
+            const x2 = e.clientX;
+            const y2 = e.clientY;
+
+            const currentBox = {
+                left: Math.min(x1, x2),
+                right: Math.max(x1, x2),
+                top: Math.min(y1, y2),
+                bottom: Math.max(y1, y2)
+            };
+
+            this.selectLayersInBox(currentBox);
+        }
     }
 
     // 🔥 NEW: Unified pointerup handler
     onPointerUp(e) {
         const pid = e.pointerId;
         if (!this.pointerDownState.has(pid)) return;
-        
+
         e.preventDefault();
-        
+
         const state = this.pointerDownState.get(pid);
         const wasActive = this.isDragging;
-        
+
         // 🔥 NEW: Re-enable scroll pada semua drag containers
         this.dragContainers.forEach(cont => {
             if (cont) {
                 cont.classList.remove('selector-active-drag');
-                cont.style.pointerEvents = 'auto';
             }
         });
-        
+
         // Detach document-level listeners
         document.removeEventListener('pointermove', this.onDocumentPointerMove);
         document.removeEventListener('pointerup', this.onDocumentPointerUp);
         document.removeEventListener('pointercancel', this.onDocumentPointerUp);
-        
+
+        // Calculate selection before cleaning up state
+        if (wasActive) {
+            const containerRect = this.container.getBoundingClientRect();
+            const currentX = e.clientX - containerRect.left;
+            const currentY = e.clientY - containerRect.top;
+
+            // 🔥 NEW: Jarak gerakan total
+            const dist = Math.sqrt(Math.pow(currentX - state.startX, 2) + Math.pow(currentY - state.startY, 2));
+
+            if (dist > 5) {
+                // Selesai Drag Select
+                const x1 = state.startX + containerRect.left;
+                const y1 = state.startY + containerRect.top;
+                const x2 = currentX + containerRect.left;
+                const y2 = currentY + containerRect.top;
+
+                const box = {
+                    left: Math.min(x1, x2),
+                    right: Math.max(x1, x2),
+                    top: Math.min(y1, y2),
+                    bottom: Math.max(y1, y2)
+                };
+
+                this.selectLayersInBox(box);
+                this.clearSelectionBox();
+
+                // 🔥 NEW: Set flag agar klik yang menyusul diabaikan oleh handler lain
+                window.justFinishedDrag = true;
+                setTimeout(() => { window.justFinishedDrag = false; }, 100);
+            } else {
+                // 🔥 TAP LOGIC (Jarak kecil = Klik/Tap)
+                // Karena layers punya pointer-events: none, kita gunakan elementsFromPoint
+                const elements = document.elementsFromPoint(e.clientX, e.clientY);
+                const tappedLayerEl = elements.find(el => el.classList.contains('layer') || el.classList.contains('layer-group'));
+
+                if (tappedLayerEl) {
+                    // Tap pada layer -> Select layer tersebut (Deselect yang lain)
+                    this.deselectAllLayers();
+                    const inst = tappedLayerEl.__layerInstance || (window.layers && window.layers.find(l => l.element === tappedLayerEl));
+                    if (inst) {
+                        inst.selected = true;
+                        tappedLayerEl.classList.add('selected');
+                        this.selectedLayers = [inst];
+                    } else {
+                        tappedLayerEl.classList.add('selected');
+                        this.selectedLayers = [tappedLayerEl];
+                    }
+                    if (typeof selectLayer === 'function' && inst) selectLayer(inst);
+                } else {
+                    // Tap pada background panel1 -> Deselect All
+                    // Pastikan yang di-tap adalah panel1 atau container-nya
+                    const isPanel1Content = elements.some(el =>
+                        el.id === 'panel1' ||
+                        el.id === 'panel1-layercontainer' ||
+                        el.classList.contains('container')
+                    );
+                    if (isPanel1Content) {
+                        this.deselectAllLayers();
+                    }
+                }
+            }
+        }
+
         // Clean up pointer state
         this.pointerDownState.delete(pid);
         if (this.pointerDownState.size === 0) {
             this.isDragging = false;
         }
-        
+
         try { e.target.releasePointerCapture(pid); } catch (err) { /* ignore */ }
-        
-        // Check apakah selection box ada sebelum di-access
-        if (wasActive && this.selectionBox) {
-            const box = this.selectionBox.getBoundingClientRect();
-            this.selectLayersInBox(box);
-            this.clearSelectionBox();
-        }
     }
 
     onKeyDown(e) {
-        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
-            if (!this.selectedLayers.length) return;
-            const dx = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
-            const dy = e.key === 'ArrowDown' ? 1 : e.key === 'ArrowUp' ? -1 : 0;
-            this.moveSelectedLayers(dx, dy);
-        }
+        // Removed: handled by key.js to prevent double movement and respect sensitivity
     }
 }
 
@@ -366,13 +463,13 @@ class Selector {
 function initSelector() {
     const container = document.getElementById('panel1') || document.querySelector('.container');
     const toggleSelectorBtn = document.getElementById('toggleSelectorBtn');
-    
+
     if (!container || !toggleSelectorBtn) {
         console.warn('Selector: Container or button not found, retrying...');
         setTimeout(initSelector, 100);
         return;
     }
-    
+
     console.log('✅ Selector initialized with unified PointerEvent system');
     // expose selector instance globally so drag code can detect multi-selected layers
     window.selectorInstance = new Selector(container, toggleSelectorBtn);

@@ -21,7 +21,7 @@
 
 // sensitivity.js
 
-let sensitivity = 0.1 // Nilai awal untuk sensitivitas
+window.sensitivity = 0.1; // Nilai awal untuk sensitivitas
 
 function handleSensitivity(value) {
     sensitivity = parseFloat(value);
@@ -35,47 +35,47 @@ function handleSensitivity(value) {
 function drawGuideCanvas() {
     const canvas = document.getElementById('guideCanvas');
     const layerContainer = document.getElementById('panel1-layercontainer');
-    
+
     if (!canvas || !layerContainer) return;
-    
+
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    
+
     // Set canvas size ke panel1-layercontainer size
     const rect = layerContainer.getBoundingClientRect();
     canvas.width = layerContainer.offsetWidth;
     canvas.height = layerContainer.offsetHeight;
-    
+
     // Get current scale dari transform
     const transform = layerContainer.style.transform;
     const scaleMatch = transform.match(/scale\(([0-9.]+)\)/);
     const scale = scaleMatch ? parseFloat(scaleMatch[1]) : 1;
-    
+
     // Hanya gambar jika zoom <100%
     if (scale >= 1) {
         canvas.style.display = 'none';
         return;
     }
-    
+
     canvas.style.display = 'block';
-    
+
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
+
     // Set garis style
     ctx.strokeStyle = '#5dade2'; // Sky blue
     ctx.lineWidth = 2;
     ctx.setLineDash([5, 5]); // Dash pattern: 5px line, 5px gap
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    
+
     // Hitung interval untuk grid (10% dari ukuran asli, responsif ke layar)
     // Karena canvas di-scale, kita perlu hitung berdasarkan ukuran asli
     const gridStep = Math.max(
         canvas.width * 0.1,  // 10% width
         canvas.height * 0.1  // 10% height
     );
-    
+
     // Gambar garis vertikal
     for (let x = gridStep; x < canvas.width; x += gridStep) {
         ctx.beginPath();
@@ -83,7 +83,7 @@ function drawGuideCanvas() {
         ctx.lineTo(x, canvas.height);
         ctx.stroke();
     }
-    
+
     // Gambar garis horizontal
     for (let y = gridStep; y < canvas.height; y += gridStep) {
         ctx.beginPath();
@@ -91,7 +91,7 @@ function drawGuideCanvas() {
         ctx.lineTo(canvas.width, y);
         ctx.stroke();
     }
-    
+
     // Gambar outline border tebal
     ctx.setLineDash([]); // Solid line untuk border
     ctx.lineWidth = 3;
@@ -102,14 +102,14 @@ function drawGuideCanvas() {
 function handleZoom(value) {
     const zoomValue = parseFloat(value);
     const layerContainer = document.getElementById('panel1-layercontainer');
-    
+
     if (layerContainer) {
         const scale = zoomValue / 100; // 100% = scale 1
         layerContainer.dataset.scale = scale;
-        
+
         // Check if center origin mode
         const isCenterOriginActive = layerContainer.dataset.centerOriginActive === 'true';
-        
+
         if (isCenterOriginActive) {
             // ✅ SIMPLE: Center origin dengan HANYA scale, NO positioning adjustment
             // positioning (left/top) TETAP FIXED ke center viewport
@@ -117,7 +117,7 @@ function handleZoom(value) {
             // TOP-LEFT corner element di viewport center → scale dari sana → membesar ke right & down
             layerContainer.style.transformOrigin = 'top left';
             layerContainer.style.transform = `scale(${scale})`;
-            
+
             console.log(`🔍 Zoom ${zoomValue}% - Center origin scale only (scale: ${scale})`);
         } else {
             // Default: pojok kiri atas dengan scale transform
@@ -126,18 +126,18 @@ function handleZoom(value) {
             layerContainer.style.transformOrigin = 'top left';
             layerContainer.style.transform = `scale(${scale})`;
         }
-        
+
         // Gambar guide canvas jika zoom <100%
         drawGuideCanvas();
-        
+
         document.getElementById('zoomInput').value = zoomValue + '%';
-        
+
         // Record history
         if (typeof window.HistoryManager !== 'undefined') {
-          window.HistoryManager.recordAction('zoom', {
-            scale: scale,
-            action: 'Zoom via slider'
-          });
+            window.HistoryManager.recordAction('zoom', {
+                scale: scale,
+                action: 'Zoom via slider'
+            });
         }
     }
 }
@@ -146,18 +146,18 @@ function handleZoomInput(value) {
     // Remove '%' if present
     let zoomValue = parseFloat(value.replace('%', ''));
     if (isNaN(zoomValue)) return;
-    
+
     // Clamp to 0-10000
     zoomValue = Math.max(0, Math.min(10000, zoomValue));
-    
+
     const layerContainer = document.getElementById('panel1-layercontainer');
     if (layerContainer) {
         const scale = zoomValue / 100; // 100% = scale 1
         layerContainer.dataset.scale = scale;
-        
+
         // Check if center origin mode
         const isCenterOriginActive = layerContainer.dataset.centerOriginActive === 'true';
-        
+
         if (isCenterOriginActive) {
             // ✅ SIMPLE: Center origin dengan HANYA scale, NO positioning adjustment
             // positioning (left/top) TETAP FIXED ke center viewport
@@ -165,7 +165,7 @@ function handleZoomInput(value) {
             // TOP-LEFT corner element di viewport center → scale dari sana → membesar ke right & down
             layerContainer.style.transformOrigin = 'top left';
             layerContainer.style.transform = `scale(${scale})`;
-            
+
             console.log(`🔍 Zoom ${zoomValue}% - Center origin scale only (scale: ${scale})`);
         } else {
             // Default: pojok kiri atas dengan scale transform
@@ -174,19 +174,19 @@ function handleZoomInput(value) {
             layerContainer.style.transformOrigin = 'top left';
             layerContainer.style.transform = `scale(${scale})`;
         }
-        
+
         // Gambar guide canvas jika zoom <100%
         drawGuideCanvas();
-        
+
         document.getElementById('zoomSlider').value = zoomValue;
         document.getElementById('zoomInput').value = zoomValue + '%';
-        
+
         // Record history
         if (typeof window.HistoryManager !== 'undefined') {
-          window.HistoryManager.recordAction('zoom', {
-            scale: scale,
-            action: 'Zoom via input'
-          });
+            window.HistoryManager.recordAction('zoom', {
+                scale: scale,
+                action: 'Zoom via input'
+            });
         }
     }
 }
@@ -197,35 +197,35 @@ function handleZoomInput(value) {
 function initPanelResponsiveness() {
     const layerContainer = document.getElementById('panel1-layercontainer');
     if (!layerContainer) return;
-    
+
     // Handler untuk window resize
     const handleResize = () => {
         // Trigger redraw guide canvas dan maintain positioning saat resize
         const scale = parseFloat(layerContainer.dataset.scale) || 1;
         const isCenterOriginActive = layerContainer.dataset.centerOriginActive === 'true';
         const centerPositionMode = layerContainer.dataset.centerPositionMode === 'true';
-        
+
         if (isCenterOriginActive && centerPositionMode) {
             // Center origin: update positioning saat resize via updateCenterOriginTransform
             if (typeof updateCenterOriginTransform === 'function') {
                 updateCenterOriginTransform();
             }
         }
-        
+
         drawGuideCanvas();
     };
-    
+
     // Debounce resize handler (prevent excessive redraws)
     let resizeTimeout;
     const debouncedResize = () => {
         clearTimeout(resizeTimeout);
         resizeTimeout = setTimeout(handleResize, 150);
     };
-    
+
     // Add event listeners for responsiveness
     window.addEventListener('resize', debouncedResize);
     window.addEventListener('orientationchange', debouncedResize);
-    
+
     // Optional: ResizeObserver untuk detect perubahan size elemen (tidak hanya window)
     if (typeof ResizeObserver !== 'undefined') {
         const resizeObserver = new ResizeObserver(() => {

@@ -294,6 +294,68 @@
         <button id="copyBtn" onclick="copySelectedLayers()">Salin</button>
         <button id="pasteBtn" onclick="pasteCopiedLayers()">Tempel</button>
         <button id="deleteBtn" onclick="deleteSelectedLayer()">Hapus Lapisan</button>
+        
+        <!-- Multiplier Menu -->
+        <div id="multiplier-container" style="margin-top: 15px; border: 2px solid #512da8; padding: 15px; border-radius: 12px; background: linear-gradient(135deg, #f3e5f5 0%, #ede7f6 100%); box-shadow: 0 4px 15px rgba(103, 58, 183, 0.15); transition: all 0.3s ease;">
+            <h3 style="color: #4527a0; margin: 0 0 12px 0; font-size: 18px; display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 22px;">🔄</span> Multiplier (Cermin & Ubin)
+            </h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; align-items: start;">
+                <label style="font-weight: bold; cursor: pointer; color: #311b92; display: flex; align-items: center; gap: 5px;">
+                    <input type="checkbox" id="multiplierEnabled" onchange="handleMultiplierEnabled(this.checked)" style="width: 18px; height: 18px; cursor: pointer;"> Aktifkan
+                </label>
+                
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <span style="font-size: 12px; color: #5e35b1; font-weight: bold;">Tipe Perulangan</span>
+                    <select id="multiplierRepeatType" onchange="handleMultiplierRepeatType(this.value)" style="padding: 6px; border-radius: 6px; border: 1px solid #b39ddb; background: white; cursor: pointer;">
+                        <option value="sederet">Sederet (Lurus)</option>
+                        <option value="mirror">Cermin (Mirror)</option>
+                    </select>
+                </div>
+                
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <span style="font-size: 12px; color: #5e35b1; font-weight: bold;">Sumbu (Axis)</span>
+                    <div style="display: flex; gap: 10px; background: white; padding: 6px; border-radius: 6px; border: 1px solid #b39ddb;">
+                        <label style="cursor: pointer; display: flex; align-items: center; gap: 4px; font-size: 13px;">
+                            <input type="checkbox" id="multiplierAxisX" value="x" onchange="handleMultiplierAxisChange()"> X
+                        </label>
+                        <label style="cursor: pointer; display: flex; align-items: center; gap: 4px; font-size: 13px;">
+                            <input type="checkbox" id="multiplierAxisY" value="y" onchange="handleMultiplierAxisChange()"> Y
+                        </label>
+                    </div>
+                </div>
+                
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <span style="font-size: 12px; color: #5e35b1; font-weight: bold;">Jumlah Copy</span>
+                    <div style="display: flex; gap: 5px; align-items: center;">
+                        <input type="number" id="multiplierCount" min="0" max="100" value="0" style="padding: 6px; border: 1px solid #b39ddb; border-radius: 6px; flex: 1; transition: border 0.3s;" oninput="handleMultiplierCount(this.value)">
+                        <label style="cursor: pointer; display: flex; align-items: center; gap: 3px; font-size: 11px; white-space: nowrap;">
+                            <input type="checkbox" id="multiplierUnlimited" onchange="handleMultiplierUnlimited(this.checked)" style="width: 14px; height: 14px;"> ∞
+                        </label>
+                    </div>
+                </div>
+                
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <span style="font-size: 12px; color: #5e35b1; font-weight: bold;">Jarak (Gap)</span>
+                    <input type="number" id="multiplierGap" value="0" style="padding: 6px; border: 1px solid #b39ddb; border-radius: 6px; width: 100%; transition: border 0.3s;" oninput="handleMultiplierGap(this.value)">
+                </div>
+                
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <span style="font-size: 12px; color: #5e35b1; font-weight: bold;">Rotasi Iterasi (°)</span>
+                    <input type="number" id="multiplierRotation" value="0" min="-360" max="360" step="1" style="padding: 6px; border: 1px solid #b39ddb; border-radius: 6px; width: 100%; transition: border 0.3s;" oninput="handleMultiplierRotation(this.value)">
+                </div>
+                
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <span style="font-size: 12px; color: #5e35b1; font-weight: bold;">Tipe Cermin</span>
+                    <select id="multiplierMirrorType" onchange="handleMultiplierMirrorType(this.value)" style="padding: 6px; border-radius: 6px; border: 1px solid #b39ddb; background: white; cursor: pointer;">
+                        <option value="1">q|p / d|b (Standard)</option>
+                        <option value="2">q|p / p|q (Flip Horizontal)</option>
+                        <option value="3">q|p / p|d (Atas Flip, Bawah Normal)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
         <button id="resetBtn" onclick="resetStudio()" style="background-color: #ff6b6b;">Reset Studio</button>
         
         <!-- Shortcut dan History Buttons -->
@@ -325,11 +387,13 @@
     <!-- Skrip -->
     <script src="js/windowhandler.js"></script>
     <script src="js/mainmenu/studiopose.js"></script>
+    <script src="js/studiocharacter/multiplier.js"></script>
     <script src="js/studiocharacter/layer.js"></script>
     <script src="js/studiocharacter/history.js"></script>
     <script src="js/studiocharacter/historywindow.js"></script>
     <script src="js/studiocharacter/function.js"></script>
     <script src="js/studiocharacter/studiopose.js"></script>
+    <script src="js/studiocharacter/multiplier_ui.js"></script>
     <script src="js/studiocharacter/textshape.js"></script>
     <script src="js/studiocharacter/pausestudio.js"></script>
     <script src="js/studiocharacter/bgm.js"></script>
