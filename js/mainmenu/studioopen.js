@@ -331,17 +331,21 @@ document.addEventListener("DOMContentLoaded", function () {
     function hideOverlay(push) {
         // Start fade-in menu effect only (main menu fades in from black - 1.5 seconds)
         fadeOverlay.style.display = 'block';
-        fadeOverlay.classList.remove('fade-out-menu');
+        fadeOverlay.classList.remove('fade-out-menu', 'fade-in-black', 'fade-out-black');
         fadeOverlay.classList.add('fade-in-menu');
 
-        overlayRoot.style.display = 'none';
-        overlayRoot.style.pointerEvents = 'none';
-        overlayRoot.innerHTML = ''; // bersihkan saat tutup
+        // DON'T hide overlayRoot immediately! Let it fade naturally
+        // overlayRoot akan di-hide setelah fade animation selesai
 
         // After fade-in menu completes (1.5 seconds), hide overlay
         setTimeout(() => {
             fadeOverlay.classList.remove('fade-in-menu');
             fadeOverlay.style.display = 'none';
+            
+            // NOW hide overlayRoot setelah fade complete
+            overlayRoot.style.display = 'none';
+            overlayRoot.style.pointerEvents = 'none';
+            overlayRoot.innerHTML = ''; // bersihkan saat tutup
         }, 1500);
 
         if (push !== false) {
