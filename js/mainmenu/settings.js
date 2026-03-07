@@ -313,6 +313,29 @@ document.addEventListener("DOMContentLoaded", function () {
         text-align: center;
         flex-grow: 1;
     }
+
+    .return-titlescreen-btn {
+        background-color: #e74c3c;
+        border: none;
+        border-radius: 10px;
+        color: white;
+        padding: 12px 20px;
+        font-size: 1rem;
+        font-family: "Comfortaa", sans-serif;
+        cursor: pointer;
+        width: 100%;
+        margin-top: 20px;
+        transition: background-color 0.3s ease;
+    }
+
+    .return-titlescreen-btn:hover {
+        background-color: #c0392b;
+    }
+
+    .return-titlescreen-btn:active {
+        background-color: #a93226;
+        transform: scale(0.98);
+    }
     `;
 
     var styleSheet = document.createElement("style");
@@ -406,6 +429,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     <span id="bgmTitle">Loading...</span>
                     <button id="nextBGM">Next</button>
                 </div>
+                <button id="returnTitleScreenBtn" class="return-titlescreen-btn" onclick="window.returnToTitleScreen();">⬅ Return Title Screen</button>
             </div>
             </div>
         `;
@@ -487,6 +511,45 @@ document.addEventListener("DOMContentLoaded", function () {
         if (window.currentSettingsWindowId && typeof window.closeWindow === 'function') {
             window.closeWindow(window.currentSettingsWindowId);
         }
+    }
+
+    window.returnToTitleScreen = function() {
+        console.log('%c[Settings] Return Title Screen button clicked!', 'color: red; font-weight: bold;');
+        
+        // Close settings popup first
+        if (window.closeSettingsPopup) {
+            window.closeSettingsPopup();
+        }
+        
+        // Hide layer2 (main menu)
+        var layer2 = document.getElementById('layer2');
+        if (layer2) {
+            layer2.classList.add('fade-out');
+            setTimeout(function() {
+                layer2.style.display = 'none';
+                layer2.style.pointerEvents = 'none';
+            }, 500);
+        }
+        
+        // Restore loading background (untuk titlescreen pakai)
+        var loading = document.getElementById('loading');
+        if (loading) {
+            loading.style.display = 'block';
+            console.log('%c[Settings] Loading background restored', 'color: blue;');
+        }
+        
+        // Set mode back to titlemenu
+        if (window.setPageMode) {
+            window.setPageMode('titlemenu');
+        }
+        
+        // Show title screen dengan fade in
+        setTimeout(function() {
+            if (window.showTitleScreen) {
+                window.showTitleScreen(true); // true = dengan fade-in animation
+                console.log('%c[Settings] Title screen shown with fade-in', 'color: green; font-weight: bold;');
+            }
+        }, 500);
     }
 
     function centerPopup(popup) {
