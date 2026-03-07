@@ -129,6 +129,61 @@ document.addEventListener("DOMContentLoaded", function () {
     right: 0;
     cursor: se-resize;
 }
+#fadeOverlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0);
+    z-index: 2147483647;
+    pointer-events: none;
+}
+.fade-in-black {
+    animation: fadeInToBlack 1.5s ease-in-out forwards;
+}
+.fade-out-black {
+    animation: fadeOutFromBlack 1.5s ease-in-out forwards;
+}
+.fade-in-menu {
+    animation: fadeInMenu 1.5s ease-in-out forwards;
+}
+.fade-out-menu {
+    animation: fadeOutMenu 1.5s ease-in-out forwards;
+}
+@keyframes fadeInToBlack {
+    0% {
+        background-color: rgba(0, 0, 0, 0);
+    }
+    100% {
+        background-color: rgba(0, 0, 0, 1);
+    }
+}
+@keyframes fadeOutFromBlack {
+    0% {
+        background-color: rgba(0, 0, 0, 1);
+    }
+    100% {
+        background-color: rgba(0, 0, 0, 0);
+    }
+}
+@keyframes fadeInMenu {
+    0% {
+        background-color: rgba(0, 0, 0, 1);
+    }
+    100% {
+        background-color: rgba(0, 0, 0, 0);
+    }
+}
+@keyframes fadeOutMenu {
+    0% {
+        background-color: rgba(0, 0, 0, 0);
+    }
+    100% {
+        background-color: rgba(0, 0, 0, 1);
+    }
+}
     `;
 
     var styleSheet = document.createElement("style");
@@ -207,6 +262,15 @@ document.addEventListener("DOMContentLoaded", function () {
 
     var frames = {};
 
+    // Create fade overlay element
+    var fadeOverlay = document.createElement('div');
+    fadeOverlay.id = 'fadeOverlay';
+    if (document.body) {
+        document.body.appendChild(fadeOverlay);
+    } else {
+        document.addEventListener('DOMContentLoaded', () => document.body.appendChild(fadeOverlay));
+    }
+
     function registerFrame(name, initFn) {
         if (!name || typeof initFn !== 'function') return;
         frames[name] = initFn;
@@ -216,22 +280,44 @@ document.addEventListener("DOMContentLoaded", function () {
         if (!mode) return;
 
         overlayRoot.style.display = 'block';
-        // make overlay accept pointer events while a frame is shown
         overlayRoot.style.pointerEvents = 'auto';
         overlayRoot.innerHTML = ''; // kosong total — frame bebas isi apa saja
 
-        if (frames[mode]) {
-            try {
-                // Panggil init dengan overlayRoot sebagai container utama (bukan p1/p2 terbatas)
-                // Helpers dihilangkan (tidak perlu lagi)
-                frames[mode](overlayRoot);
-            } catch (e) {
-                console.error('frame init error', e);
-                overlayRoot.innerHTML = '<h2 style="color:red;padding:20px;">Error loading frame: ' + mode + '</h2>';
+        // Start fade-in effect (1.5 seconds)
+        fadeOverlay.style.display = 'block';
+        fadeOverlay.classList.remove('fade-out-black');
+        fadeOverlay.classList.add('fade-in-black');
+
+        // After fade-in completes (1.5s), start loading parallel, then fade-out
+        setTimeout(() => {
+            // Show loading state while studio loads in parallel
+            if (frames[mode]) {
+                try {
+                    // Initialize frame while loading overlay is still black
+                    frames[mode](overlayRoot);
+                } catch (e) {
+                    console.error('frame init error', e);
+                    overlayRoot.innerHTML = '<h2 style="color:red;padding:20px;">Error loading frame: ' + mode + '</h2>';
+                }
+            } else {
+                overlayRoot.innerHTML = '<h2 style="padding:20px;">Loading ' + mode + '...</h2>';
             }
-        } else {
-            overlayRoot.innerHTML = '<h2 style="padding:20px;">Loading ' + mode + '...</h2>';
-        }
+
+            // Wait for loading time (1.5 seconds) in parallel
+            setTimeout(() => {
+                // Now fade-out the black overlay to reveal the studio (1.5 seconds)
+                fadeOverlay.classList.remove('fade-in-black');
+                // Force reflow to trigger animation
+                void fadeOverlay.offsetWidth;
+                fadeOverlay.classList.add('fade-out-black');
+
+                // After fade-out completes, hide the overlay
+                setTimeout(() => {
+                    fadeOverlay.classList.remove('fade-out-black');
+                    fadeOverlay.style.display = 'none';
+                }, 1500);
+            }, 1500);
+        }, 1500);
 
         if (push !== false) {
             var newUrl = new URL(window.location);
@@ -243,11 +329,20 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function hideOverlay(push) {
+        // Start fade-in menu effect only (main menu fades in from black - 1.5 seconds)
+        fadeOverlay.style.display = 'block';
+        fadeOverlay.classList.remove('fade-out-menu');
+        fadeOverlay.classList.add('fade-in-menu');
 
         overlayRoot.style.display = 'none';
-        // disable pointer capture so page becomes clickable again
         overlayRoot.style.pointerEvents = 'none';
         overlayRoot.innerHTML = ''; // bersihkan saat tutup
+
+        // After fade-in menu completes (1.5 seconds), hide overlay
+        setTimeout(() => {
+            fadeOverlay.classList.remove('fade-in-menu');
+            fadeOverlay.style.display = 'none';
+        }, 1500);
 
         if (push !== false) {
             var newUrl = new URL(window.location);

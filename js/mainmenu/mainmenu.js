@@ -163,6 +163,10 @@ window.openBgPicker = function() {
     styleSheet.innerText = styles;
     document.head.appendChild(styleSheet);
 
+    // Show body setelah semua CSS siap
+    document.documentElement.style.display = 'block';
+    document.body.style.display = 'block';
+
     // We don't need the old overlay/popup HTML anymore - windowhandler.js creates its own
 
     // Function definitions using windowhandler.js API
