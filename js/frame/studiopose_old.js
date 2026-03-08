@@ -293,6 +293,7 @@
     <script src="js/studiocharacter/export.js"></script>
     <script src="js/studiocharacter/layersrcmanager.js"></script>
     <script src="js/studiocharacter/menulayer.js"></script>
+    <script src="js/studiocharacter/studiocharactermenuintegration.js"></script>
     <script src="js/studiocharacter/bgconfig.js"></script>
     <script src="js/studiocharacter/framework.js"></script>
     <!-- Skrip -->

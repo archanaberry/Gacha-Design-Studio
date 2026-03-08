@@ -494,29 +494,29 @@
   // Monitor panel2 controls untuk flag modification state
   // Ini akan memberitahu sistem bahwa layer telah berubah, dan history akan direkam SAAT DESELECT
   document.addEventListener('DOMContentLoaded', function () {
+    const panel2 = document.getElementById('panel2');
+    if (panel2) {
+      // Monitor input fields untuk change
+      panel2.addEventListener('input', function (e) {
+        if (e.target.type === 'range' || e.target.type === 'text' || e.target.type === 'number' || e.target.type === 'color' || e.target.tagName === 'SELECT') {
+          window.currentLayerStateModified = true;
+        }
+      }, true);
+
+      // Monitor checkbox changes (flip)
+      panel2.addEventListener('change', function (e) {
+        if (e.target.type === 'checkbox' || e.target.tagName === 'SELECT') {
+          window.currentLayerStateModified = true;
+        }
+      }, true);
+    }
+      
     setTimeout(function () {
       // Record baseline initial state
       if (window.HistoryManager && typeof window.HistoryManager.recordBaseline === 'function') {
         window.HistoryManager.recordBaseline();
       }
-
-      const panel2 = document.getElementById('panel2');
-      if (panel2) {
-        // Monitor input fields untuk change
-        panel2.addEventListener('input', function (e) {
-          if (e.target.type === 'range' || e.target.type === 'text' || e.target.type === 'number' || e.target.type === 'color' || e.target.tagName === 'SELECT') {
-            window.currentLayerStateModified = true;
-          }
-        }, true);
-
-        // Monitor checkbox changes (flip)
-        panel2.addEventListener('change', function (e) {
-          if (e.target.type === 'checkbox' || e.target.tagName === 'SELECT') {
-            window.currentLayerStateModified = true;
-          }
-        }, true);
-      }
-    }, 3000);
+    }, 500);
   });
 
   console.log('✓ HistoryManager initialized (Recursive Tree Support)');

@@ -361,6 +361,15 @@ function onLayerPointerUp(e) {
     groupDraggedLayers = [];
   }
 
+  // Record history if drag ended (only if actual movement occurred)
+  if (window.justFinishedDrag && typeof window.HistoryManager !== 'undefined') {
+    const layerNames = info.type === 'group' && info.layers ? info.layers.map(l => l.name).join(', ') : (info.layer ? info.layer.name : 'Layer');
+    window.HistoryManager.recordAction('move', {
+      layerName: layerNames,
+      action: 'Dragged layer(s)'
+    });
+  }
+
   // Update display when any drag ends
   // Color will change from BLUE (active drag) to RED (multi-select idle) based on multiDragState.size
   updateCoordInput();
@@ -2467,6 +2476,14 @@ function mergeSelectedLayersSrc() {
   // Select layer baru
   selectLayer(mergedLayer);
   renderLayer();
+
+  // Record history
+  if (typeof window.HistoryManager !== 'undefined') {
+    window.HistoryManager.recordAction('group', {
+      layerName: newName,
+      action: 'Merged layer sources'
+    });
+  }
 }
 
 /**
@@ -2620,6 +2637,14 @@ function ungroupSrcLayers() {
       selectLayer(allNewLayers[0]);
     }
     renderLayer();
+
+    // Record history
+    if (typeof window.HistoryManager !== 'undefined') {
+      window.HistoryManager.recordAction('ungroup', {
+        layerName: 'Ungrouped sources',
+        action: 'Ungrouped layer sources'
+      });
+    }
   }
 }
 
@@ -2710,6 +2735,14 @@ function groupSelectedLayers() {
   // Pilih grup baru
   selectLayer(newGroup);
   renderLayer();
+
+  // Record history
+  if (typeof window.HistoryManager !== 'undefined') {
+    window.HistoryManager.recordAction('group', {
+      layerName: groupName,
+      action: 'Grouped layers'
+    });
+  }
 }
 
 /**
@@ -2805,6 +2838,14 @@ function ungroupSelectedLayers() {
   }
 
   renderLayer();
+
+  // Record history
+  if (typeof window.HistoryManager !== 'undefined') {
+    window.HistoryManager.recordAction('ungroup', {
+      layerName: 'Ungrouped layers',
+      action: 'Ungrouped layers'
+    });
+  }
 }
 
 function deleteSelectedLayer() {

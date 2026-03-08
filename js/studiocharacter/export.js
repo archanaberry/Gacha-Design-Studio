@@ -509,6 +509,11 @@ function loadStudioScene(layerDataList, assets = null, background = null) {
                 if (data.options && data.options.spineData && window.Spine) {
                     newLayer.spine = new window.Spine(newLayer);
                 }
+
+                // Re-integrate HTML Shape khusus
+                if ((data.isHtmlShape || (data.options && data.options.isHtmlShape)) && typeof window.hsRehydrateHtmlShape === 'function') {
+                    window.hsRehydrateHtmlShape(newLayer, data.htmlShapeData);
+                }
             }
         }
     });
@@ -517,6 +522,7 @@ function loadStudioScene(layerDataList, assets = null, background = null) {
     if (typeof deselectAllLayersUnified === 'function') deselectAllLayersUnified();
     if (typeof updateCoordInput === 'function') updateCoordInput();
     if (typeof renderLayer === 'function') renderLayer();
+    if (typeof updateMenuLayer === 'function') updateMenuLayer();
 
     console.log(`✅ Loaded ${layerDataList.length} layers into studio.`);
 }
@@ -665,7 +671,8 @@ window.getSerializedLayerData = function (layer) {
         width: layer.width,
         height: layer.height,
         opacity: layer.opacity !== undefined ? layer.opacity : 1,
-        color: layer.color || null
+        color: layer.color || null,
+        isHtmlShape: layer.isHtmlShape || false
     };
 
     // Capture multiplier state
@@ -687,8 +694,6 @@ window.getSerializedLayerData = function (layer) {
         });
     }
 
-    // Gabungkan dengan options asli untuk mempertahankan properti per-src (posX0, color1, dll)
-    // currentOptions yang baru akan meng-overwrite nilai lama yang berubah
     const options = Object.assign({}, layer.options || {}, currentOptions);
 
     const data = {
@@ -696,6 +701,12 @@ window.getSerializedLayerData = function (layer) {
         src: layer.src,
         options: options
     };
+
+    if (layer.isHtmlShape || (layer.options && layer.options.isHtmlShape)) {
+        data.isHtmlShape = true;
+        if (options) options.isHtmlShape = true;
+        data.htmlShapeData = layer.htmlShapeData;
+    }
 
     // Rekursif jika ada child layers (Grup)
     if (layer.childLayers && layer.childLayers.length > 0) {

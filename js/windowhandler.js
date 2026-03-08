@@ -233,6 +233,7 @@
       win.style.top = config.position.top;
       win.style.left = config.position.left;
       win.style.width = config.width;
+      if (config.height) win.style.height = config.height;
       win.style.minWidth = config.minWidth;
       win.style.minHeight = config.minHeight;
       win.style.zIndex = config.zIndex;
@@ -317,7 +318,7 @@
       for (let i = 0; i < n; i++) {
         ids.push(this.openWindow({
           title: `Gacha Window ${this.windows.size + 1}`,
-          content: `<div><strong>Window #${this.windows.size + 1}</strong><p>Test content ${i+1}</p></div>`,
+          content: `<div><strong>Window #${this.windows.size + 1}</strong><p>Test content ${i + 1}</p></div>`,
           position: { top: `${20 + i * 3}%`, left: `${20 + i * 3}%` },
           width: '380px'
         }));
@@ -391,7 +392,7 @@
           pointerId: e.pointerId
         };
         // capture pointer to header if supported
-        try { header.setPointerCapture && header.setPointerCapture(e.pointerId); } catch (err) {}
+        try { header.setPointerCapture && header.setPointerCapture(e.pointerId); } catch (err) { }
         this._bringToTop(windowId);
         e.preventDefault();
       };
@@ -402,11 +403,11 @@
         const dx = e.clientX - dragState.startX;
         const dy = e.clientY - dragState.startY;
         winEl.style.left = `${Math.round(dragState.startLeft + dx)}px`;
-        winEl.style.top  = `${Math.round(dragState.startTop + dy)}px`;
+        winEl.style.top = `${Math.round(dragState.startTop + dy)}px`;
       };
       const onHeaderPointerUp = (e) => {
         if (!dragState) return;
-        try { header.releasePointerCapture && header.releasePointerCapture(dragState.pointerId); } catch (err) {}
+        try { header.releasePointerCapture && header.releasePointerCapture(dragState.pointerId); } catch (err) { }
         dragState = null;
       };
 
@@ -429,7 +430,7 @@
           startH: parseInt(getComputedStyle(winEl).height, 10),
           pointerId: e.pointerId
         };
-        try { resizer.setPointerCapture && resizer.setPointerCapture(e.pointerId); } catch (err) {}
+        try { resizer.setPointerCapture && resizer.setPointerCapture(e.pointerId); } catch (err) { }
         this._bringToTop(windowId);
         e.preventDefault();
       };
@@ -444,7 +445,7 @@
       };
       const onResizerPointerUp = (e) => {
         if (!resizeState) return;
-        try { resizer.releasePointerCapture && resizer.releasePointerCapture(resizeState.pointerId); } catch (err) {}
+        try { resizer.releasePointerCapture && resizer.releasePointerCapture(resizeState.pointerId); } catch (err) { }
         resizeState = null;
       };
 
@@ -504,8 +505,8 @@
       }
 
       // remove DOM nodes
-      try { winObj.element.remove(); } catch (e) {}
-      try { winObj.overlay.remove(); } catch (e) {}
+      try { winObj.element.remove(); } catch (e) { }
+      try { winObj.overlay.remove(); } catch (e) { }
 
       // delete entry
       this.windows.delete(windowId);

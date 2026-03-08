@@ -724,7 +724,11 @@ class LayerSrcManager {
             colorInput.addEventListener('input', (e) => {
                 const color = e.target.value;
                 layerRow.querySelector('.menusrc-color-inner').style.backgroundColor = color;
-                this.#applyColorToLayer(layerId, color);
+                this.#applyColorToLayer(layerId, color, false);
+            });
+            colorInput.addEventListener('change', (e) => {
+                const color = e.target.value;
+                this.#applyColorToLayer(layerId, color, true);
             });
             colorInput.addEventListener('click', (e) => e.stopPropagation());
         }
@@ -796,7 +800,11 @@ class LayerSrcManager {
                     sInput.addEventListener('input', (e) => {
                         const color = e.target.value;
                         srcRow.querySelector('.menusrc-color-inner').style.backgroundColor = color;
-                        this.#applyColorToSrc(layerId, idx, color);
+                        this.#applyColorToSrc(layerId, idx, color, false);
+                    });
+                    sInput.addEventListener('change', (e) => {
+                        const color = e.target.value;
+                        this.#applyColorToSrc(layerId, idx, color, true);
                     });
                     sInput.addEventListener('click', (e) => e.stopPropagation());
                 }
@@ -812,20 +820,20 @@ class LayerSrcManager {
         }
     }
 
-    #applyColorToLayer(layerId, color) {
+    #applyColorToLayer(layerId, color, recordHistory = true) {
         const layerData = this.layerMap.get(layerId);
         if (!layerData) return;
 
         // Apply to this layer's sources (SG)
         const srcs = layerData.srcs || layerData.src || [];
         srcs.forEach((_, idx) => {
-            this.#applyColorToSrc(layerId, idx, color);
+            this.#applyColorToSrc(layerId, idx, color, recordHistory);
         });
 
         // Recursively apply to child layers (IG)
         if (layerData.childLayers && layerData.childLayers.length > 0) {
             layerData.childLayers.forEach(child => {
-                this.#applyColorToLayer(child.id, color);
+                this.#applyColorToLayer(child.id, color, recordHistory);
             });
         }
     }
@@ -835,12 +843,16 @@ class LayerSrcManager {
         colorInput.type = 'color';
         colorInput.oninput = (e) => {
             const color = e.target.value;
-            this.#applyColorToLayer(layerId, color);
+            this.#applyColorToLayer(layerId, color, false);
+        };
+        colorInput.onchange = (e) => {
+            const color = e.target.value;
+            this.#applyColorToLayer(layerId, color, true);
         };
         colorInput.click();
     }
 
-    #applyColorToSrc(layerId, srcIndex, color = null) {
+    #applyColorToSrc(layerId, srcIndex, color = null, recordHistory = true) {
         if (color === null) {
             this.#showColorPicker(layerId, srcIndex);
             return;
@@ -881,7 +893,7 @@ class LayerSrcManager {
             }
         }
 
-        if (typeof window.HistoryManager !== 'undefined') {
+        if (recordHistory && typeof window.HistoryManager !== 'undefined') {
             window.HistoryManager.recordAction('color', {
                 layerName: layer.name,
                 srcIndex: srcIndex,

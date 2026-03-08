@@ -34,45 +34,40 @@
             width: 100%;
             height: 100%;
             position: relative;
+            background-color: #333; /* Resets: Added to hide white gaps */
         }
 
         /* Framework container (Panel3) */
         .panel3.framework-container {
-            background: none;
+            border: 5px solid #f44336; /* Red Frame */
+            border-radius: 12px;
+            box-sizing: border-box; /* Include border in size */
+            padding: 0 !important;
+            margin: 0;
+            margin-right: -5px; /* Overlap to remove white gap */
+            background-color: white;
+            z-index: 150;
             background-size: cover;
             overflow: auto;
             flex-shrink: 0;
-            border-right: 1px solid #ccc;
             position: relative;
             display: none;
             width: 0;
             min-height: 100%;
         }
 
-        /* Horizontal splitter */
-        .splitter-horizontal {
-            width: 5px;
-            height: 100%;
-            background-color: #999;
-            cursor: ew-resize;
-            z-index: 20;
-            flex-shrink: 0;
-            display: none;
-        }
-
-        .splitter-horizontal:hover {
-            background-color: #666;
-        }
-
         /* Panel group - flex container untuk panel1 dan panel2 */
         .panel-group {
             display: flex;
             flex-direction: column;
-            flex: 1;
             width: 100%;
-            height: 100%;
-            position: relative; /* Important for absolute positioning of panel1 dan panel2 */
-            min-height: 0;
+            height: 100%; /* Occupy full height of parent */
+            background-color: transparent; 
+            overflow: hidden; /* Prevent strange scrollbars on the group itself */
+            flex: 1;
+            margin: 0;
+            padding: 0;
+            position: relative;
         }
 
         /* Panel1 - UNLIMITED content canvas FULL SIZE */
@@ -139,29 +134,23 @@
             touch-action: pan-x pan-y;
         }
 
-        /* Vertical splitter */
-        #splitter {
-            width: 100%;
-            height: 10px;
-            background-color: #999;
-            cursor: ns-resize;
-            z-index: 10;
-            flex-shrink: 0;
-            position: absolute;
-            bottom: 120px; /* Adjust based on panel2 height */
+        /* Drag Overlay - Invisible layer to catch fast mouse movements */
+        #dragOverlay {
+            position: fixed;
+            top: 0;
             left: 0;
-            right: 0;
-        }
-
-        #splitter:hover {
-            background-color: #666;
+            width: 100%;
+            height: 100%;
+            z-index: 20000; /* Above everything including splitters */
+            cursor: grabbing;
+            display: none; /* Hidden by default */
+            background: transparent;
         }
 
         /* Panel2 - Controls panel OVERLAY di atas panel1 */
         .panel2.input-container {
             margin: 0;
             padding: 0;
-            background: none;
             background-size: cover;
             width: 100%;
             height: auto;
@@ -176,7 +165,28 @@
             align-items: initial;
             justify-content: initial;
             box-sizing: border-box;
-            z-index: 20; /* Di atas panel1 */
+            /* NEW STYLING */
+            border: 5px solid #29b6f6; /* Blue Water Frame */
+            border-radius: 12px 12px 0 0; /* Radius on top only usually looks better, but user asked for 12px */
+            border-radius: 12px;
+            /* PADDING REMOVED as requested */
+            padding: 0 !important;
+            /* Ensure background is opaque so content from panel 1 doesn't bleed weirdly if they overlap */
+            background-color: white; 
+            z-index: 100; /* High Z-index as requested */
+        }
+        
+        /* CORNER MOVE HANDLE */
+        #splitterCorner {
+            position: absolute;
+            width: 40px; /* Large hit area */
+            height: 40px;
+            background: transparent;
+            z-index: 2000; /* Highest, above panels */
+            cursor: move; /* 4-way arrow */
+            display: none;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
         }
     </style>
 </head>
@@ -184,12 +194,15 @@
 
     <!-- Main layout container -->
     <div class="main-container" id="mainContainer">
+        <!-- GLOBAL DRAG OVERLAY to fix fast-drag "sticking" issues -->
+        <div id="dragOverlay"></div>
+
         <!-- Panel kiri: Panel3 (Framework) -->
         <div class="panel3 framework-container" id="panel3" style="display: none; width: 0%;">
         </div>
 
-        <!-- Splitter horizontal (Panel3 - Panel1/2) -->
-        <div id="splitterH" class="splitter-horizontal"></div>
+        <!-- Corner Handle (Intersection) -->
+        <div id="splitterCorner"></div>
 
         <!-- Panel tengah: Panel1 (Canvas) dan Panel2 (Controls) -->
         <div class="panel-group" id="panelGroup">
@@ -283,6 +296,9 @@
         <input type="text" id="svgFileName" placeholder="Nama file SVG">
         <button onclick="exportAsHTML()">Ekspor sebagai HTML</button>
         <input type="text" id="htmlFileName" placeholder="Nama file HTML">
+        <br><br>
+        <button onclick="exportStudioScene()" style="background-color: #4CAF50; color: white;">Ekspor Prasetel Studio (.gss/.gsj)</button>
+        <button onclick="importStudioScene()" style="background-color: #9C27B0; color: white;">Impor Prasetel / Konfigurasi Studio</button>
         
         <br>
         <button id="toggleSelectorBtn">Nyalakan Seleksi</button>
@@ -371,6 +387,8 @@
         <button onclick="document.getElementById('svgUpload').click()">Tambahkan SVG</button>
         <input type="file" id="imageUpload" accept="image/*" multiple style="display:none" onchange="addImage(event)">
         <button onclick="document.getElementById('imageUpload').click()">Tambahkan Sisipan</button>
+        <button id="addHtmlShapeBtn" onclick="openHtmlShapeStudio()" style="background-color: #5E6CC9; color: white; transition: all 0.2s;">Tambahkan Markah Web</button>
+
         
         <!-- Layer SRC Manager Container -->
         <div id="menusrcContainer" style="margin-top: 15px; border-top: 2px solid #ddd; padding-top: 15px;"></div>
@@ -378,15 +396,14 @@
         <!-- Child Layers Manager Container -->
         <div id="menulayerContainer" style="margin-top: 15px; border-top: 2px solid #333; padding-top: 15px;"></div>
             </div>
-
-            <!-- Garis splitter vertikal (Panel1 - Panel2) -->
-            <div id="splitter" class="splitter-vertical"></div>
         </div>
     </div>
 
     <!-- Skrip -->
+    <script src="js/colorcode/javascript.js"></script>
     <script src="js/windowhandler.js"></script>
     <script src="js/mainmenu/studiopose.js"></script>
+    <script src="js/studiocharacter/htmlshape.js"></script>
     <script src="js/studiocharacter/multiplier.js"></script>
     <script src="js/studiocharacter/layer.js"></script>
     <script src="js/studiocharacter/history.js"></script>
@@ -408,8 +425,14 @@
     <script src="js/studiocharacter/export.js"></script>
     <script src="js/studiocharacter/layersrcmanager.js"></script>
     <script src="js/studiocharacter/menulayer.js"></script>
+    <script src="js/studiocharacter/studiocharactermenuintegration.js"></script>
     <script src="js/studiocharacter/bgconfig.js"></script>
     <script src="js/studiocharacter/framework.js"></script>
+    <!-- Rigging System -->
+    <script src="js/studiocharacter/joint.js"></script>
+    <script src="js/studiocharacter/bone.js"></script>
+    <script src="js/studiocharacter/spine.js"></script>
+    <script src="js/studiocharacter/menurigging.js"></script>
     <!-- Skrip -->
 
     <script>
@@ -418,7 +441,6 @@
     function toggleFrameworkPanel() {
         const panel3 = document.getElementById('panel3');
         const panelGroup = document.getElementById('panelGroup');
-        const splitterH = document.getElementById('splitterH');
         const panel1 = document.getElementById('panel1');
         const mainContainer = document.getElementById('mainContainer');
         
@@ -427,14 +449,12 @@
             panel3.style.display = 'block';
             panel3.style.width = '200px'; // Default width
             panelGroup.style.flex = '1';
-            splitterH.style.display = 'block';
             // Ensure panel1 can grow when panel3 is shown
             panel1.style.minHeight = '0';
         } else {
             // Hide panel3 - panel1 bisa unlimited growth
             panel3.style.width = '0%';
             panel3.style.display = 'none';
-            splitterH.style.display = 'none';
             // Allow panel1 to grow unlimited when panel3 is hidden
             panel1.style.minHeight = 'auto';
         }
@@ -468,68 +488,134 @@
         }
     });
 
-    // Initialize splitter for panel3 (horizontal - left to right)
+    // ========== CORNER DRAG & SYNC LOGIC ==========
     document.addEventListener('DOMContentLoaded', function() {
-        const splitterH = document.getElementById('splitterH');
+        const splitterCorner = document.getElementById('splitterCorner');
         const panel3 = document.getElementById('panel3');
-        const panel1 = document.getElementById('panel1');
+        const panelGroup = document.getElementById('panelGroup');
         const mainContainer = document.getElementById('mainContainer');
-        let isDraggingH = false;
-
-        if (splitterH && mainContainer) {
-            splitterH.addEventListener('mousedown', function(e) {
-                isDraggingH = true;
-                document.addEventListener('mousemove', handleHorizontalDrag);
-                document.addEventListener('mouseup', stopHorizontalDrag);
-            });
-
-            splitterH.addEventListener('touchstart', function(e) {
-                isDraggingH = true;
-                document.addEventListener('touchmove', handleHorizontalDrag, { passive: false });
-                document.addEventListener('touchend', stopHorizontalDrag);
-            });
-
-            function handleHorizontalDrag(e) {
-                if (!isDraggingH) return;
-                
-                let clientX;
-                if (e.touches && e.touches.length > 0) {
-                    clientX = e.touches[0].clientX;
-                } else if (e.clientX) {
-                    clientX = e.clientX;
-                } else {
-                    return;
-                }
-                
-                const containerRect = mainContainer.getBoundingClientRect();
-                const newWidth = clientX - containerRect.left;
-                const minWidth = 0;
-                const maxWidth = containerRect.width; // Unlimited - can expand to screen edge
-                
-                const width = Math.max(minWidth, Math.min(newWidth, maxWidth));
-                panel3.style.width = width + 'px';
-                
-                // Check if width is approximately 0, if so hide the panel
-                if (width < 10) {
-                    panel3.style.width = '0px';
-                }
+        const panel1 = document.getElementById('panel1');
+        const panel2 = document.getElementById('panel2');
+        
+        let isDraggingCorner = false;
+        
+        // Sync Function: Move corner to intersection of Panel3 Right and Panel2 Top
+        function syncCorner() {
+             if (!splitterCorner || !panel2 || panel3.style.display === 'none') {
+                 if(splitterCorner) splitterCorner.style.display = 'none';
+                 return;
+             }
+             
+             // Check if panel3 is visible
+             if (panel3.offsetWidth > 5) {
+                 splitterCorner.style.display = 'block';
+                 
+                 const mainRect = mainContainer.getBoundingClientRect();
+                 const panel2Rect = panel2.getBoundingClientRect();
+                 const panel3Rect = panel3.getBoundingClientRect();
+                 
+                 // Pos X: Right edge of Panel3 (minus mainRect.left)
+                 const x = panel3Rect.right - mainRect.left; 
+                 
+                 // Pos Y: Top edge of Panel2 relative to container
+                 const y = panel2Rect.top - mainRect.top;
+                 
+                 splitterCorner.style.left = x + 'px';
+                 splitterCorner.style.top = y + 'px';
+             } else {
+                 splitterCorner.style.display = 'none';
+             }
+        }
+        
+        // Loop sync using requestAnimationFrame for smoothness
+        function loopSync() {
+            syncCorner();
+            requestAnimationFrame(loopSync);
+        }
+        loopSync();
+        
+        // Drag Logic
+        if (splitterCorner) {
+            splitterCorner.addEventListener('mousedown', function(e) { startCornerDrag(e); });
+            splitterCorner.addEventListener('touchstart', function(e) { startCornerDrag(e); });
+        }
+        
+        function startCornerDrag(e) {
+            e.preventDefault();
+            isDraggingCorner = true;
+            
+            // Show overlay
+            const overlay = document.getElementById('dragOverlay');
+            if (overlay) overlay.style.display = 'block';
+            document.body.style.userSelect = 'none';
+            document.body.style.cursor = 'move';
+            
+            if (e.type === 'mousedown') {
+                document.addEventListener('mousemove', handleCornerDrag);
+                document.addEventListener('mouseup', stopCornerDrag);
+            } else {
+                 document.addEventListener('touchmove', handleCornerDrag, {passive: false});
+                 document.addEventListener('touchend', stopCornerDrag);
             }
-
-            function stopHorizontalDrag() {
-                isDraggingH = false;
-                document.removeEventListener('mousemove', handleHorizontalDrag);
-                document.removeEventListener('mouseup', stopHorizontalDrag);
-                document.removeEventListener('touchmove', handleHorizontalDrag);
-                document.removeEventListener('touchend', stopHorizontalDrag);
-                
-                // If panel3 width is 0, hide it completely
-                if (panel3.offsetWidth < 10) {
-                    panel3.style.display = 'none';
-                    splitterH.style.display = 'none';
-                    // Allow panel1 to grow unlimited when panel3 is completely hidden
-                    panel1.style.minHeight = 'auto';
-                }
+        }
+        
+        function handleCornerDrag(e) {
+            if (!isDraggingCorner) return;
+            e.preventDefault();
+            
+            let clientX, clientY;
+             if (e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
             }
+            
+            // 1. Handle Horizontal (Panel3 Width)
+            const containerRect = mainContainer.getBoundingClientRect();
+            let newWidth = clientX - containerRect.left;
+            const minWidth = 0;
+            const maxWidth = containerRect.width * 0.9;
+            const width = Math.max(minWidth, Math.min(newWidth, maxWidth));
+            
+            if (width < 20) {
+                 // Close if dragged too far left
+                 panel3.style.width = '0px';
+                 panel3.style.display = 'none';
+            } else {
+                 panel3.style.width = width + 'px';
+                 panel3.style.display = 'block';
+            }
+            
+            // 2. Handle Vertical (Panel2 Top Drag)
+            const mainRect = mainContainer.getBoundingClientRect();
+            const winH = mainRect.height;
+            const pointerYRel = clientY - mainRect.top;
+            
+            // Calculate height from bottom
+            let hPx = winH - pointerYRel;
+            let hPct = (hPx / winH) * 100;
+            hPct = Math.min(Math.max(hPct, 5), 95);
+
+            panel2.style.height = hPct + '%';
+            
+            // Force sync immediately
+            syncCorner();
+        }
+        
+        function stopCornerDrag() {
+            isDraggingCorner = false;
+            document.removeEventListener('mousemove', handleCornerDrag);
+            document.removeEventListener('mouseup', stopCornerDrag);
+             document.removeEventListener('touchmove', handleCornerDrag);
+             document.removeEventListener('touchend', stopCornerDrag);
+             
+            // Hide overlay
+            const overlay = document.getElementById('dragOverlay');
+            if (overlay) overlay.style.display = 'none';
+            document.body.style.userSelect = '';
+            document.body.style.cursor = '';
         }
     });
 
