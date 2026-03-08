@@ -47,8 +47,19 @@ function loadCurrentStudioBGM() {
         studioBGMAudio = new Audio();
         studioBGMAudio.loop = false;
         studioBGMAudio.addEventListener('ended', playNextStudioBGM);
+
+        // Add error handling for 404s
+        studioBGMAudio.addEventListener('error', function (e) {
+            console.warn(`%c[BGM] ❌ Failed to load: ${studioBGMAudio.src}`, 'color: #ff4444; font-weight: bold');
+            // Optionally skip to next BGM if current one fails
+            // setTimeout(playNextStudioBGM, 1000); 
+        });
     }
-    studioBGMAudio.src = "assets/audio/studiocharacter/" + studioBGMList[currentStudioBGMIndex][0] + ".mp3";
+    const fileName = studioBGMList[currentStudioBGMIndex][0];
+    studioBGMAudio.src = "assets/audio/studiocharacter/" + fileName + ".mp3";
+
+    console.log(`%c[BGM] 🎵 Loading track: ${fileName}`, 'color: #00aaff');
+
     try {
         studioBGMAudio.preload = 'auto';
         studioBGMAudio.load();
@@ -57,17 +68,18 @@ function loadCurrentStudioBGM() {
     }
 }
 
+
 /**
  * Hitung volume efektif untuk studio BGM
  * @param {Object} settings - Audio settings object
  * @returns {number} Volume antara 0-1
  */
 function effectiveStudioBGMVolume(settings) {
-    var master = (settings && settings.masterVolume !== undefined) 
-        ? settings.masterVolume 
+    var master = (settings && settings.masterVolume !== undefined)
+        ? settings.masterVolume
         : (parseFloat(localStorage.getItem('masterVolume')) || 0.5);
-    var bgm = (settings && settings.bgmVolume !== undefined) 
-        ? settings.bgmVolume 
+    var bgm = (settings && settings.bgmVolume !== undefined)
+        ? settings.bgmVolume
         : (parseFloat(localStorage.getItem('bgmVolume')) || 0.5);
     return Math.max(0, Math.min(1, master * bgm));
 }
@@ -84,13 +96,13 @@ function fadeOutStudioBGM(duration = 1500, targetVol = 0.3) {
 
     studioAudioFading = true;
     studioTargetVolume = targetVol;
-    
+
     var currentVolume = studioBGMAudio.volume || 0.5;
     studioOriginalVolume = currentVolume;
-    
+
     var startTime = Date.now();
     var startVolume = currentVolume;
-    
+
     console.log('studiocharacter/bgm.js: Starting fade out', {
         startVolume,
         targetVolume: targetVol,
@@ -100,11 +112,11 @@ function fadeOutStudioBGM(duration = 1500, targetVol = 0.3) {
 
     function animateFade() {
         if (!studioAudioFading) return;
-        
+
         var elapsed = Date.now() - startTime;
         var progress = Math.min(1, elapsed / duration);
         var newVolume = startVolume + (targetVol - startVolume) * progress;
-        
+
         if (studioBGMAudio) {
             studioBGMAudio.volume = Math.max(0, Math.min(1, newVolume));
         }
@@ -132,12 +144,12 @@ function fadeInStudioBGM(duration = 1500) {
     }
 
     studioAudioFading = true;
-    
+
     var startVolume = studioBGMAudio.volume || studioTargetVolume;
     var targetVolume = effectiveStudioBGMVolume(window.AudioSettings || null);
-    
+
     var startTime = Date.now();
-    
+
     console.log('studiocharacter/bgm.js: Starting fade in', {
         startVolume,
         targetVolume,
@@ -147,11 +159,11 @@ function fadeInStudioBGM(duration = 1500) {
 
     function animateFade() {
         if (!studioAudioFading) return;
-        
+
         var elapsed = Date.now() - startTime;
         var progress = Math.min(1, elapsed / duration);
         var newVolume = startVolume + (targetVolume - startVolume) * progress;
-        
+
         if (studioBGMAudio) {
             studioBGMAudio.volume = Math.max(0, Math.min(1, newVolume));
         }
@@ -174,18 +186,18 @@ function fadeInStudioBGM(duration = 1500) {
  * @param {Object} settings - Audio settings object
  */
 function applyStudioAudioSettings(settings) {
-    var master = (settings && settings.masterVolume !== undefined) 
-        ? settings.masterVolume 
+    var master = (settings && settings.masterVolume !== undefined)
+        ? settings.masterVolume
         : (parseFloat(localStorage.getItem('masterVolume')) || 0.5);
-    var bgmSetting = (settings && settings.bgmVolume !== undefined) 
-        ? settings.bgmVolume 
+    var bgmSetting = (settings && settings.bgmVolume !== undefined)
+        ? settings.bgmVolume
         : (parseFloat(localStorage.getItem('bgmVolume')) || 0.5);
     var effectiveVol = Math.max(0, Math.min(1, master * bgmSetting));
 
     if (!studioBGMAudio) {
         loadCurrentStudioBGM();
     }
-    
+
     if (!studioBGMAudio) {
         console.warn('studiocharacter/bgm.js: studioBGMAudio not initialized');
         return;
@@ -194,7 +206,7 @@ function applyStudioAudioSettings(settings) {
     if (!studioAudioFading) {
         studioBGMAudio.volume = effectiveVol;
     }
-    
+
     console.log('studiocharacter/bgm.js: applyStudioAudioSettings', {
         master,
         bgmSetting,
@@ -206,7 +218,7 @@ function applyStudioAudioSettings(settings) {
     });
 
     if ((settings && settings.bgmEnabled === false) || effectiveVol === 0) {
-        try { studioBGMAudio.pause(); } catch(e){}
+        try { studioBGMAudio.pause(); } catch (e) { }
         console.log('studiocharacter/bgm.js: Studio BGM paused due to settings or volume');
         return;
     }
@@ -219,7 +231,7 @@ function applyStudioAudioSettings(settings) {
             console.warn('studiocharacter/bgm.js: Failed to start studio BGM playback', err);
         });
     }
-    
+
     updateStudioBGMTitle();
 }
 
@@ -246,7 +258,7 @@ function playPrevStudioBGM() {
  */
 function stopStudioBGMWithFade(duration = 1000) {
     if (!studioBGMAudio) return;
-    
+
     var startVolume = studioBGMAudio.volume;
     var startTime = Date.now();
 
@@ -261,7 +273,7 @@ function stopStudioBGMWithFade(duration = 1000) {
             try {
                 studioBGMAudio.pause();
                 studioBGMAudio.currentTime = 0;
-            } catch (e) {}
+            } catch (e) { }
         }
     }
 
@@ -271,7 +283,7 @@ function stopStudioBGMWithFade(duration = 1000) {
 // Event listeners
 
 // Ketika studio siap (loading selesai)
-document.addEventListener('studioReady', function(e) {
+document.addEventListener('studioReady', function (e) {
     console.log('studiocharacter/bgm.js: Studio ready detected');
     if (!studioBGMAudio) {
         loadCurrentStudioBGM();
@@ -284,7 +296,7 @@ document.addEventListener('studioReady', function(e) {
 });
 
 // Ketika masuk studio (sebelum ready)
-document.addEventListener('studioEnter', function(e) {
+document.addEventListener('studioEnter', function (e) {
     console.log('studiocharacter/bgm.js: Entering studio - fading out to reduced volume');
     if (!studioBGMAudio) {
         loadCurrentStudioBGM();
@@ -294,13 +306,13 @@ document.addEventListener('studioEnter', function(e) {
 });
 
 // Ketika keluar studio
-document.addEventListener('studioExit', function(e) {
+document.addEventListener('studioExit', function (e) {
     console.log('studiocharacter/bgm.js: Exiting studio - stopping BGM');
     stopStudioBGMWithFade(1000);
 });
 
 // Ubah BGM studio
-document.addEventListener('changeStudioBGM', function(e) {
+document.addEventListener('changeStudioBGM', function (e) {
     if (e && e.detail) {
         if (e.detail.direction === 'next') {
             playNextStudioBGM();
@@ -311,14 +323,14 @@ document.addEventListener('changeStudioBGM', function(e) {
 });
 
 // React to audio settings changes
-document.addEventListener('audioSettingsChanged', function(e) {
+document.addEventListener('audioSettingsChanged', function (e) {
     applyStudioAudioSettings(e && e.detail ? e.detail : window.AudioSettings || null);
 });
 
 // Initialize DOMContentLoaded
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     console.log('studiocharacter/bgm.js: Initializing studio BGM system');
-    
+
     // Shuffle list (optional)
     // Uncomment jika ingin random order
     /*
@@ -327,11 +339,11 @@ document.addEventListener('DOMContentLoaded', function() {
         [studioBGMList[i], studioBGMList[j]] = [studioBGMList[j], studioBGMList[i]];
     }
     */
-    
+
     currentStudioBGMIndex = 0;
     loadCurrentStudioBGM();
     updateStudioBGMTitle();
-    
+
     if (window.AudioSettings) {
         applyStudioAudioSettings(window.AudioSettings);
     }

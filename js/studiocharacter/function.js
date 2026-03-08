@@ -36,6 +36,12 @@
   function toggleLayerSelection(layer) {
     if (!layer) return;
     if (layer.element.classList.contains('selected')) {
+      // About to deselect logic
+      if (layer.selected && window.currentLayerStateModified && window.HistoryManager) {
+        window.HistoryManager.recordAction('edit');
+        window.currentLayerStateModified = false;
+      }
+
       layer.element.classList.remove('selected');
       layer.selected = false;
     } else {
@@ -68,6 +74,15 @@
 
   // 🔥 REFACTORED: deselect all layers
   function deselectAllLayers() {
+
+    // 🔥 HISTORY STRATEGY: RECORD ON DESELECT
+    // If we had a modified layer active, record its state BEFORE we lose selection context
+    if (window.currentLayerStateModified && window.HistoryManager) {
+      console.log('📝 Deselect triggered: Recording history for modified state');
+      window.HistoryManager.recordAction('edit'); // Generic 'edit' action
+      window.currentLayerStateModified = false;
+    }
+
     if (typeof layers !== 'undefined') {
       layers.forEach(l => {
         l.element.classList.remove('selected');
@@ -96,7 +111,7 @@
   // Ctrl+Click dan layer selection logic sudah di-handle di studiopose.js addLayerClickHandler!
   document.addEventListener('click', function (e) {
     const panel1 = document.getElementById('panel1');
-    const panel2 = document.getElementById('panel2');
+    const  = document.getElementById('panel2');
     const panel3 = document.getElementById('panel3');
     const splitter = document.getElementById('splitter');
 
@@ -171,6 +186,17 @@
     // ============================================
     if (isCtrl && e.key.toLowerCase() === 'z' && !e.shiftKey) {
       e.preventDefault();
+      // 🔥 Trigger deselect check first: if user is editing a layer and hits Undo,
+      // we must "commit" the current edit to history first (if any)
+      // BUT typically Undo should UNDO the current state.
+      // If we record now, we save the current state, then undo goes back to previous.
+
+      // Force save current state if modified
+      if (window.currentLayerStateModified && window.HistoryManager) {
+        window.HistoryManager.recordAction('edit');
+        window.currentLayerStateModified = false;
+      }
+
       if (typeof window.HistoryManager !== 'undefined') {
         window.HistoryManager.undo();
       }
@@ -180,7 +206,7 @@
     // ============================================
     // Ctrl+Y: Redo
     // ============================================
-    if (isCtrl && e.key.toLowerCase() === 'y') {
+    if (isCtrl && (e.key.toLowerCase() === 'y' || (e.key.toLowerCase() === 'z' && e.shiftKey))) {
       e.preventDefault();
       if (typeof window.HistoryManager !== 'undefined') {
         window.HistoryManager.redo();
@@ -331,24 +357,62 @@
     }
 
     // ============================================
+    // Ctrl+B: Toggle Bounding Mode
+    // ============================================
+    if (isCtrl && e.key.toLowerCase() === 'b' && !isInput) {
+      e.preventDefault();
+      if (typeof toggleBoundingMode === 'function') {
+        toggleBoundingMode();
+      } else {
+        // Simple toggle if function not defined yet
+        window.boundingMode = !window.boundingMode;
+        console.log('Bounding Mode:', window.boundingMode ? 'ON' : 'OFF');
+        // Update UI if needed
+        if (typeof updateBoundingModeUI === 'function') updateBoundingModeUI();
+      }
+      return;
+    }
+
+    // ============================================
+    // Ctrl+G: Group Selected Layers
+    // ============================================
+    if (isCtrl && e.key.toLowerCase() === 'g' && !e.shiftKey && !isInput) {
+      e.preventDefault();
+      if (typeof groupSelectedLayers === 'function') {
+        groupSelectedLayers();
+      }
+      return;
+    }
+
+    // ============================================
+    // Ctrl+Shift+G: Merge Inner Group to Src (Convert to Multi-Src Layer)
+    // ============================================
+    if (isCtrl && e.shiftKey && e.key.toLowerCase() === 'g' && !isInput) {
+      e.preventDefault();
+      if (typeof mergeSelectedLayersSrc === 'function') {
+        console.log('🔄 Converting Inner Group to Src/Merging Layers...');
+        mergeSelectedLayersSrc();
+      }
+      return;
+    }
+
+    // ============================================
     // Delete / Ctrl+Del / Ctrl+Shift+Del handling
     // ============================================
     if (!isInput && e.key === 'Delete') {
       e.preventDefault();
-      // Ctrl+Shift+Del => ungroup inner children (ungroupSelectedLayer)
-      if (isCtrl && e.shiftKey) {
-        if (typeof ungroupSelectedLayer === 'function') {
-          ungroupSelectedLayer();
+
+      // Ctrl+Del => Smart Ungroup (Inner/Src)
+      if (isCtrl) {
+        if (typeof smartUngroup === 'function') {
+          smartUngroup();
+        } else if (typeof ungroupSelectedLayers === 'function') {
+          // Fallback to existing ungroup
+          ungroupSelectedLayers();
         }
         return;
       }
-      // Ctrl+Del => ungroup src into separate layers
-      if (isCtrl && !e.shiftKey) {
-        if (typeof ungroupSrcLayers === 'function') {
-          ungroupSrcLayers();
-        }
-        return;
-      }
+
       // Just Delete => remove selected
       if (!isCtrl && !e.shiftKey) {
         if (typeof deleteSelectedLayer === 'function') {
@@ -356,6 +420,25 @@
         }
         return;
       }
+    }
+
+    // ============================================
+    // Ctrl+Shift+D: Deep Debug (Example) or other combinations
+    // ============================================
+    // ============================================
+    // Ctrl+Shift+D: Deep Debug (Log Layer Info)
+    // ============================================
+    if (isCtrl && e.shiftKey && e.key.toLowerCase() === 'd' && !isInput) {
+      e.preventDefault();
+      console.log('🐞 Deep Debug Info:');
+      const sel = getSelectedLayers();
+      if (sel.length > 0) {
+        sel.forEach(l => console.log(l));
+        console.table(sel.map(l => ({ name: l.name, x: l.x, y: l.y, parent: l.parentLayer?.name || 'root' })));
+      } else {
+        console.log('No layers selected.');
+      }
+      return;
     }
 
     // ============================================
@@ -372,26 +455,41 @@
     // ============================================
     if (isCtrl && e.altKey && e.key.toLowerCase() === 'c' && !isInput) {
       e.preventDefault();
-      console.log('Color picker - Show color dialog');
 
       if (typeof selected !== 'undefined' && selected !== null) {
+        // Determine current color for the picker
+        let currentColor = '#000000';
+        const sIdx = selected.selectedImageIndex;
+
+        if (sIdx !== null && typeof selected.srcColors === 'object') {
+          currentColor = selected.srcColors[sIdx] || selected.color || '#000000';
+        } else {
+          currentColor = selected.color || '#000000';
+        }
+
         const input = document.createElement('input');
         input.type = 'color';
-        input.value = selected.options?.color || '#000000';
-        input.onchange = function (e) {
-          if (typeof selected !== 'undefined' && selected !== null) {
-            selected.options = selected.options || {};
-            selected.options.color = e.target.value;
-            console.log('Color changed to: ' + e.target.value);
+        input.value = currentColor;
 
-            // Record history
-            if (typeof window.HistoryManager !== 'undefined') {
-              window.HistoryManager.recordAction('color', {
-                layerName: selected.layerName,
-                color: e.target.value,
-                action: 'Change color'
-              });
+        input.onchange = function (ev) {
+          if (typeof selected !== 'undefined' && selected !== null) {
+            const newColor = ev.target.value;
+            const idx = selected.selectedImageIndex;
+
+            if (idx !== null) {
+              // Apply color to specific src
+              const colors = Object.assign({}, selected.srcColors || {});
+              colors[idx] = newColor;
+              selected.srcColors = colors; // Trigger setter
+              console.log(`Color of src${idx} changed to: ${newColor}`);
+            } else {
+              // Apply global color
+              selected.color = newColor; // Trigger setter
+              console.log(`Global color changed to: ${newColor}`);
             }
+
+            // Flag modification for history (Record on Deselect)
+            window.currentLayerStateModified = true;
           }
         };
         input.click();
@@ -404,6 +502,7 @@
   window.StudioShortcuts = {
     init: function () {
       console.log('✅ Studio Shortcuts initialized with unified multi-select system');
+      window.boundingMode = false; // Init bounding mode state
     },
     selectAll: selectAllLayers,
     deselectAll: deselectAllLayers,

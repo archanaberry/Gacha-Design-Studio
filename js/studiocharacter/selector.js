@@ -258,6 +258,11 @@ class Selector {
             if (s && typeof s.x !== 'undefined') {
                 s.x += dx;
                 s.y += dy;
+
+                // 🔥 CRITICAL: Propagate move to Rigging System (Master -> Slave pull)
+                if (s.spine) {
+                    s.spine.onLayerMove(dx, dy, this.selectedLayers);
+                }
             } else if (s && s.getBoundingClientRect) {
                 // fallback: adjust DOM positioning directly
                 const rect = s.getBoundingClientRect();
@@ -269,7 +274,16 @@ class Selector {
 
     // 🔥 NEW: Unified pointerdown handler (works for mouse, touch, and pen)
     onPointerDown(e) {
-        if (!this.selectorActive) return;
+        // Shift+Drag activates selector, but ONLY if Ctrl is not held (Ctrl+Shift is for Deep Select)
+        const isShift = e.shiftKey && !e.ctrlKey;
+
+        // Allow drag if selector is active OR Shift key is held (Temporary Selector)
+        if (!this.selectorActive && !isShift) return;
+
+        // Visual feedback for Shift Mode
+        if (isShift && !this.selectorActive) {
+            console.log('⇧ Shift+Drag: Temporary Selector Active');
+        }
 
         // e.preventDefault(); // 🔥 Remove to allow synthesized click events for deselection logic
         try { e.target.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
@@ -286,7 +300,8 @@ class Selector {
             startX: this.startX,
             startY: this.startY,
             container: this.container,
-            hasClearedSelection: false // Track jika sudah reset seleksi untuk drag baru
+            hasClearedSelection: false, // Track jika sudah reset seleksi untuk drag baru
+            forceActive: isShift // 🔥 Store Shift state for this drag session
         });
 
         this.isDragging = true;
@@ -319,11 +334,15 @@ class Selector {
     // 🔥 NEW: Unified pointermove handler
     onPointerMove(e) {
         const pid = e.pointerId;
-        if (!this.pointerDownState.has(pid) || !this.selectorActive || !this.isDragging) return;
+        const state = this.pointerDownState.get(pid);
+
+        // Allow if selector active OR forced active (Shift+Drag)
+        // Check state first to avoid undefined errors
+        if (!state || (!this.selectorActive && !state.forceActive) || !this.isDragging) return;
 
         e.preventDefault();
 
-        const state = this.pointerDownState.get(pid);
+        // const state = this.pointerDownState.get(pid); // Already got above
         const containerRect = this.container.getBoundingClientRect();
         const currentX = e.clientX - containerRect.left;
         const currentY = e.clientY - containerRect.top;

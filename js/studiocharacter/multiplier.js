@@ -27,6 +27,13 @@ class LayerMultiplier {
     setOptions(newOptions) {
         if (!newOptions) return;
         this.options = Object.assign(this.options, newOptions);
+
+        // Persist to layer options for serialisation/export
+        if (this.layer) {
+            this.layer.options = this.layer.options || {};
+            this.layer.options.multiplier = Object.assign({}, this.options);
+        }
+
         console.log('[Multiplier] Options updated:', this.options);
         this.update();
     }

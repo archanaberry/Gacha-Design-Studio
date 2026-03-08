@@ -48,13 +48,13 @@ function getBrowserZoom() {
     } catch (e) {
         // Ignore errors
     }
-    
+
     // Method 2: Try devicePixelRatio (less reliable untuk browser zoom)
     if (window.devicePixelRatio) {
         const dpr = window.devicePixelRatio;
         return dpr > 0.1 && dpr < 10 ? dpr : 1;
     }
-    
+
     // Method 3: Fallback ke 1
     return 1;
 }
@@ -67,35 +67,35 @@ function getBrowserZoom() {
 function calculateCenterOffset() {
     const layerContainer = document.getElementById('panel1-layercontainer');
     const panel1 = document.getElementById('panel1');
-    
+
     if (!layerContainer) return { offsetX: 0, offsetY: 0, offsetXPercent: 50, offsetYPercent: 50 };
-    
+
     // PRIORITAS 1: Gunakan panel1 sebagai reference container (actual visible area)
     let width = 0, height = 0;
-    
+
     if (panel1) {
         // Gunakan client dimensions untuk responsive sizing
         width = panel1.clientWidth || panel1.offsetWidth || 0;
         height = panel1.clientHeight || panel1.offsetHeight || 0;
     }
-    
+
     // PRIORITAS 2: Fallback ke getBoundingClientRect untuk viewport-relative dimensions
     if (width === 0 || height === 0) {
         const rect = panel1 ? panel1.getBoundingClientRect() : layerContainer.getBoundingClientRect();
         if (width === 0) width = rect.width || window.innerWidth;
         if (height === 0) height = rect.height || window.innerHeight;
     }
-    
+
     // Ensure minimum values
     if (width === 0) width = window.innerWidth;
     if (height === 0) height = window.innerHeight;
-    
+
     // Hitung center point
     const centerX = width / 2;
     const centerY = height / 2;
     const centerXPercent = 50; // 50% dari width
     const centerYPercent = 50; // 50% dari height
-    
+
     return {
         offsetX: centerX,
         offsetY: centerY,
@@ -114,21 +114,21 @@ function calculateCenterOffset() {
 function toggleCenterOrigin(enabled) {
     // Ensure enabled is boolean
     enabled = Boolean(enabled);
-    
+
     // Only proceed if state actually changed
     if (centerOriginActive === enabled) {
         console.log('⚠️ Center origin already ' + (enabled ? 'ENABLED' : 'DISABLED'));
         return;
     }
-    
+
     centerOriginActive = enabled;
     const layerContainer = document.getElementById('panel1-layercontainer');
-    
+
     if (!layerContainer) {
         console.error('❌ panel1-layercontainer not found');
         return;
     }
-    
+
     if (enabled) {
         // ✅ Aktifkan center origin: SIMPLE approach
         // Position top-left corner ke center viewport
@@ -137,46 +137,46 @@ function toggleCenterOrigin(enabled) {
         const offset = calculateCenterOffset();
         const centerX = offset.offsetX;  // pixel offset dari left
         const centerY = offset.offsetY;  // pixel offset dari top
-        
+
         // Get current zoom scale (jika ada)
         const currentTransform = layerContainer.style.transform || '';
         const scaleMatch = currentTransform.match(/scale\(([\d.]+)\)/);
         const scale = scaleMatch ? parseFloat(scaleMatch[1]) : 1;
-        
+
         // Set positioning ke center viewport - dan INI AKAN TETAP FIXED saat zoom!
         layerContainer.style.left = centerX + 'px';
         layerContainer.style.top = centerY + 'px';
         layerContainer.style.transformOrigin = 'top left';
         layerContainer.style.transform = `scale(${scale})`;
-        
+
         // Store state untuk reference
         layerContainer.dataset.centerOriginActive = 'true';
         layerContainer.dataset.centerOffsetX = centerX;
         layerContainer.dataset.centerOffsetY = centerY;
         layerContainer.dataset.centerPositionMode = 'true';
         layerContainer.dataset.scale = scale;
-        
+
         // Update checkbox to match state
         const checkbox = document.getElementById('centerOriginToggle');
         if (checkbox && !checkbox.checked) {
             checkbox.checked = true;
         }
-        
+
         console.log('✅ Center origin ENABLED - Top-left corner di center viewport');
         console.log(`📍 Center point: (${centerX.toFixed(0)}px, ${centerY.toFixed(0)}px) | Scale: ${scale}`);
-        
+
         // Trigger layer re-render
         if (typeof updateCoordInput === 'function') {
             updateCoordInput();
         }
-        
+
     } else {
         // Matikan center origin - kembali ke default (pojok kiri atas)
         // Get current zoom scale untuk maintain zoom after disable
         const currentTransform = layerContainer.style.transform || '';
         const scaleMatch = currentTransform.match(/scale\(([\d.]+)\)/);
         const scale = scaleMatch ? scaleMatch[1] : 1;
-        
+
         // Reset ke default: positioning top-left, transform hanya scale
         // JANGAN UBAH INI - Default pojok kiri atas sudah bekerja sempurna
         layerContainer.style.left = '0';
@@ -184,21 +184,21 @@ function toggleCenterOrigin(enabled) {
         layerContainer.style.transformOrigin = 'top left';  // Scale dari top-left
         layerContainer.style.transform = `scale(${scale})`;
         // Hanya scale, no translate untuk default mode
-        
+
         // Clear state
         layerContainer.dataset.centerOriginActive = 'false';
         delete layerContainer.dataset.centerOffsetX;
         delete layerContainer.dataset.centerOffsetY;
         delete layerContainer.dataset.centerPositionMode;
-        
+
         // Update checkbox to match state
         const checkbox = document.getElementById('centerOriginToggle');
         if (checkbox && checkbox.checked) {
             checkbox.checked = false;
         }
-        
+
         console.log('❌ Center origin DISABLED - Origin (0,0) at top-left corner');
-        
+
         // Trigger layer re-render untuk refresh visual
         if (typeof updateCoordInput === 'function') {
             updateCoordInput();
@@ -213,32 +213,32 @@ function toggleCenterOrigin(enabled) {
  */
 function updateCenterOriginTransform() {
     if (!centerOriginActive) return;
-    
+
     const layerContainer = document.getElementById('panel1-layercontainer');
     if (!layerContainer) return;
-    
+
     // Get current zoom scale dari transform (keep existing scale!)
     const currentTransform = layerContainer.style.transform || '';
     const scaleMatch = currentTransform.match(/scale\(([\d.]+)\)/);
     const scale = scaleMatch ? parseFloat(scaleMatch[1]) : 1;
-    
+
     // Recalculate center offset saat resize (RESPONSIVE)
     const offset = calculateCenterOffset();
     const centerX = offset.offsetX;
     const centerY = offset.offsetY;
-    
+
     // Update positioning (left/top) ke new center viewport
     // Scale tetap sama - jangan ubah!
     layerContainer.style.left = centerX + 'px';
     layerContainer.style.top = centerY + 'px';
     layerContainer.style.transformOrigin = 'top left';
     layerContainer.style.transform = `scale(${scale})`;
-    
+
     // Update stored offsets
     layerContainer.dataset.centerOffsetX = centerX;
     layerContainer.dataset.centerOffsetY = centerY;
     layerContainer.dataset.scale = scale;
-    
+
     console.log(`🔄 Center origin repositioned for resize: (${centerX.toFixed(0)}px, ${centerY.toFixed(0)}px), scale ${scale}`);
 }
 
@@ -252,9 +252,9 @@ function showZoomWarningDialog(newZoom) {
     if (isShowingZoomDialog || isResettingStudioNow) {
         return;
     }
-    
+
     isShowingZoomDialog = true;
-    
+
     const zoomPercent = Math.round(newZoom * 100);
     const warningContent = `
         <div style="font-family: Arial, sans-serif; padding: 16px 20px; line-height: 1.6; color: #333;">
@@ -269,7 +269,7 @@ function showZoomWarningDialog(newZoom) {
             </p>
         </div>
     `;
-    
+
     // Use windowhandler to create dialog with 2 buttons
     if (typeof window.openWindow === 'function') {
         const dialogId = window.openWindow({
@@ -286,43 +286,43 @@ function showZoomWarningDialog(newZoom) {
             width: '840px',
             height: '117px'
         });
-        
+
         // Attach button handlers
         setTimeout(() => {
             const resetBtn = document.getElementById('zoomResetBtn');
             const ignoreBtn = document.getElementById('zoomIgnoreBtn');
-            
+
             if (resetBtn) {
                 resetBtn.addEventListener('click', () => {
                     isShowingZoomDialog = false;
                     isResettingStudioNow = true;
-                    
+
                     // Close dialog
                     if (typeof window.closeWindow === 'function') {
                         window.closeWindow(dialogId);
                     }
-                    
+
                     // Reset studio (akan di-disable flag duplikat)
                     if (typeof resetStudio === 'function') {
                         resetStudio();
                     }
-                    
+
                     // Reset flag
                     setTimeout(() => {
                         isResettingStudioNow = false;
                     }, 500);
                 });
             }
-            
+
             if (ignoreBtn) {
                 ignoreBtn.addEventListener('click', () => {
                     isShowingZoomDialog = false;
-                    
+
                     // Close dialog
                     if (typeof window.closeWindow === 'function') {
                         window.closeWindow(dialogId);
                     }
-                    
+
                     console.log('⚠️ User mengabaikan zoom warning - posisi origin mungkin berantakan');
                 });
             }
@@ -341,33 +341,33 @@ function initZoomDetection() {
     if (zoomCheckInterval) {
         clearInterval(zoomCheckInterval);
     }
-    
+
     // Store initial zoom - ini tidak akan trigger dialog
     lastBrowserZoom = getBrowserZoom();
     zoomDetectionInitialized = true;
-    
+
     // Check browser zoom setiap 100ms
     // Ini untuk mendeteksi user mengubah zoom level di Chrome (Ctrl+Plus, Ctrl+Minus)
     zoomCheckInterval = setInterval(() => {
         const currentZoom = getBrowserZoom();
-        
+
         // Jika zoom berubah signifikan (> 1% change)
         if (Math.abs(currentZoom - lastBrowserZoom) / lastBrowserZoom > 0.01) {
             lastBrowserZoom = currentZoom;
-            
+
             console.log(`🔍 Browser zoom changed to: ${(currentZoom * 100).toFixed(1)}%`);
-            
+
             // ✅ BARU: Tampilkan dialog warning zoom (skip jika sedang reset)
             if (!isResettingStudioNow && zoomDetectionInitialized) {
                 showZoomWarningDialog(currentZoom);
             }
-            
+
             // Refresh center origin jika active
             if (centerOriginActive) {
                 updateCenterOriginTransform();
                 console.log('🔄 Center origin refreshed untuk follow zoom');
             }
-            
+
             // Refresh guide canvas
             if (typeof drawGuideCanvas === 'function') {
                 drawGuideCanvas();
@@ -396,10 +396,10 @@ function refreshCenterOrigin() {
         console.warn('❌ panel1-layercontainer not found');
         return;
     }
-    
+
     const browserZoom = getBrowserZoom();
     console.log(`🔄 Manual refresh: browserZoom=${(browserZoom * 100).toFixed(1)}%`);
-    
+
     if (centerOriginActive) {
         // Re-calculate dan apply transforms
         updateCenterOriginTransform();
@@ -412,7 +412,7 @@ function refreshCenterOrigin() {
         layerContainer.style.transform = `translate(-50%, -50%) scale(${scale})`;
         console.log('✅ Basic centering refreshed (center origin OFF)');
     }
-    
+
     // Refresh visual
     if (typeof drawGuideCanvas === 'function') {
         drawGuideCanvas();
@@ -439,19 +439,19 @@ window.addEventListener('resize', () => {
  */
 function resetCenterOrigin() {
     console.log('🔄 Resetting center origin to default state...');
-    
+
     // Set global state ke false
     centerOriginActive = false;
     lastBrowserZoom = 1;
     isShowingZoomDialog = false; // Prevent dialog saat reset
-    
+
     // Reset checkbox
     const checkbox = document.getElementById('centerOriginToggle');
     if (checkbox) {
         checkbox.checked = false;
         console.log('✅ Checkbox unchecked');
     }
-    
+
     // Reset layer container transform
     const layerContainer = document.getElementById('panel1-layercontainer');
     if (layerContainer) {
@@ -459,21 +459,21 @@ function resetCenterOrigin() {
         const currentTransform = layerContainer.style.transform;
         const scaleMatch = currentTransform.match(/scale\(([\d.]+)\)/);
         const scale = scaleMatch ? scaleMatch[1] : 1;
-        
+
         // Reset transform to basic centering without offset
         layerContainer.style.transform = `translate(50%, 50%) scale(${scale})`;
         layerContainer.style.transformOrigin = 'center center';
         layerContainer.style.height = '100%';
         layerContainer.style.width = '100%';
-        
+
         // Clear dataset
         layerContainer.dataset.centerOriginActive = 'false';
         delete layerContainer.dataset.centerOffsetX;
         delete layerContainer.dataset.centerOffsetY;
-        
+
         console.log('✅ Layer container transform reset');
     }
-    
+
     // Refresh visual
     if (typeof drawGuideCanvas === 'function') {
         drawGuideCanvas();
@@ -481,7 +481,7 @@ function resetCenterOrigin() {
     if (typeof updateCoordInput === 'function') {
         updateCoordInput();
     }
-    
+
     console.log('✅ Center origin fully reset to default state');
 }
 
@@ -492,35 +492,35 @@ function resetCenterOrigin() {
  */
 function initializeCenterOrigin() {
     console.log('🔧 Initializing center origin...');
-    
+
     const checkbox = document.getElementById('centerOriginToggle');
     const layerContainer = document.getElementById('panel1-layercontainer');
-    
+
     if (!checkbox || !layerContainer) {
         console.warn('⚠️ Required elements not found for center origin init');
         return;
     }
-    
+
     // Ensure checkbox is unchecked by default
     checkbox.checked = false;
     centerOriginActive = false;
-    
+
     // Ensure layer container has proper default state - pojok kiri atas
     // MENGGUNAKAN CSS POSITIONING (left, top), BUKAN transform translate
     const currentTransform = layerContainer.style.transform || '';
     const scaleMatch = currentTransform.match(/scale\(([\d.]+)\)/);
     const scale = scaleMatch ? scaleMatch[1] : 1;
-    
+
     // Default state: pojok kiri atas dengan transform-origin top left
     layerContainer.style.left = '0px';
     layerContainer.style.top = '0px';
     layerContainer.style.transformOrigin = 'top left';
     layerContainer.style.transform = `scale(${scale})`;  // HANYA scale, tanpa translate
-    
+
     // Clear dataset state
     layerContainer.dataset.centerOriginActive = 'false';
     delete layerContainer.dataset.centerPositionMode;
-    
+
     console.log('✅ Center origin initialized to default state (top-left corner)');
 }
 

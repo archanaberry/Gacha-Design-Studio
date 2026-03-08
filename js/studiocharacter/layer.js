@@ -49,11 +49,16 @@ class Layer {
     #maxX = 0; // Bounding box max X
     #maxY = 0; // Bounding box max Y
     #hasFinalBounds = false; // Flag if bounds are calculated from loaded images
+    #originX = 50; // Pivot point X (%)
+    #originY = 50; // Pivot point Y (%)
+    #cachedSvgTexts = {}; // Store raw SVG text for dynamic recoloring
     options = {};
 
     constructor(name, src, options = {}, childLayers = []) {
         this.options = options || {};
+        this.id = options.id || `layer-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         this.#name = name;
+
         this.#src = Array.isArray(src) ? src : [src];
         this.#x = 0; // Posisi awal x
         this.#y = 0; // Posisi awal y
@@ -132,6 +137,12 @@ class Layer {
         this.#updateElement();
     }
 
+    #isSvg(src) {
+        if (!src) return false;
+        if (typeof src !== 'string') return false;
+        return src.toLowerCase().endsWith('.svg') || src.includes('image/svg+xml');
+    }
+
     #parseColorOptions(options) {
         // Parse color untuk seluruh layer
         if ('color' in options && options.color !== null) {
@@ -139,6 +150,7 @@ class Layer {
         }
 
         // Parse color per src (color0, color1, color2, dst)
+        // Juga handle posX0, posY0 dll via #parseSrcProperties tetapi khusus color kita simpan di #srcColors juga
         for (let i = 0; i < this.#src.length; i++) {
             const colorKey = `color${i}`;
             if (colorKey in options && options[colorKey] !== null) {
@@ -211,12 +223,13 @@ class Layer {
         // Per-Src Color (#srcProperties) > Per-Src Color (#srcColors) > Global Color
 
         // Check di #srcProperties dulu (hasil dari #parseSrcProperties)
-        if (index in this.#srcProperties && 'color' in this.#srcProperties[index]) {
+        // Gunakan null check agar tidak meng-override global color jika null
+        if (index in this.#srcProperties && this.#srcProperties[index]['color'] !== null) {
             return this.#srcProperties[index]['color'];
         }
 
         // Lalu check #srcColors (hasil dari #parseColorOptions - backward compat)
-        if (index in this.#srcColors) {
+        if (index in this.#srcColors && this.#srcColors[index] !== null) {
             return this.#srcColors[index];
         }
 
@@ -353,32 +366,22 @@ class Layer {
             };
 
             const colorForThis = this.#getColorForSrc(index);
-            if (src.endsWith('.svg')) {
+            if (this.#isSvg(src)) {
                 // Always fetch SVG to potentially recolor
                 fetch(src).then(r => r.text()).then(svgText => {
-                    // Jika ada warna untuk src ini, aplikasikan ke SVG menggunakan DOM parsing
-                    if (colorForThis) {
-                        console.log(`[Layer: ${this.#name}] src${index} - Applying color ${colorForThis}`);
+                    // Store original SVG text in cache for dynamic recoloring
+                    this.#cachedSvgTexts[index] = svgText;
 
-                        // Debug: tampilkan SVG sebelum di-ubah
-                        const beforeFills = (svgText.match(/fill\s*[:=]/gi) || []).length;
-                        const beforeStrokes = (svgText.match(/stroke\s*[:=]/gi) || []).length;
-                        const beforeStopColors = (svgText.match(/stop-color\s*[:=]/gi) || []).length;
-                        console.log(`[Layer: ${this.#name}] src${index} BEFORE - Fill: ${beforeFills}, Stroke: ${beforeStrokes}, StopColor: ${beforeStopColors}`);
-
-                        const recoloredSVG = this.#recolorSVG(svgText, colorForThis);
-
-                        // Debug: count setelah perubahan
-                        const afterFills = (recoloredSVG.match(/fill\s*[:=]/gi) || []).length;
-                        const afterStrokes = (recoloredSVG.match(/stroke\s*[:=]/gi) || []).length;
-                        const afterStopColors = (recoloredSVG.match(/stop-color\s*[:=]/gi) || []).length;
-                        console.log(`[Layer: ${this.#name}] src${index} AFTER - Fill: ${afterFills}, Stroke: ${afterStrokes}, StopColor: ${afterStopColors}`);
-
-                        svgText = recoloredSVG;
+                    const currentColor = this.#getColorForSrc(index);
+                    // Apply colors (use currentColor which might have changed since fetch started)
+                    let finalSvg = svgText;
+                    if (currentColor) {
+                        console.log(`[Layer: ${this.#name}] src${index} - Applying fetched color ${currentColor}`);
+                        finalSvg = this.#recolorSVG(svgText, currentColor);
                     } else {
-                        console.warn(`[Layer: ${this.#name}] src${index} - No color defined, using original`);
+                        console.warn(`[Layer: ${this.#name}] src${index} - No color defined yet`);
                     }
-                    const dataUrl = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgText)));
+                    const dataUrl = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(finalSvg)));
                     imgElement.src = dataUrl;
                     img.src = dataUrl; // Also load for dimensions
                 }).catch(e => {
@@ -389,6 +392,10 @@ class Layer {
             } else {
                 imgElement.src = src;
                 img.src = src; // Load untuk get dimensions
+                // Apply color tint via filter for non-SVG
+                if (colorForThis) {
+                    imgElement.style.filter = `drop-shadow(0 0 0 ${colorForThis})`;
+                }
             }
 
             // Append ke content wrapper jika group, atau ke element jika standalone
@@ -587,8 +594,13 @@ class Layer {
             if (this.#contentWrapper) {
                 this.#contentWrapper.style.width = bounds.width + 'px';
                 this.#contentWrapper.style.height = bounds.height + 'px';
-                // Block child pointer events ketika group tidak selected, biar outline bisa didrag
-                this.#contentWrapper.style.pointerEvents = (this.selectedState ? 'auto' : 'none');
+
+                // 🔥 FIX: Allow child pointer events when:
+                // 1. Group is selected (normal behavior), OR
+                // 2. Bounding Mode is ON (allows child selection/dragging even when group not selected)
+                const allowChildPointerEvents = this.selectedState || window.boundingMode;
+                this.#contentWrapper.style.pointerEvents = (allowChildPointerEvents ? 'auto' : 'none');
+
                 // Also set data attribute untuk CSS selector
                 this.#contentWrapper.dataset.selected = this.selectedState ? 'true' : 'false';
             }
@@ -598,7 +610,8 @@ class Layer {
             // 🔥 Fix: Don't force 'none', use empty string so .selected class in CSS can apply border
             this.element.style.border = '';
             this.element.style.pointerEvents = 'auto';
-            this.element.style.transformOrigin = '0px 0px';
+            //this.element.style.transformOrigin = '0px 0px';
+            this.element.style.transformOrigin = '50% 50%';
         }
 
         // Cari elemen gambar di dalam elemen utama (hanya untuk non-grouped layers)
@@ -634,6 +647,9 @@ class Layer {
         if (this.#skewY !== 0) transforms.push(`skewY(${this.#skewY}deg)`);
         this.element.style.transform = transforms.join(' ');
 
+        // Apply dynamic origin
+        this.element.style.transformOrigin = `${this.#originX}% ${this.#originY}%`;
+
         // Perbarui label nama layer
         const nameLabel = this.element.querySelector('.layer-name');
         if (nameLabel) {
@@ -644,6 +660,27 @@ class Layer {
         if (this.multiplier) {
             this.multiplier.update();
         }
+
+        // 🔥 CRITICAL: Update Bone Overlay Position (Global Sync)
+        if (this.spine) {
+            this.spine._renderAllSpines();
+        }
+    }
+
+    /**
+     * Public method to force update element visuals and bounds
+     * Crucial for group resizing when children move
+     */
+    updateElement() {
+        this.#updateElement();
+    }
+
+    /**
+     * Public method to force update element visuals and bounds
+     * Crucial for group resizing when children move
+     */
+    updateElement() {
+        this.#updateElement();
     }
 
     #calculateGroupBounds() {
@@ -687,7 +724,9 @@ class Layer {
         // Jika ini adalah child layer, beritahu parent untuk update bounds
         if (this.#parentLayer) {
             // Gunakan metode publik untuk memanggil pembaruan elemen
-            this.#parentLayer.updateElement();
+            if (typeof this.#parentLayer.updateElement === 'function') {
+                this.#parentLayer.updateElement();
+            }
         }
     }
 
@@ -735,6 +774,11 @@ class Layer {
         return this.#parentLayer ? this.#relativeY : this.#y;
     }
 
+    // Public method to set parent layer properly
+    setParentLayer(parent) {
+        this.#parentLayer = parent;
+    }
+
     get rotation() {
         return this.#rotation;
     }
@@ -768,6 +812,14 @@ class Layer {
         return this.#selectedImageIndex;
     }
 
+    /**
+     * Public method to select a specific image part in this layer
+     * @param {number} index - Index of the src to select
+     */
+    selectImage(index) {
+        this.#selectImage(index);
+    }
+
     set name(name) {
         this.#name = name;
     }
@@ -794,6 +846,48 @@ class Layer {
         }
         this.#updateElement(); // Perbarui posisi elemen DOM
         this.#notifyParentUpdate(); // Beritahu parent jika ada
+    }
+
+    get originX() { return this.#originX; }
+    set originX(val) { this.#originX = val; this.#updateElement(); }
+
+    get originY() { return this.#originY; }
+    set originY(val) { this.#originY = val; this.#updateElement(); }
+
+    /**
+     * Sets the transform origin (pivot) and optionally shifts the layer 
+     * to maintain visual position if it's currently transformed.
+     * @param {number} x - Percent (0-100)
+     * @param {number} y - Percent (0-100)
+     * @param {boolean} maintainPos - If true, adjust X/Y to prevent visual jump
+     */
+    setPivot(x, y, maintainPos = true) {
+        if (!maintainPos || (this.#rotation === 0 && this.#scale === 1)) {
+            this.#originX = x;
+            this.#originY = y;
+            this.#updateElement();
+            return;
+        }
+
+        // Logic to maintain visual position when pivot changes
+        // 1. Get current Rect position on screen (visual)
+        const rect = this.element.getBoundingClientRect();
+        const oldVisualX = rect.left;
+        const oldVisualY = rect.top;
+
+        // 2. Change origin
+        this.#originX = x;
+        this.#originY = y;
+        this.#updateElement();
+
+        // 3. Compensate for the shift
+        const newRect = this.element.getBoundingClientRect();
+        const diffX = oldVisualX - newRect.left;
+        const diffY = oldVisualY - newRect.top;
+
+        this.#x += diffX;
+        this.#y += diffY;
+        this.#updateElement();
     }
 
     set rotation(value) {
@@ -828,6 +922,12 @@ class Layer {
 
     set srcColors(colors) {
         this.#srcColors = colors;
+        // Sync to options
+        if (colors) {
+            for (const idx in colors) {
+                this.options[`color${idx}`] = colors[idx];
+            }
+        }
         this.#updateElement();
     }
 
@@ -838,6 +938,13 @@ class Layer {
     get src() {
         return this.#src;
     }
+
+    get srcs() {
+        return this.#src;
+    }
+
+
+
 
     set src(newSrc) {
         // Allow updating src array
@@ -890,6 +997,9 @@ class Layer {
 
     set color(value) {
         this.#color = value;
+        // Sync to options
+        this.options = this.options || {};
+        this.options.color = value;
         this.#updateElement();
     }
 
@@ -960,8 +1070,57 @@ class Layer {
         this.#parseColorOptions(this.options);
         this.#parseSrcProperties(this.options);
 
+        // Dynamic recolor for ALL images (SVG or Filter)
+        this.#applyColorsToImages();
+
+        // Propagate colors to children if this is a group
+        if (this.#childLayers.length > 0) {
+            // If 'color' is provided, we propagate it as the base color for all children
+            if ('color' in newOptions) {
+                this.#childLayers.forEach(child => {
+                    child.updateOptions({ color: newOptions.color });
+                });
+            }
+            // If color0, color1 etc are provided, we can either propagate specifically or ignore
+            // For groups, color0 usually acts as a "master color" for the whole group in many configs
+            if ('color0' in newOptions && !('color' in newOptions)) {
+                this.#childLayers.forEach(child => {
+                    child.updateOptions({ color: newOptions.color0 });
+                });
+            }
+        }
+
         // Force update visual
         this.#updateElement();
+    }
+
+    #applyColorsToImages() {
+        if (!this.element) return;
+
+        // ONLY target images that are DIRECT children of this layer or its contentWrapper
+        const target = this.#contentWrapper || this.element;
+        const imgElements = Array.from(target.querySelectorAll(':scope > img.src-item'));
+
+        imgElements.forEach((imgElement) => {
+            const index = parseInt(imgElement.dataset.index);
+            const src = this.#src[index];
+            const color = this.#getColorForSrc(index);
+
+            if (src && this.#isSvg(src) && this.#cachedSvgTexts[index]) {
+                const rawSvg = this.#cachedSvgTexts[index];
+                const finalSvg = color ? this.#recolorSVG(rawSvg, color) : rawSvg;
+                const dataUrl = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(finalSvg)));
+                imgElement.src = dataUrl;
+                // Important: clear any filters if it was SVG
+                imgElement.style.filter = '';
+            } else if (color) {
+                // Apply drop-shadow tint for non-SVG or Base64 non-SVG
+                imgElement.style.filter = `drop-shadow(0 0 0 ${color})`;
+            } else {
+                // Clear filter if no color
+                imgElement.style.filter = '';
+            }
+        });
     }
 
     set width(value) {
@@ -1173,33 +1332,26 @@ class Layer {
      * @returns {string} - Modified SVG text
      */
     #recolorSVG(svgText, newColor) {
+        if (!svgText || !newColor) return svgText;
         try {
-            // APPROACH 1: Smart regex replacement untuk solid colors di fill/stroke
-            // Pattern: cari fill="COLOR" atau stroke="COLOR" tapi SKIP url(#...) references
+            // APPROACH: Regex replacement for both attributes and styles
+            // We target fill, stroke, and stop-color (for gradients)
 
             let modified = svgText;
 
-            // 1. Replace fill attributes yang bukan reference (url)
-            modified = modified.replace(/fill="(?!url|none|currentColor)([^"]*)"/gi, `fill="${newColor}"`);
+            // 1. Attributes: fill="...", stroke="..." (excluding url references)
+            modified = modified.replace(/fill="(?!url|none)([^"]*)"/gi, `fill="${newColor}"`);
+            modified = modified.replace(/stroke="(?!url|none)([^"]*)"/gi, `stroke="${newColor}"`);
+            modified = modified.replace(/stop-color="(?!url|none)([^"]*)"/gi, `stop-color="${newColor}"`);
 
-            // 2. Replace stroke attributes yang bukan reference (url)  
-            modified = modified.replace(/stroke="(?!url|none|currentColor)([^"]*)"/gi, `stroke="${newColor}"`);
+            // 2. CSS/Inline Styles: fill: ..., stroke: ... (including those in <style> blocks)
+            // We target colons and ensure we don't catch url() or none
+            modified = modified.replace(/(fill|stroke|stop-color)\s*:\s*(?!url|none)([^;!}]+)/gi, `$1: ${newColor}`);
 
-            // 3. Replace fill dalam inline styles
-            modified = modified.replace(/fill:\s*(?!url|none|currentColor)([^;]+)/gi, `fill: ${newColor}`);
-
-            // 4. Replace stroke dalam inline styles
-            modified = modified.replace(/stroke:\s*(?!url|none|currentColor)([^;]+)/gi, `stroke: ${newColor}`);
-
-            // 5. Replace stop-color untuk gradasi
-            modified = modified.replace(/stop-color="(?!url|none|currentColor)([^"]*)"/gi, `stop-color="${newColor}"`);
-            modified = modified.replace(/stop-color:\s*(?!url|none|currentColor)([^;]+)/gi, `stop-color: ${newColor}`);
-
-            console.log(`[Layer: ${this.#name}] SVG recolored with regex approach - target color ${newColor}`);
             return modified;
         } catch (error) {
             console.error(`Error recoloring SVG for layer "${this.#name}":`, error);
-            return svgText; // Return original jika ada error
+            return svgText;
         }
     }
 }

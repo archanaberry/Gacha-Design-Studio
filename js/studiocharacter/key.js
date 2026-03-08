@@ -403,6 +403,24 @@ function moveLayer(direction) {
                 break;
         }
     });
+
+    // 🔥 Rig Link: Synchronize bones for all moved layers
+    // Calculate dx/dy for this frame
+    let dx = 0, dy = 0;
+    switch (direction) {
+        case 'up': dy = -step; break;
+        case 'down': dy = step; break;
+        case 'left': dx = -step; break;
+        case 'right': dx = step; break;
+    }
+
+    selectedLayers.forEach(layer => {
+        if (layer.spine && typeof layer.spine.onLayerMove === 'function') {
+            // Pass movement delta and exclude currently moved layers (to avoid double move if group selected)
+            layer.spine.onLayerMove(dx, dy, selectedLayers);
+        }
+    });
+
     updateCoordInput();
 }
 

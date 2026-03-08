@@ -28,6 +28,12 @@
  */
 
 class LayerSrcManager {
+    #isSyncing = false;
+    dragGroup = null;
+    get isSyncing() {
+        return this.#isSyncing;
+    }
+
     constructor(container, options = {}) {
         this.container = container;
         this.options = {
@@ -43,6 +49,8 @@ class LayerSrcManager {
 
         this.layers = [];
         this.layerMap = new Map();
+        this.#isSyncing = false;
+        this.dragGroup = null;
 
         // MenuSrc instance (UI handler)
         this.menuSrc = null;
@@ -53,7 +61,14 @@ class LayerSrcManager {
         this.#initCSS();
         this.#buildHTML();
         this.#attachEventListeners();
+
+        // Ensure initial VISIBLE state
+        if (this.widget) {
+            this.widget.classList.remove('menusrc-hidden');
+            this.widget.classList.add('visible');
+        }
         this.#updateResponsive();
+        this.#initObservers();
     }
 
     #initCSS() {
@@ -70,13 +85,15 @@ class LayerSrcManager {
         wrapper.innerHTML = `
             <div class="menusrc-main" id="menusrc-widget">
                 <div class="menusrc-header" id="menusrc-headerToggle">
-                    <div class="menusrc-icon-box">☰</div>
+                    <div class="menusrc-icon-box" id="menusrc-selected-thumbnail" title="Selected Thumbnail">🖼️</div>
                     <div class="menusrc-title">LAYERS</div>
-                    <div class="menusrc-color-picker" id="menusrc-colorPicker">
-                        <input type="color" class="menusrc-color-input" id="menusrc-colorInput" value="#000000">
-                        <span id="menusrc-colorDisplay">■</span>
+                    <div class="menusrc-color-box-container" id="menusrc-headerColorBoxContainer">
+                        <div class="menusrc-color-box" id="menusrc-headerColorBox" title="Bulk Color Overwrite">
+                            <div class="menusrc-color-inner"></div>
+                        </div>
+                        <input type="color" class="menusrc-color-input" id="menusrc-headerColorInput">
                     </div>
-                    <div class="menusrc-arrow"></div>
+                    <div class="menusrc-arrow" id="menusrc-arrowGlobal">▼</div>
                 </div>
 
                 <div class="menusrc-grid-wrapper" id="menusrc-gridWrapper">
@@ -97,62 +114,150 @@ class LayerSrcManager {
         this.gridWrapper = document.getElementById('menusrc-gridWrapper');
         this.layerWrapper = document.getElementById('menusrc-layerWrapper');
         this.layerList = document.getElementById('menusrc-layerList');
-        this.colorPicker = document.getElementById('menusrc-colorPicker');
-        this.colorInput = document.getElementById('menusrc-colorInput');
-        this.colorDisplay = document.getElementById('menusrc-colorDisplay');
+
+        this.headerThumbnail = document.getElementById('menusrc-selected-thumbnail');
+        this.headerColorBox = document.getElementById('menusrc-headerColorBox');
+        this.headerColorInput = document.getElementById('menusrc-headerColorInput');
     }
 
     #attachEventListeners() {
-        // Toggle header
-        this.headerToggle.addEventListener('click', () => {
-            this.widget.classList.toggle('open');
+        // HEADER: Toggle logic (Clicking Arrow / Header)
+        this.headerToggle.addEventListener('click', (e) => {
+            if (e.target.closest('.menusrc-color-box-container')) return; // Ignore color box click
+
+            console.log('%c[LayerSrcManager] 🔄 Header toggle clicked', 'color: #00ffff; font-weight: bold');
+
+            const isListOpen = this.widget.classList.contains('show-list');
+            const arrow = document.getElementById('menusrc-arrowGlobal');
+
+            if (isListOpen) {
+                console.log('   → Mode: LIST -> GRID');
+                this.widget.classList.remove('show-list');
+                this.widget.classList.add('show-grid');
+                if (arrow) arrow.textContent = '▼'; // Closed (Grid view)
+            } else {
+                console.log('   → Mode: GRID -> LIST');
+                this.widget.classList.remove('show-grid');
+                this.widget.classList.add('show-list');
+                if (arrow) arrow.textContent = '▲'; // Open (List view)
+            }
             this.#updateResponsive();
         });
 
-        // Color picker
-        this.colorPicker.addEventListener('click', () => {
-            this.colorInput.click();
+        // HEADER: Bulk Color Overwrite
+        this.headerColorBox.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.headerColorInput.click();
         });
 
-        this.colorInput.addEventListener('change', (e) => {
+        // Bulk color overwrite in Header (Apply to all selected)
+        this.headerColorInput.addEventListener('change', (e) => {
             const color = e.target.value;
-            this.colorDisplay.style.color = color;
-            this.#applyColorToSelectedSrc(color);
+            console.log('%c[LayerSrcManager] 🎨 Bulk color overwrite:', 'color: #00ffff', color);
+
+            const selectedRows = this.layerList.querySelectorAll('.menusrc-item-row.selected');
+            if (selectedRows.length > 0) {
+                selectedRows.forEach(row => {
+                    this.#applyColorToLayer(row.dataset.layerId, color);
+                });
+            } else {
+                // If nothing selected in menu, maybe apply to window.selected or all?
+                // User said: "pas ganti warna kok ga mau berubah" - usually they select first.
+            }
+
+            // Update the bulk box visual
+            const inner = this.headerColorBox.querySelector('.menusrc-color-inner');
+            if (inner) inner.style.backgroundColor = color;
         });
 
-        // Folder toggle
-        this.layerList.addEventListener('click', (e) => {
-            const toggle = e.target.closest('.menusrc-folder-toggle');
-            if (!toggle) return;
-            const folder = toggle.closest('.menusrc-src-folder');
-            folder.classList.toggle('collapsed');
-            this.#updateResponsive();
+        // GRID: Click delegation for grid items
+        this.gridContent.addEventListener('click', (e) => {
+            const gridItem = e.target.closest('.menusrc-grid-item');
+            if (gridItem) {
+                this.selectSrc(gridItem); // Grid items are essentially SRCs
+            }
         });
 
-        // Layer selection
+        // LIST: Click delegation
         this.layerList.addEventListener('click', (e) => {
+            // Row selection
             const row = e.target.closest('.menusrc-item-row');
-            if (!row) return;
-            this.selectLayer(row);
+            if (row) {
+                // Toggle expand/collapse logic
+                const toggle = e.target.closest('.menusrc-row-toggle');
+                if (toggle) {
+                    e.stopPropagation();
+                    const nextSibling = row.nextElementSibling;
+                    if (nextSibling && nextSibling.classList.contains('menusrc-nested-group')) {
+                        const isHidden = nextSibling.style.display === 'none';
+                        nextSibling.style.display = isHidden ? 'block' : 'none';
+                        toggle.textContent = isHidden ? '▲' : '▼'; // Update arrow
+                        row.classList.toggle('collapsed', !isHidden); // Add/remove collapsed class
+                    }
+                    return;
+                }
+
+                // Color box click
+                const colorBox = e.target.closest('.menusrc-color-box');
+                if (colorBox) {
+                    e.stopPropagation();
+                    const input = colorBox.parentElement.querySelector('input[type="color"]');
+                    if (input) input.click();
+                    return;
+                }
+
+                // Select the row
+                this.selectLayer(row, e.ctrlKey);
+            }
         });
 
-        // Src selection
-        this.layerList.addEventListener('click', (e) => {
-            const srcItem = e.target.closest('.menusrc-src-item');
-            if (!srcItem) return;
-            this.selectSrc(srcItem);
+        // LIST: Color Change Delegation
+        this.layerList.addEventListener('change', (e) => {
+            if (e.target.classList.contains('menusrc-row-color-input')) {
+                const color = e.target.value;
+                const row = e.target.closest('.menusrc-item-row');
+                const layerId = row.dataset.layerId;
+                const srcIndex = e.target.dataset.srcIndex;
+
+                if (srcIndex !== undefined) {
+                    // Single SRC color change
+                    this.#applyColorToSrc(layerId, parseInt(srcIndex), color);
+                } else {
+                    // Group/Layer color overwrite
+                    this.#applyColorToLayer(layerId, color);
+                }
+
+                // Update visual box
+                const boxInner = e.target.parentElement.querySelector('.menusrc-color-inner');
+                if (boxInner) boxInner.style.backgroundColor = color;
+            }
         });
 
-        // Drag & Drop
+        // Drag & Drop - ONLY top-level reordering (childLayers is read-only on Layer)
         this.layerList.addEventListener('pointerdown', (e) => {
-            const handle = e.target.closest('.menusrc-handle');
+            const handle = e.target.closest('.menusrc-row-handle');
             if (!handle) return;
 
-            this.dragItem = handle.closest('.menusrc-item-row');
+            const row = handle.closest('.menusrc-item-row');
+            if (!row) return;
+
+            // Only allow dragging top-level rows (direct children of layerList)
+            if (row.parentElement !== this.layerList) return;
+            // Don't allow dragging src-rows
+            if (row.classList.contains('menusrc-src-row')) return;
+
+            this.dragItem = row;
+
+            // Find associated nested-group container (if it's a folder)
+            const sibling = row.nextElementSibling;
+            this.dragGroup = (sibling && sibling.classList.contains('menusrc-nested-group')) ? sibling : null;
+
             this.dragItem.classList.add('menusrc-dragging');
+            if (this.dragGroup) this.dragGroup.classList.add('menusrc-dragging-group');
+
             try {
                 this.layerList.setPointerCapture(e.pointerId);
-            } catch (_) {}
+            } catch (_) { }
 
             e.preventDefault();
         });
@@ -166,48 +271,41 @@ class LayerSrcManager {
 
             this.lastPointerMoveRaf = requestAnimationFrame(() => {
                 const y = e.clientY;
-                const rows = [
-                    ...this.layerList.querySelectorAll('.menusrc-item-row:not(.menusrc-dragging)')
-                ];
 
-                const targetRow = rows.find((row) => {
+                // Only consider other top-level rows as drop targets
+                const rows = Array.from(this.layerList.children).filter(el =>
+                    el.classList.contains('menusrc-item-row') &&
+                    !el.classList.contains('menusrc-src-row') &&
+                    el !== this.dragItem
+                );
+
+                let targetRow = null;
+                for (const row of rows) {
                     const rect = row.getBoundingClientRect();
-                    return y > rect.top && y < rect.bottom;
-                });
+                    if (y >= rect.top && y <= rect.bottom) {
+                        targetRow = row;
+                        break;
+                    }
+                }
 
                 if (!targetRow) return;
 
                 const rect = targetRow.getBoundingClientRect();
                 const midpoint = (rect.top + rect.bottom) / 2;
-                const isFolder = targetRow.classList.contains('menusrc-src-folder');
-                const isCollapsed = targetRow.classList.contains('collapsed');
 
-                if (isFolder) {
-                    const group = targetRow.nextElementSibling;
-                    if (y > midpoint) {
-                        if (isCollapsed) {
-                            group.after(this.dragItem);
-                            this.dragItem.classList.remove('menusrc-is-nested');
-                        } else {
-                            group.prepend(this.dragItem);
-                            this.dragItem.classList.add('menusrc-is-nested');
-                        }
-                    } else {
-                        targetRow.before(this.dragItem);
-                        this.dragItem.classList.remove('menusrc-is-nested');
-                    }
+                // Find the targetRow's associated group container (if folder)
+                const targetSibling = targetRow.nextElementSibling;
+                const targetGroup = (targetSibling && targetSibling.classList.contains('menusrc-nested-group')) ? targetSibling : null;
+
+                if (y > midpoint) {
+                    // Insert AFTER targetRow (and its group)
+                    const insertAfter = targetGroup || targetRow;
+                    insertAfter.after(this.dragItem);
+                    if (this.dragGroup) this.dragItem.after(this.dragGroup);
                 } else {
-                    if (y > midpoint) {
-                        targetRow.after(this.dragItem);
-                    } else {
-                        targetRow.before(this.dragItem);
-                    }
-
-                    if (this.dragItem.parentElement.classList.contains('menusrc-nested-group')) {
-                        this.dragItem.classList.add('menusrc-is-nested');
-                    } else {
-                        this.dragItem.classList.remove('menusrc-is-nested');
-                    }
+                    // Insert BEFORE targetRow
+                    targetRow.before(this.dragItem);
+                    if (this.dragGroup) this.dragItem.after(this.dragGroup);
                 }
             });
         });
@@ -215,23 +313,68 @@ class LayerSrcManager {
         this.layerList.addEventListener('pointerup', (e) => {
             if (!this.dragItem) return;
 
-            const parent = this.dragItem.parentElement;
-            if (parent && parent.classList.contains('menusrc-nested-group')) {
-                this.dragItem.classList.add('menusrc-is-nested');
-            } else {
-                this.dragItem.classList.remove('menusrc-is-nested');
-            }
-
             this.dragItem.classList.remove('menusrc-dragging');
+            if (this.dragGroup) this.dragGroup.classList.remove('menusrc-dragging-group');
             try {
                 this.layerList.releasePointerCapture(e.pointerId);
-            } catch (_) {}
-            this.dragItem = null;
+            } catch (_) { }
 
+            // Re-order window.layers based on the new DOM order in menu
+            this.#syncSystemOrderFromMenu();
+
+            this.dragItem = null;
+            this.dragGroup = null;
             this.#updateResponsive();
         });
+    }
 
-        // Mutation observer
+    #syncSystemOrderFromMenu() {
+        if (!window.layers || !this.layerList || this.#isSyncing) return;
+        this.#isSyncing = true;
+        console.log('%c[LayerSrcManager] 🔄 Syncing system order from menu...', 'color: #00ddff');
+
+        try {
+            // Only reorder top-level layers. Do NOT modify childLayers (it's read-only on Layer class).
+            const topLevelRows = Array.from(this.layerList.children).filter(
+                el => el.classList.contains('menusrc-item-row') && !el.classList.contains('menusrc-src-row')
+            );
+
+            const newOrderIds = topLevelRows.map(row => row.dataset.layerId);
+
+            // Build a lookup for O(1) access
+            const layerById = new Map();
+            window.layers.forEach(l => { if (l && l.id) layerById.set(l.id, l); });
+
+            const reordered = [];
+            newOrderIds.forEach(id => {
+                const layer = layerById.get(id);
+                if (layer) reordered.push(layer);
+            });
+
+            // Add any layers that weren't in the menu (safety net)
+            window.layers.forEach(l => {
+                if (!reordered.includes(l)) reordered.push(l);
+            });
+
+            // Update global layers array
+            window.layers.length = 0;
+            reordered.forEach(l => window.layers.push(l));
+
+            // Trigger canvas re-render to reflect new order
+            if (typeof window.renderLayer === 'function') {
+                window.renderLayer();
+            }
+        } catch (err) {
+            console.error('[LayerSrcManager] Error in sync:', err);
+        } finally {
+            // Delay resetting flag to prevent MutationObserver from triggering loop
+            setTimeout(() => {
+                this.#isSyncing = false;
+            }, 500);
+        }
+    }
+
+    #initObservers() {
         const mo = new MutationObserver(() => {
             this.#updateResponsive();
         });
@@ -245,70 +388,226 @@ class LayerSrcManager {
     }
 
     // ===== PUBLIC API =====
-    addLayer(layerData) {
-        const layerId = layerData.id || `layer-${Date.now()}`;
-        this.layerMap.set(layerId, layerData);
-        this.layers.push(layerData);
-        this.currentLayers.push(layerData);
+    addLayers(layersArray) {
+        if (!Array.isArray(layersArray)) return;
+        console.log(`%c[LayerSrcManager] addLayers called with ${layersArray.length} layers`, 'color: #ff00ff; font-weight: bold');
+
+        layersArray.forEach(layerData => {
+            const layerId = layerData.id || `layer-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+            layerData.id = layerId;
+            this.layerMap.set(layerId, layerData);
+            this.layers.push(layerData);
+            this.currentLayers.push(layerData);
+        });
+
         this.#renderLayers();
     }
 
-    addLayerGroup(groupName, layers) {
-        const folderId = `folder-${Date.now()}`;
-        const folderRow = document.createElement('div');
-        folderRow.className = 'menusrc-item-row menusrc-src-folder';
-        folderRow.id = folderId;
-        folderRow.dataset.type = 'folder';
-        folderRow.innerHTML = `
-            <span class="menusrc-folder-toggle">▼</span>
-            <span class="menusrc-layer-icon">📁</span>
-            <span class="menusrc-layer-name">${groupName}</span>
-            <span class="menusrc-handle">☰</span>
-        `;
-
-        const nestedGroup = document.createElement('div');
-        nestedGroup.className = 'menusrc-nested-group';
-        nestedGroup.id = `group-${folderId}`;
-
-        this.layerList.appendChild(folderRow);
-        this.layerList.appendChild(nestedGroup);
-
-        layers.forEach((layer) => {
-            this.currentLayers.push(layer);
-            this.#addLayerToGroup(nestedGroup, layer);
-        });
+    addLayer(layerData) {
+        const layerId = layerData.id || `layer-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+        layerData.id = layerId;
+        this.layerMap.set(layerId, layerData);
+        this.layers.push(layerData);
+        this.currentLayers.push(layerData);
     }
 
-    selectLayer(rowElement) {
-        document.querySelectorAll('.menusrc-item-row.selected').forEach((el) => {
-            el.classList.remove('selected');
-        });
+    addLayerGroup(groupName, layers, id = null) {
+        // Create a pseudo-layer object to represent the group
+        const groupData = {
+            id: id || `folder-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+            name: groupName,
+            childLayers: layers
+        };
+        this.layerMap.set(groupData.id, groupData);
+        this.layers.push(groupData); // Add to the main layers array
+        this.currentLayers.push(groupData);
+        // We don't call #renderLayers here anymore to allow bulk updates
+    }
+
+    render() {
+        this.#renderLayers();
+    }
+
+    clear() {
+        this.layers = [];
+        this.currentLayers = [];
+        this.layerMap.clear();
+        if (this.layerList) this.layerList.innerHTML = '';
+        if (this.gridContent) this.gridContent.innerHTML = '';
+    }
+
+    selectLayer(rowElement, isCtrl = false) {
+        if (!rowElement) return;
+
+        const layerId = rowElement.dataset.layerId;
+        console.log(`%c[LayerSrcManager] 🖱️ selectLayer: ${layerId} (Ctrl: ${isCtrl})`, 'color: #00ff00; font-weight: bold');
+
+        if (!isCtrl) {
+            // Remove selection from all rows
+            this.layerList.querySelectorAll('.menusrc-item-row.selected').forEach((el) => {
+                el.classList.remove('selected');
+                el.style.backgroundColor = '';
+            });
+        }
 
         rowElement.classList.add('selected');
+        rowElement.style.backgroundColor = '#e3f2fd';
         this.selectedLayer = rowElement;
-        this.selectedSrc = null;
-        
-        // Dispatch event
-        this.#dispatchLayerSelectedEvent(rowElement.id);
+
+        // === SELECT IN PANEL1 (canvas) ===
+        if (window.layers) {
+            // Find the actual Layer object by ID
+            const findLayerById = (arr, id) => {
+                for (const l of arr) {
+                    if (l.id === id) return l;
+                    if (l.childLayers && l.childLayers.length > 0) {
+                        const found = findLayerById(l.childLayers, id);
+                        if (found) return found;
+                    }
+                }
+                return null;
+            };
+
+            const targetLayer = findLayerById(window.layers, layerId);
+            if (targetLayer && targetLayer.element) {
+                if (!isCtrl) {
+                    // Single select: deselect all others first
+                    document.querySelectorAll('.layer.selected, .layer-group.selected').forEach(el => {
+                        el.classList.remove('selected');
+                    });
+                    if (window.selectorInstance && Array.isArray(window.selectorInstance.selectedLayers)) {
+                        window.selectorInstance.selectedLayers = [];
+                    }
+                }
+
+                // Select this layer
+                targetLayer.selected = true;
+                targetLayer.element.classList.add('selected');
+                window.selected = targetLayer;
+
+                // Add to selector
+                if (window.selectorInstance && Array.isArray(window.selectorInstance.selectedLayers)) {
+                    if (!window.selectorInstance.selectedLayers.includes(targetLayer)) {
+                        window.selectorInstance.selectedLayers.push(targetLayer);
+                    }
+                }
+
+                // Update coord inputs
+                if (typeof window.updateCoordInput === 'function') window.updateCoordInput();
+                if (typeof window.syncMultiSelectToFramework === 'function') window.syncMultiSelectToFramework();
+            }
+        }
+
+        // syncHeaderSelection will handle thumbnail updates and visibility
+        this.syncHeaderSelection();
     }
 
     selectSrc(srcElement) {
-        document.querySelectorAll('.menusrc-src-item.selected').forEach((el) => {
-            el.classList.remove('selected');
-        });
+        // In the new layout, srcs are rows themselves, so delegating to selectLayer
+        this.selectLayer(srcElement);
+    }
 
-        srcElement.classList.add('selected');
-        this.selectedSrc = srcElement;
-        
-        // Dispatch event
-        const srcIndex = Array.from(srcElement.parentElement.children).indexOf(srcElement);
-        const srcPath = srcElement.querySelector('img')?.src || '';
-        this.#dispatchSrcSelectedEvent(srcIndex, srcPath);
+    #updateHeaderThumbnail(layerId, srcIndex) {
+        if (!this.headerThumbnail) return;
+
+        const layerData = this.layerMap.get(layerId);
+        if (!layerData) return;
+
+        let srcPath = '';
+        if (srcIndex !== undefined) {
+            const srcs = layerData.srcs || layerData.src || [];
+            srcPath = srcs[parseInt(srcIndex)];
+        } else {
+            // Default to first src if it's a layer/group
+            const srcs = layerData.srcs || layerData.src || [];
+            srcPath = Array.isArray(srcs) ? srcs[0] : srcs;
+        }
+
+        if (srcPath) {
+            this.headerThumbnail.innerHTML = `<img src="${srcPath}" style="width:100%; height:100%; object-fit:contain;">`;
+        } else {
+            this.headerThumbnail.innerHTML = '🖼️';
+        }
     }
 
     getSelectedLayerId() {
         if (!this.selectedLayer) return null;
         return this.selectedLayer.id;
+    }
+
+    syncHeaderSelection() {
+        // Check CANVAS selection state (the real source of truth)
+        const canvasSelected = document.querySelectorAll('.layer.selected, .layer-group.selected');
+        const hasCanvasSelection = canvasSelected.length > 0;
+
+        // Show/hide widget content based on canvas selection (using class, not inline display)
+        if (this.widget) {
+            if (hasCanvasSelection) {
+                this.widget.classList.remove('menusrc-hidden');
+                this.widget.classList.add('visible');
+                if (this.layerWrapper) this.layerWrapper.classList.remove('menusrc-content-hidden');
+                if (this.gridWrapper) this.gridWrapper.classList.remove('menusrc-content-hidden');
+            } else {
+                // Hide layer list and grid when nothing selected
+                if (this.layerWrapper) this.layerWrapper.classList.add('menusrc-content-hidden');
+                if (this.gridWrapper) this.gridWrapper.classList.add('menusrc-content-hidden');
+            }
+        }
+
+        // Update menu row highlights to match canvas selection
+        const selectedRows = this.layerList?.querySelectorAll('.menusrc-item-row.selected') || [];
+
+        if (selectedRows.length > 0) {
+            // Handle Multiple Thumbnails in Header
+            if (this.headerThumbnail) {
+                this.headerThumbnail.innerHTML = '';
+                this.headerThumbnail.style.display = 'flex';
+                this.headerThumbnail.style.overflowX = 'auto';
+                this.headerThumbnail.style.width = 'auto';
+                this.headerThumbnail.style.maxWidth = '120px';
+
+                const maxThumbs = 4;
+                Array.from(selectedRows).slice(0, maxThumbs).forEach(row => {
+                    const layerId = row.dataset.layerId;
+                    const layerData = this.layerMap.get(layerId);
+
+                    if (layerData) {
+                        const srcs = layerData.srcs || layerData.src || [];
+                        const thumbSrc = Array.isArray(srcs) ? srcs[0] : srcs;
+
+                        if (thumbSrc) {
+                            const img = document.createElement('img');
+                            img.src = thumbSrc;
+                            img.style.cssText = 'width:24px;height:24px;object-fit:contain;margin-right:2px;border:1px solid #ddd;';
+                            this.headerThumbnail.appendChild(img);
+                        }
+                    }
+                });
+
+                if (selectedRows.length > maxThumbs) {
+                    const more = document.createElement('span');
+                    more.textContent = `+${selectedRows.length - maxThumbs}`;
+                    more.style.cssText = 'font-size:10px;align-self:center;';
+                    this.headerThumbnail.appendChild(more);
+                }
+            }
+
+            // Update header color box
+            const lastRow = selectedRows[selectedRows.length - 1];
+            const colorInner = lastRow.querySelector('.menusrc-color-inner');
+            if (colorInner && this.headerColorBox) {
+                this.headerColorBox.querySelector('.menusrc-color-inner').style.backgroundColor = colorInner.style.backgroundColor;
+            }
+        } else {
+            // Clear header info
+            if (this.headerThumbnail) {
+                this.headerThumbnail.innerHTML = '🖼️';
+                this.headerThumbnail.style.width = '32px';
+            }
+            if (this.headerColorBox) {
+                this.headerColorBox.querySelector('.menusrc-color-inner').style.backgroundColor = 'transparent';
+            }
+        }
     }
 
     getSelectedSrcIndex() {
@@ -343,49 +642,376 @@ class LayerSrcManager {
         if (!srcElement) return;
 
         srcElement.style.filter = `drop-shadow(0 0 0 ${color})`;
-        
+
         this.#dispatchColorChangedEvent(color);
     }
 
-    #addLayerToGroup(parentGroup, layerData) {
-        const layer = document.createElement('div');
-        layer.className = 'menusrc-item-row menusrc-is-nested';
-        layer.id = layerData.id;
-        layer.dataset.layerId = layerData.id;
+    /**
+     * Recursive rendering helper
+     * @param {HTMLElement} parentGroup 
+     * @param {Object} layerData 
+     * @param {number} depth Indentation depth
+     */
+    #addLayerToGroup(parentGroup, layerData, depth = 0, path = []) {
+        const layerId = layerData.id;
+        const name = layerData.name || 'Layer';
+        const currentPath = [...path, name];
+        const fullIdentity = currentPath.join(':');
 
-        let srcHtml = '';
-        if (layerData.srcs && Array.isArray(layerData.srcs)) {
-            srcHtml = layerData.srcs
-                .map(
-                    (src, idx) => `
-                <div class="menusrc-src-item" data-src-index="${idx}">
-                    <div class="menusrc-layer-icon">
-                        <img src="${src}" alt="src${idx}" style="width:100%; height:100%; object-fit:contain;">
-                    </div>
-                    <span class="menusrc-layer-name">src${idx}</span>
-                </div>
-            `
-                )
-                .join('');
+        // Register in Map to allow lookup for color application/selection
+        this.layerMap.set(layerId, layerData);
+
+        const srcs = layerData.srcs || layerData.src || [];
+        const srcArr = Array.isArray(srcs) ? srcs : [srcs];
+        const hasChildren = layerData.childLayers && layerData.childLayers.length > 0;
+        const hasMultipleSrcs = srcArr.length > 1;
+
+        // Determine Type Tag based on requested format
+        let typeTag = '';
+        if (hasChildren) typeTag = ':IG';
+        else if (hasMultipleSrcs) typeTag = ':SG';
+
+        // Indentation string
+        const indentStr = depth > 0 ? Array(depth).fill('-').join('') + ' ' : '';
+
+        const layerRow = document.createElement('div');
+        layerRow.className = `menusrc-item-row depth-${depth}`;
+        layerRow.id = layerId;
+        layerRow.dataset.layerId = layerId;
+
+        // Color for Group Box - Priority: layer.color (getter) > layer.options.color0 > layer.options.color
+        let groupColor = '#000000';
+        if (layerData.color) {
+            groupColor = layerData.color;
+        } else if (layerData.options) {
+            groupColor = layerData.options.color0 || layerData.options.color || '#000000';
         }
 
-        layer.innerHTML = `
-            <span class="menusrc-layer-icon">🖼️</span>
-            <span class="menusrc-layer-name">${layerData.name || 'Layer'}</span>
-            <span class="menusrc-handle">☰</span>
-            <div style="margin-left: 10px; flex-grow: 1;">
-                ${srcHtml}
+        layerRow.innerHTML = `
+            <div class="menusrc-row-content">
+                <span class="menusrc-indent">${indentStr}</span>
+                <span class="menusrc-row-symbol">|</span>
+                <span class="menusrc-layer-name" title="${fullIdentity}">${fullIdentity}${typeTag}</span>
+                <div class="menusrc-color-box-container">
+                    <div class="menusrc-color-box" title="Layer/Group Color">
+                        <div class="menusrc-color-inner" style="background-color: ${groupColor}"></div>
+                    </div>
+                    <input type="color" class="menusrc-row-color-input" value="${groupColor}">
+                </div>
+                ${(hasChildren || hasMultipleSrcs) ? '<span class="menusrc-row-toggle">▼</span>' : ''}
+                <span class="menusrc-row-handle">=</span>
+                <span class="menusrc-row-symbol">|</span>
             </div>
         `;
 
-        parentGroup.appendChild(layer);
+        // Event Listeners for Layer Row
+        layerRow.addEventListener('click', (e) => {
+            if (e.target.closest('.menusrc-color-box-container') ||
+                e.target.closest('.menusrc-row-toggle') ||
+                e.target.closest('.menusrc-row-handle')) return;
+            this.selectLayer(layerRow, e.ctrlKey);
+        });
+
+        const colorInput = layerRow.querySelector('.menusrc-row-color-input');
+        const colorBox = layerRow.querySelector('.menusrc-color-box');
+        if (colorBox) {
+            colorBox.addEventListener('click', (e) => {
+                e.stopPropagation();
+                colorInput.click();
+            });
+        }
+        if (colorInput) {
+            colorInput.addEventListener('input', (e) => {
+                const color = e.target.value;
+                layerRow.querySelector('.menusrc-color-inner').style.backgroundColor = color;
+                this.#applyColorToLayer(layerId, color);
+            });
+            colorInput.addEventListener('click', (e) => e.stopPropagation());
+        }
+
+        parentGroup.appendChild(layerRow);
+
+        // Nested Container
+        const nestedContainer = document.createElement('div');
+        nestedContainer.className = 'menusrc-nested-group';
+        nestedContainer.style.display = 'none';
+        parentGroup.appendChild(nestedContainer);
+
+        const toggleBtn = layerRow.querySelector('.menusrc-row-toggle');
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const isHidden = nestedContainer.style.display === 'none';
+                nestedContainer.style.display = isHidden ? 'block' : 'none';
+                toggleBtn.textContent = isHidden ? '▲' : '▼';
+                if (isHidden) layerRow.classList.remove('collapsed');
+                else layerRow.classList.add('collapsed');
+            });
+        }
+
+        // Render Sources if SG
+        if (hasMultipleSrcs) {
+            srcs.forEach((srcPath, idx) => {
+                const srcRow = document.createElement('div');
+                srcRow.className = `menusrc-item-row menusrc-src-row depth-${depth + 1}`;
+                srcRow.dataset.layerId = layerId;
+                const srcIndent = Array(depth + 1).fill('-').join('') + ' ';
+                let srcColor = '#000000';
+                if (layerData.srcColors && layerData.srcColors[idx]) {
+                    srcColor = layerData.srcColors[idx];
+                } else if (layerData.options && layerData.options[`color${idx}`]) {
+                    srcColor = layerData.options[`color${idx}`];
+                } else if (groupColor && groupColor !== '#000000') {
+                    // Fallback to group color if per-src is missing
+                    srcColor = groupColor;
+                }
+
+                const sLabel = `${fullIdentity}:S${idx}`;
+
+                srcRow.innerHTML = `
+                    <div class="menusrc-row-content">
+                        <span class="menusrc-indent">${srcIndent}</span>
+                        <span class="menusrc-row-symbol">|</span>
+                        <span class="menusrc-layer-name">${sLabel}</span>
+                        <div class="menusrc-color-box-container">
+                            <div class="menusrc-color-box" title="Source Color">
+                                <div class="menusrc-color-inner" style="background-color: ${srcColor}"></div>
+                            </div>
+                            <input type="color" class="menusrc-row-color-input" data-src-index="${idx}" value="${srcColor}">
+                        </div>
+                        <span class="menusrc-row-handle">=</span>
+                        <span class="menusrc-row-symbol">|</span>
+                    </div>
+                `;
+
+                srcRow.addEventListener('click', (e) => {
+                    if (e.target.closest('.menusrc-color-box-container') || e.target.closest('.menusrc-row-handle')) return;
+                    this.selectLayer(layerRow, e.ctrlKey);
+                });
+
+                const sInput = srcRow.querySelector('.menusrc-row-color-input');
+                const sBox = srcRow.querySelector('.menusrc-color-box');
+                if (sBox) sBox.addEventListener('click', (e) => { e.stopPropagation(); sInput.click(); });
+                if (sInput) {
+                    sInput.addEventListener('input', (e) => {
+                        const color = e.target.value;
+                        srcRow.querySelector('.menusrc-color-inner').style.backgroundColor = color;
+                        this.#applyColorToSrc(layerId, idx, color);
+                    });
+                    sInput.addEventListener('click', (e) => e.stopPropagation());
+                }
+                nestedContainer.appendChild(srcRow);
+            });
+        }
+
+        if (hasChildren) {
+            layerData.childLayers.forEach((child) => {
+                if (!child.id) child.id = `layer-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+                this.#addLayerToGroup(nestedContainer, child, depth + 1, currentPath);
+            });
+        }
+    }
+
+    #applyColorToLayer(layerId, color) {
+        const layerData = this.layerMap.get(layerId);
+        if (!layerData) return;
+
+        // Apply to this layer's sources (SG)
+        const srcs = layerData.srcs || layerData.src || [];
+        srcs.forEach((_, idx) => {
+            this.#applyColorToSrc(layerId, idx, color);
+        });
+
+        // Recursively apply to child layers (IG)
+        if (layerData.childLayers && layerData.childLayers.length > 0) {
+            layerData.childLayers.forEach(child => {
+                this.#applyColorToLayer(child.id, color);
+            });
+        }
+    }
+
+    #applyColorBulkToLayer(layerId) {
+        const colorInput = document.createElement('input');
+        colorInput.type = 'color';
+        colorInput.oninput = (e) => {
+            const color = e.target.value;
+            this.#applyColorToLayer(layerId, color);
+        };
+        colorInput.click();
+    }
+
+    #applyColorToSrc(layerId, srcIndex, color = null) {
+        if (color === null) {
+            this.#showColorPicker(layerId, srcIndex);
+            return;
+        }
+
+        console.log('🎨 Applying color:', color, 'to layer:', layerId, 'src:', srcIndex);
+
+        const layer = this.layerMap.get(layerId) || (window.layers && window.layers.find(l => l.id === layerId));
+        if (!layer) {
+            console.error('Layer not found for color application:', layerId);
+            return;
+        }
+
+        if (!layer.options) layer.options = {};
+        layer.options[`color${srcIndex}`] = color;
+
+        if (typeof layer.updateOptions === 'function') {
+            layer.updateOptions({ [`color${srcIndex}`]: color });
+        } else {
+            if (layer.element && layer.element.parentElement) {
+                const parent = layer.element.parentElement;
+                layer.detach();
+                layer.attach(parent, window.onLayerPointerDown);
+            }
+        }
+
+        this.#dispatchColorChangedEvent(color);
+        this.#updateGridThumbnail(layerId);
+        this.syncHeaderSelection();
+
+        const row = document.getElementById(layerId);
+        if (row) {
+            const input = row.querySelector(`.menusrc-row-color-input[data-src-index="${srcIndex}"]`) || row.querySelector('.menusrc-row-color-input');
+            if (input) {
+                input.value = color;
+                const inner = input.parentElement.querySelector('.menusrc-color-inner');
+                if (inner) inner.style.backgroundColor = color;
+            }
+        }
+
+        if (typeof window.HistoryManager !== 'undefined') {
+            window.HistoryManager.recordAction('color', {
+                layerName: layer.name,
+                srcIndex: srcIndex,
+                color: color,
+                action: `Changed color for src${srcIndex}`
+            });
+        }
+    }
+
+    #applyColorBulk(color) {
+        this.layers.forEach(layer => {
+            this.#applyColorToLayer(layer.id, color);
+        });
     }
 
     #renderLayers() {
+        console.log('%c[LayerSrcManager] 🎨 #renderLayers (Filtered)', 'color: purple; font-weight: bold');
         this.layerList.innerHTML = '';
-        this.layers.forEach((layer) => {
+        this.gridContent.innerHTML = '';
+
+        // Find actual layer objects that are selected
+        const selectedLayers = [];
+        const findSelected = (layers) => {
+            layers.forEach(l => {
+                const isSelected = l.selected || (l.element && l.element.classList.contains('selected'));
+                if (isSelected) {
+                    selectedLayers.push(l);
+                } else if (l.childLayers && l.childLayers.length > 0) {
+                    findSelected(l.childLayers);
+                }
+            });
+        };
+        if (window.layers) findSelected(window.layers);
+
+        // If nothing selected, don't render list/grid
+        if (selectedLayers.length === 0) {
+            this.syncHeaderSelection();
+            return;
+        }
+
+        // Helper: collect all {layer, srcIndex, srcPath, label, type}
+        const collectAllSrcs = (layerData, path = []) => {
+            const result = [];
+            const srcArr = Array.isArray(layerData.srcs || layerData.src) ? (layerData.srcs || layerData.src) : [layerData.srcs || layerData.src];
+            const name = layerData.name || 'Layer';
+            const hasChildren = layerData.childLayers && layerData.childLayers.length > 0;
+            const hasMultipleSrcs = srcArr.length > 1;
+
+            // Build path string for identity
+            const currentPath = [...path, name];
+            const fullIdentity = currentPath.join(':');
+
+            if (hasChildren) {
+                result.push({ layer: layerData, type: 'IG', label: `${fullIdentity}:IG` });
+            } else if (hasMultipleSrcs) {
+                result.push({ layer: layerData, type: 'SG', label: `${fullIdentity}:SG` });
+            }
+
+            srcArr.forEach((srcPath, idx) => {
+                if (srcPath) {
+                    const label = hasMultipleSrcs ? `${fullIdentity}:S${idx}` : `${fullIdentity}:S0`;
+                    result.push({ layer: layerData, srcIndex: idx, srcPath, type: 'SRC', label: label });
+                }
+            });
+
+            if (hasChildren) {
+                layerData.childLayers.forEach((child, gIdx) => {
+                    // Use G prefix for children if desired? 
+                    // User example: GrupBadan:IG:G0
+                    // This implies the child itself is labeled within its parent
+                    result.push(...collectAllSrcs(child, currentPath));
+                });
+            }
+            return result;
+        };
+
+        selectedLayers.forEach((layer) => {
+            // 1. Add to Layer List
             this.#addLayerToGroup(this.layerList, layer);
+
+            // 2. Add to Grid
+            const allSrcs = collectAllSrcs(layer);
+            allSrcs.forEach(({ layer: srcLayer, srcIndex, srcPath, type, label }) => {
+                const gridItem = document.createElement('div');
+                gridItem.className = 'menusrc-grid-item';
+                gridItem.dataset.layerId = srcLayer.id;
+                gridItem.dataset.srcIndex = srcIndex !== undefined ? srcIndex : '';
+
+                let tintColor = 'transparent';
+                if (type === 'SRC' && srcLayer.options && srcLayer.options[`color${srcIndex}`]) {
+                    tintColor = srcLayer.options[`color${srcIndex}`];
+                } else if (srcLayer.options) {
+                    tintColor = srcLayer.options.color0 || srcLayer.options.color || 'transparent';
+                }
+
+                let imgHtml = '';
+                if (type === 'SRC') {
+                    imgHtml = `<img src="${srcPath}" style="width:100%; height:100%; object-fit:contain; ${tintColor !== 'transparent' ? `filter: drop-shadow(0 0 0 ${tintColor})` : ''}">`;
+                } else {
+                    const s = srcLayer.srcs || srcLayer.src || [];
+                    const ts = Array.isArray(s) ? s[0] : s;
+                    imgHtml = ts ? `<img src="${ts}" style="width:100%; height:100%; object-fit:contain; opacity:0.6; ${tintColor !== 'transparent' ? `filter: drop-shadow(0 0 0 ${tintColor})` : ''}">` : '<span>📁</span>';
+                }
+
+                gridItem.innerHTML = `<div class="grid-thumb-container" style="position:relative; width:100%; height:100%;">${imgHtml}<span style="position:absolute; bottom:0; left:0; font-size:7px; background:rgba(0,0,0,0.6); color:#fff; padding:0 2px; border-radius:0 2px 0 0; white-space:nowrap;">${label}</span></div>`;
+
+                gridItem.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const row = document.getElementById(srcLayer.id);
+                    if (row) this.selectLayer(row, e.ctrlKey);
+                    if (!e.ctrlKey) this.gridContent.querySelectorAll('.grid-selected').forEach(g => g.classList.remove('grid-selected'));
+                    gridItem.classList.add('grid-selected');
+                });
+
+                gridItem.addEventListener('dblclick', (e) => {
+                    e.stopPropagation();
+                    if (type === 'SRC') this.#applyColorToSrc(srcLayer.id, srcIndex);
+                    else this.#applyColorBulkToLayer(srcLayer.id);
+                });
+
+                this.gridContent.appendChild(gridItem);
+            });
         });
+
+        if (!this.widget.classList.contains('show-list')) {
+            this.widget.classList.add('show-list');
+            const arrow = document.getElementById('menusrc-arrowGlobal');
+            if (arrow) arrow.textContent = '▲';
+        }
+        this.syncHeaderSelection();
     }
 
     #applyColorToSelectedSrc(color) {
@@ -395,7 +1021,7 @@ class LayerSrcManager {
         if (!srcElement) return;
 
         srcElement.style.filter = `drop-shadow(0 0 0 ${color})`;
-        
+
         this.#dispatchColorChangedEvent(color);
     }
 
@@ -428,43 +1054,40 @@ class LayerSrcManager {
     }
 
     #updateResponsive() {
-        const gridIsVisible =
-            !this.widget.classList.contains('open') &&
-            this.gridContent.children.length > 0;
-        if (gridIsVisible) {
-            this.gridContent.classList.add('menusrc-compact');
-        } else {
-            this.gridContent.classList.remove('menusrc-compact');
-        }
+        const isListMode = this.widget.classList.contains('show-list');
 
-        const layersVisible = this.widget.classList.contains('open');
-        if (layersVisible) {
+        if (!isListMode) {
+            // Grid mode
+            this.gridContent.classList.add('menusrc-compact');
+            this.layerWrapper.classList.remove('menusrc-compact');
+        } else {
+            // List mode
+            this.gridContent.classList.remove('menusrc-compact');
             const visibleCount = this.#countVisibleLayers();
             if (visibleCount < 10) {
                 this.layerWrapper.classList.add('menusrc-compact');
             } else {
                 this.layerWrapper.classList.remove('menusrc-compact');
             }
-        } else {
-            this.layerWrapper.classList.remove('menusrc-compact');
         }
     }
 
     #dispatchLayerSelectedEvent(layerId) {
         const event = new CustomEvent('layerSelected', {
-            detail: { layerId }
+            detail: { layerId },
+            bubbles: true,
+            composed: true
         });
-        document.dispatchEvent(event);
+        window.dispatchEvent(event);
     }
 
     #dispatchSrcSelectedEvent(srcIndex, srcPath) {
         const event = new CustomEvent('srcSelected', {
-            detail: {
-                srcIndex,
-                srcPath
-            }
+            detail: { srcIndex, srcPath },
+            bubbles: true,
+            composed: true
         });
-        document.dispatchEvent(event);
+        window.dispatchEvent(event);
     }
 
     #dispatchColorChangedEvent(color) {
@@ -476,6 +1099,90 @@ class LayerSrcManager {
             }
         });
         document.dispatchEvent(event);
+    }
+
+    #showColorPicker(layerId, srcIndex) {
+        console.log('🎨 Opening color picker for layer:', layerId, 'src:', srcIndex);
+
+        // Find the layer object (try map first, then global layers)
+        const layer = this.layerMap.get(layerId) || (window.layers && window.layers.find(l => l.id === layerId));
+        if (!layer) {
+            console.error('Layer not found for picker:', layerId);
+            return;
+        }
+
+        // Create color input
+        const input = document.createElement('input');
+        input.type = 'color';
+
+        // Get current color if available
+        const currentColor = layer.options?.[`color${srcIndex}`] || '#000000';
+        input.value = currentColor;
+
+        input.addEventListener('change', (e) => {
+            const newColor = e.target.value;
+            console.log('🎨 Color changed to:', newColor, 'for layer:', layer.name, 'src:', srcIndex);
+
+            // Update layer options
+            if (!layer.options) layer.options = {};
+            layer.options[`color${srcIndex}`] = newColor;
+
+            // Re-render the layer to apply color
+            if (typeof layer.updateOptions === 'function') {
+                layer.updateOptions({ [`color${srcIndex}`]: newColor });
+            } else {
+                // Fallback: force re-render
+                if (layer.element && layer.element.parentElement) {
+                    const parent = layer.element.parentElement;
+                    layer.detach();
+                    layer.attach(parent, window.onLayerPointerDown);
+                }
+            }
+
+            // Dispatch event
+            this.#dispatchColorChangedEvent(newColor);
+
+            // Update Live Grid Thumbnail and Header Thumbnail
+            this.#updateGridThumbnail(layerId);
+            this.syncHeaderSelection();
+
+            // Record to history if available
+            if (typeof window.HistoryManager !== 'undefined') {
+                window.HistoryManager.recordAction('color', {
+                    layerName: layer.name,
+                    srcIndex: srcIndex,
+                    color: newColor,
+                    action: `Changed color for src${srcIndex}`
+                });
+            }
+        });
+
+        // Trigger the color picker
+        input.click();
+    }
+
+    #updateGridThumbnail(layerId) {
+        const gridItem = this.gridContent.querySelector(`.menusrc-grid-item[data-layer-id="${layerId}"]`);
+        if (!gridItem) return;
+
+        const layerData = this.layerMap.get(layerId);
+        if (!layerData) return;
+
+        // Update tint color in grid
+        const img = gridItem.querySelector('img');
+        if (img) {
+            let tintColor = 'transparent';
+            if (layerData.options) {
+                tintColor = layerData.options.color0 || layerData.options.color || 'transparent';
+            }
+            img.style.filter = tintColor !== 'transparent' ? `drop-shadow(0 0 0 ${tintColor})` : '';
+        }
+
+        // Update nested count
+        const countSpan = gridItem.querySelector('span');
+        if (countSpan && layerData.childLayers) {
+            countSpan.textContent = `G:${layerData.childLayers.length}`;
+        }
     }
 
     update() {
@@ -570,9 +1277,7 @@ class LayerSrcManager {
         }
 
         .menusrc-container {
-            font-family: 'Segoe UI', sans-serif;
-            background: #f0f0f0;
-            touch-action: manipulation;
+            font-family: 'Segoe UI', 'Roboto', sans-serif;
             margin: 0;
             display: flex;
             justify-content: center;
@@ -580,18 +1285,27 @@ class LayerSrcManager {
         }
 
         .menusrc-main {
+            display: none; /* Hidden by default */
             width: calc(100% - 20px);
             max-width: 500px;
             margin: auto;
             border: 2px solid var(--border-color);
             background: var(--bg-color);
             overflow: hidden;
-            display: flex;
             flex-direction: column;
             border-radius: 8px;
             transition: max-width 0.18s ease, transform 0.18s ease;
         }
 
+        .menusrc-main.visible, .menusrc-main.open {
+            display: flex;
+        }
+        
+        .menusrc-hidden {
+            display: none !important;
+        }
+
+        /* HEADER */
         .menusrc-header {
             display: flex;
             align-items: center;
@@ -602,12 +1316,23 @@ class LayerSrcManager {
             z-index: 20;
         }
 
+        /* Thumbnail in Header */
         .menusrc-icon-box {
+            width: 32px;
+            height: 32px;
             border: 1px solid #000;
-            padding: 2px 6px;
             margin-right: 10px;
-            font-weight: bold;
-            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            background: #eee;
+        }
+        
+        .menusrc-icon-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
         }
 
         .menusrc-title {
@@ -615,66 +1340,71 @@ class LayerSrcManager {
             font-weight: bold;
         }
 
-        .menusrc-color-picker {
-            width: 30px;
-            height: 30px;
-            border: 1px solid #000;
-            border-radius: 4px;
-            cursor: pointer;
-            margin-right: 10px;
+        /* Color Box in Row/Header */
+        .menusrc-color-box-container {
+            position: relative;
             display: flex;
             align-items: center;
-            justify-content: center;
+            margin-right: 10px;
+        }
+
+        .menusrc-color-box {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #000;
+            padding: 1px;
+            cursor: pointer;
+            display: flex;
             background: #fff;
         }
 
+        .menusrc-color-inner {
+            flex: 1;
+            background: #000;
+        }
+        
         .menusrc-color-input {
-            display: none;
-            cursor: pointer;
+            width: 0; height: 0; opacity: 0; position: absolute;
         }
 
         .menusrc-arrow {
-            width: 0;
-            height: 0;
-            border-left: 6px solid transparent;
-            border-right: 6px solid transparent;
-            border-top: 8px solid black;
-            transition: transform 0.24s;
+            font-weight: bold;
+            font-size: 20px;
+            user-select: none;
+            padding: 4px 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 40px;
+            min-height: 40px;
+            color: #333;
+        }
+        
+        .menusrc-arrow:hover {
+            background: #eee;
+            border-radius: 4px;
         }
 
-        .menusrc-main.open .menusrc-arrow {
-            transform: rotate(180deg);
-        }
-
+        /* GRID SECTION - Visible by default or when toggled */
         .menusrc-grid-wrapper {
-            max-height: 165px;
-            transition: max-height 0.32s ease, opacity 0.28s ease;
+            max-height: 200px;
+            opacity: 1;
+            transition: max-height 0.35s ease, opacity 0.3s ease;
             overflow-x: auto;
             background: #fff;
-        }
-
-        .menusrc-main.open .menusrc-grid-wrapper {
-            max-height: 0;
-            opacity: 0;
-            pointer-events: none;
+            border-bottom: 1px solid #ddd;
         }
 
         .menusrc-grid-content {
             display: grid;
-            grid-template-rows: repeat(3, var(--item-size));
+            grid-template-rows: repeat(2, var(--item-size)); /* 2 rows like typical grid */
             grid-auto-flow: column;
             gap: 4px;
             padding: 10px;
             width: max-content;
-            transition: gap 0.18s, padding 0.18s;
         }
-
-        .menusrc-grid-content.menusrc-compact {
-            gap: 2px;
-            padding: 6px;
-            --item-size: 36px;
-        }
-
+        
         .menusrc-grid-item {
             width: var(--item-size);
             height: var(--item-size);
@@ -683,223 +1413,122 @@ class LayerSrcManager {
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 11px;
-            user-select: none;
             border-radius: 4px;
-            position: relative;
+            cursor: pointer;
+            overflow: hidden;
         }
+        
+        .menusrc-grid-item:hover { filter: brightness(0.95); }
+        .menusrc-grid-item.selected { border: 2px solid #000; }
+        .menusrc-grid-item.grid-selected { border: 2px solid #2196F3; box-shadow: 0 0 4px rgba(33,150,243,0.5); }
 
-        .menusrc-grid-item.selected {
-            background: #1a73e8;
-            color: white;
-            border-color: #0d47a1;
-        }
-
+        /* LIST SECTION - Hidden by default (grid visible), Expanded when 'v' clicked */
         .menusrc-layer-wrapper {
             max-height: 0;
             opacity: 0;
-            transition: max-height 0.36s ease, opacity 0.28s ease, padding 0.18s;
+            transition: max-height 0.4s ease, opacity 0.3s ease;
             overflow-y: auto;
             background: #fafafa;
             pointer-events: none;
         }
-
-        .menusrc-main.open .menusrc-layer-wrapper {
-            max-height: 600px;
-            opacity: 1;
-            pointer-events: auto;
+        
+        /* STATES for switching views */
+        /* State 1: Show Grid (Default or toggled) --> Hide List? No, user says "grid ke tutup... terekspansi layer menu" */
+        
+        .menusrc-main.show-grid .menusrc-grid-wrapper {
+             max-height: 200px;
+             opacity: 1;
+             pointer-events: auto;
         }
-
-        .menusrc-layer-wrapper.menusrc-compact {
-            padding: 6px;
+        .menusrc-main.show-grid .menusrc-layer-wrapper {
+             max-height: 100px; /* Small peek? or 0? let's keep it small or 0 based on preference */
+             /* User said: "v di klik grid ke tutup ... terekspansi layer menu" -> so originally grid open, list closed/small. */
+             max-height: 0;
+             opacity: 0;
+             pointer-events: none;
         }
+        .menusrc-main.show-grid .menusrc-arrow { transform: rotate(0deg); }
 
-        .menusrc-layer-list {
-            padding: 8px;
-            position: relative;
+        .menusrc-main.show-list .menusrc-grid-wrapper {
+             max-height: 0;
+             opacity: 0;
+             pointer-events: none;
+             border-bottom: none;
         }
+        .menusrc-main.show-list .menusrc-layer-wrapper {
+             max-height: 500px; /* Expanded */
+             opacity: 1;
+             pointer-events: auto;
+        }
+        .menusrc-main.show-list .menusrc-arrow { transform: rotate(180deg); }
 
+
+        .menusrc-layer-list { padding: 4px; }
+
+        /* ROW STYLING matches pol.html + Request */
         .menusrc-item-row {
             display: flex;
             align-items: center;
-            padding: 10px;
-            margin-bottom: 6px;
+            padding: 6px 8px;
+            border-bottom: 1px solid #eee;
             background: #fff;
-            border: 1px solid #ddd;
-            border-radius: 4px;
             user-select: none;
-            touch-action: pan-y;
-            transition: padding 0.14s, margin-bottom 0.14s, transform 0.12s;
+        }
+        
+        .menusrc-item-row.selected { background-color: #e3f2fd; }
+        
+        .menusrc-dragging { 
+            opacity: 0.5; 
+            background: #e3f2fd !important;
         }
 
-        .menusrc-item-row.selected {
-            background: #e8f0fe;
-            border-color: #1a73e8;
+        .menusrc-dragging-group {
+            display: none !important;
         }
 
-        .menusrc-item-row.menusrc-dragging {
-            opacity: 0.75;
-            background: #d1e7ff;
-            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
-            z-index: 1000;
-            position: relative;
-        }
-
-        .menusrc-layer-wrapper.menusrc-compact .menusrc-item-row {
-            padding: 6px;
-            margin-bottom: 4px;
-            font-size: 13px;
-        }
-
-        .menusrc-layer-wrapper.menusrc-compact .menusrc-item-row .menusrc-handle {
-            padding: 6px 10px;
-        }
-
-        .menusrc-src-folder {
-            background: var(--folder-bg);
-            font-weight: bold;
-            border-left: 4px solid #1a73e8;
-        }
-
-        .menusrc-folder-toggle {
-            cursor: pointer;
-            margin-right: 8px;
-            font-size: 10px;
-            transition: transform 0.18s;
-            display: inline-block;
-        }
-
-        .menusrc-src-folder.collapsed + .menusrc-nested-group {
-            display: none;
-        }
-
-        .menusrc-src-folder.collapsed .menusrc-folder-toggle {
-            transform: rotate(-90deg);
-        }
-
-        .menusrc-nested-group {
-            margin-left: 25px;
-            border-left: 1px dashed #ccc;
-            padding-left: 8px;
-        }
-
-        .menusrc-is-nested {
-            margin-left: 5px;
-            background: #fff;
-        }
-
-        .menusrc-layer-icon {
-            margin-right: 10px;
-            min-width: 30px;
-            height: 30px;
-            border: 1px solid #ccc;
-            border-radius: 3px;
+        .menusrc-row-content {
             display: flex;
             align-items: center;
-            justify-content: center;
-            background: #f9f9f9;
-            overflow: hidden;
-            font-size: 14px;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: nowrap;
+            width: 100%;
         }
 
+        .menusrc-indent { color: #999; margin-right: 4px; }
+        .menusrc-row-symbol { color: #999; margin: 0 4px; font-weight: bold; }
+        
         .menusrc-layer-name {
             flex-grow: 1;
-            pointer-events: none;
+            margin: 0 6px;
             overflow: hidden;
             text-overflow: ellipsis;
-            white-space: nowrap;
         }
 
-        .menusrc-handle {
+        .menusrc-row-toggle {
+            cursor: pointer;
+            width: 20px;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .menusrc-row-handle {
             cursor: grab;
-            padding: 5px 12px;
-            font-size: 18px;
+            margin-left: 6px;
+            font-weight: bold;
             color: #666;
-            background: #f0f0f0;
-            border-radius: 3px;
-            margin-left: 8px;
-            user-select: none;
         }
 
-        .menusrc-handle:active {
-            cursor: grabbing;
+        /* Nested Groups */
+        .menusrc-nested-group {
+             display: none; /* Hidden by default until toggled */
         }
 
-        .menusrc-src-item {
-            display: flex;
-            align-items: center;
-            padding: 6px 10px;
-            margin: 2px 0;
-            background: #f5f5f5;
-            border: 1px solid #ccc;
-            border-radius: 3px;
-            font-size: 12px;
-        }
-
-        .menusrc-src-item .menusrc-layer-icon {
-            margin-right: 8px;
-            min-width: 24px;
-            height: 24px;
-        }
-
-        .menusrc-src-item.selected {
-            background: #1a73e8;
-            color: white;
-            border-color: #0d47a1;
-        }
-
-        @media (max-width: 420px) {
-            .menusrc-icon-box {
-                display: none;
-            }
-            .menusrc-header {
-                padding: 8px;
-            }
-            .menusrc-title {
-                font-size: 14px;
-            }
+        /* Content hidden when no layer is selected in canvas */
+        .menusrc-content-hidden {
+            display: none !important;
         }
     `;
-}
-
-// ===== AUTO-INITIALIZATION (Integration Handler) =====
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-        if (typeof window.studioMenuIntegration === 'undefined') {
-            const container = document.getElementById('menusrcContainer');
-            if (container) {
-                window.studioMenuIntegration = new LayerSrcManager(container);
-            }
-        }
-    });
-} else {
-    if (typeof window.studioMenuIntegration === 'undefined') {
-        const container = document.getElementById('menusrcContainer');
-        if (container) {
-            window.studioMenuIntegration = new LayerSrcManager(container);
-        }
-    }
-}
-
-// ===== AUTO-INITIALIZATION (Integration Handler) =====
-// Initialize dengan delay untuk memastikan container siap
-function initStudioMenuIntegration() {
-    const container = document.getElementById('menusrcContainer');
-    if (container && typeof window.studioMenuIntegration === 'undefined') {
-        window.studioMenuIntegration = new LayerSrcManager(container);
-        console.log('✓ LayerSrcManager (UI + Logic) initialized');
-    }
-}
-
-// Cek DOM state
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-        // Delay sedikit untuk pastikan semua elements ready
-        setTimeout(initStudioMenuIntegration, 100);
-    });
-} else {
-    // Document sudah loaded, init langsung dengan delay
-    setTimeout(initStudioMenuIntegration, 100);
 }
 
 // Export untuk module usage

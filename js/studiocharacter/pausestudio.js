@@ -359,7 +359,7 @@ document.addEventListener("DOMContentLoaded", function () {
         var top = (h !== null) ? (10 + (80 - h) / 2) : 25;
         return { left: left + '%', top: top + '%' };
     }
-    window.openSettings = function() {
+    window.openSettings = function () {
         // Check if windowhandler is available
         if (typeof window.openWindow !== 'function') {
             console.error('windowhandler.js API not loaded');
@@ -425,7 +425,7 @@ document.addEventListener("DOMContentLoaded", function () {
         window.currentSettingsWindowId = windowIds[windowIds.length - 1];
 
         // Restore stored values into the new window's controls
-        setTimeout(function() {
+        setTimeout(function () {
             document.getElementById('masterVolumeSlider').value = Math.round(window.AudioSettings.masterVolume * 100);
             document.getElementById('masterVolumePercentage').textContent = Math.round(window.AudioSettings.masterVolume * 100) + '%';
             document.getElementById('bgmVolumeSlider').value = Math.round(window.AudioSettings.bgmVolume * 100);
@@ -442,31 +442,31 @@ document.addEventListener("DOMContentLoaded", function () {
             document.getElementById("sfxVolumeSlider").addEventListener("input", updateVolumePercentage);
             document.getElementById("uiVolumeSlider").addEventListener("input", updateVolumePercentage);
 
-            document.getElementById('masterVolumeSlider').addEventListener('input', function(e){
+            document.getElementById('masterVolumeSlider').addEventListener('input', function (e) {
                 var val = e.target.value / 100;
                 window.AudioSettings.masterVolume = val;
-                document.getElementById('masterVolumePercentage').textContent = Math.round(val*100) + '%';
+                document.getElementById('masterVolumePercentage').textContent = Math.round(val * 100) + '%';
                 broadcastAudioSettings();
             });
 
-            document.getElementById('sfxVolumeSlider').addEventListener('input', function(e){
+            document.getElementById('sfxVolumeSlider').addEventListener('input', function (e) {
                 var val = e.target.value / 100;
                 window.AudioSettings.sfxVolume = val;
-                document.getElementById('sfxVolumePercentage').textContent = Math.round(val*100) + '%';
+                document.getElementById('sfxVolumePercentage').textContent = Math.round(val * 100) + '%';
                 broadcastAudioSettings();
             });
 
-            document.getElementById('bgmSwitch').addEventListener('change', function(e){
+            document.getElementById('bgmSwitch').addEventListener('change', function (e) {
                 window.AudioSettings.bgmEnabled = !!e.target.checked;
                 broadcastAudioSettings();
             });
 
             document.getElementById("bgmVolumeSlider").addEventListener("input", updateBGMVolume);
             document.getElementById("uiVolumeSlider").addEventListener("input", updateUIVolume);
-            document.getElementById("prevBGM").addEventListener("click", function() {
+            document.getElementById("prevBGM").addEventListener("click", function () {
                 document.dispatchEvent(new CustomEvent("changeBGM", { detail: { direction: 'prev' } }));
             });
-            document.getElementById("nextBGM").addEventListener("click", function() {
+            document.getElementById("nextBGM").addEventListener("click", function () {
                 document.dispatchEvent(new CustomEvent("changeBGM", { detail: { direction: 'next' } }));
             });
 
@@ -474,12 +474,12 @@ document.addEventListener("DOMContentLoaded", function () {
             var prevStudioBGMBtn = document.getElementById("prevStudioBGM");
             var nextStudioBGMBtn = document.getElementById("nextStudioBGM");
             if (prevStudioBGMBtn) {
-                prevStudioBGMBtn.addEventListener("click", function() {
+                prevStudioBGMBtn.addEventListener("click", function () {
                     document.dispatchEvent(new CustomEvent("changeStudioBGM", { detail: { direction: 'prev' } }));
                 });
             }
             if (nextStudioBGMBtn) {
-                nextStudioBGMBtn.addEventListener("click", function() {
+                nextStudioBGMBtn.addEventListener("click", function () {
                     document.dispatchEvent(new CustomEvent("changeStudioBGM", { detail: { direction: 'next' } }));
                 });
             }
@@ -487,20 +487,20 @@ document.addEventListener("DOMContentLoaded", function () {
             // Ensure BGM title and playback reflect current state when settings opens
             try {
                 if (typeof updateBGMTitel === 'function') updateBGMTitel();
-            } catch (e) {}
+            } catch (e) { }
             try {
                 if (typeof updateStudioBGMTitle === 'function') updateStudioBGMTitle();
-            } catch (e) {}
+            } catch (e) { }
             try {
                 if (typeof applyAudioSettings === 'function') applyAudioSettings(window.AudioSettings || null);
-            } catch (e) {}
+            } catch (e) { }
             try {
                 if (typeof applyStudioAudioSettings === 'function') applyStudioAudioSettings(window.AudioSettings || null);
-            } catch (e) {}
+            } catch (e) { }
         }, 50);
     }
 
-    window.closeSettingsPopup = function() {
+    window.closeSettingsPopup = function () {
         if (window.currentSettingsWindowId && typeof window.closeWindow === 'function') {
             window.closeWindow(window.currentSettingsWindowId);
         }
@@ -522,14 +522,14 @@ document.addEventListener("DOMContentLoaded", function () {
     function updateBGMVolume() {
         var bgmVolume = document.getElementById("bgmVolumeSlider").value / 100;
         window.AudioSettings.bgmVolume = bgmVolume;
-        document.getElementById('bgmVolumePercentage').textContent = Math.round(bgmVolume*100)+'%';
+        document.getElementById('bgmVolumePercentage').textContent = Math.round(bgmVolume * 100) + '%';
         broadcastAudioSettings();
     }
 
     function updateUIVolume() {
         var uiVolume = document.getElementById("uiVolumeSlider").value / 100;
         window.AudioSettings.uiVolume = uiVolume;
-        document.getElementById('uiVolumePercentage').textContent = Math.round(uiVolume*100)+'%';
+        document.getElementById('uiVolumePercentage').textContent = Math.round(uiVolume * 100) + '%';
         broadcastAudioSettings();
     }
 });

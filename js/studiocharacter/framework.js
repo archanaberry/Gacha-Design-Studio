@@ -31,7 +31,7 @@ class FrameworkDisplay {
         this.trackSpacing = 5; // pixels
         this.columnsCount = 3; // grid columns
         this.allLayers = [];
-        
+
         // Whitelist urutan layer sesuai rendering
         this.layerOrder = [
             'Aksesoris',
@@ -83,7 +83,7 @@ class FrameworkDisplay {
 
         // Sort layers berdasarkan whitelist order
         this.allLayers = this.sortLayersByWhitelist(layers);
-        
+
         console.log(`✅ Framework.initialize: Rendering ${this.allLayers.length} layers`);
         this.renderFrameworkPanel();
     }
@@ -95,7 +95,7 @@ class FrameworkDisplay {
      */
     sortLayersByWhitelist(layers) {
         const sorted = [];
-        
+
         // Loop through whitelist order
         for (const layerName of this.layerOrder) {
             const layer = layers.find(l => l.name === layerName);
@@ -103,14 +103,14 @@ class FrameworkDisplay {
                 sorted.push(layer);
             }
         }
-        
+
         // Add any layers not in whitelist (ke belakang)
         for (const layer of layers) {
             if (!sorted.includes(layer)) {
                 sorted.push(layer);
             }
         }
-        
+
         return sorted;
     }
 
@@ -127,8 +127,9 @@ class FrameworkDisplay {
         const title = document.createElement('h2');
         title.textContent = 'Kerangka Karakter';
         title.style.fontSize = '20px';
-        title.style.margin = '10px 5px';
-        title.style.padding = '10px';
+        title.style.margin = '0'; // Remove margin (green area in debug)
+        title.style.padding = '10px 5px'; // Minimal padding
+        title.style.borderBottom = '1px solid #ccc';
         this.panel3.appendChild(title);
 
         // Create grid container
@@ -137,7 +138,7 @@ class FrameworkDisplay {
         gridContainer.style.display = 'grid';
         gridContainer.style.gridTemplateColumns = `repeat(${this.columnsCount}, 1fr)`;
         gridContainer.style.gap = `${this.trackSpacing}px`;
-        gridContainer.style.padding = '10px';
+        gridContainer.style.padding = '5px'; // Reduced padding
         gridContainer.style.overflow = 'auto';
         gridContainer.style.minHeight = 'auto';
 
@@ -170,7 +171,7 @@ class FrameworkDisplay {
         card.style.padding = '5px';
         card.style.borderRadius = '8px';
         card.style.border = '2px solid transparent';
-        
+
         // Add hover effect
         card.addEventListener('mouseenter', () => {
             card.style.transform = 'scale(1.05)';
@@ -189,7 +190,7 @@ class FrameworkDisplay {
             // 🔥 CRITICAL: Pass Ctrl key info to handler
             const isCtrl = e.ctrlKey || e.metaKey;
             console.log(`🎲 FrameworkPanel Click: "${layer.name}", Ctrl=${isCtrl}`);
-            
+
             this.handleCardClick(layer, card, isCtrl);
         }, true); // 🔥 CAPTURE PHASE - must be before child handlers
 
@@ -257,15 +258,15 @@ class FrameworkDisplay {
             return new Promise((resolve) => {
                 const img = new Image();
                 img.crossOrigin = 'anonymous';
-                
+
                 img.onload = () => {
                     resolve(img);
                 };
-                
+
                 img.onerror = () => {
                     resolve(null); // Return null jika fail
                 };
-                
+
                 img.src = srcUrl;
             });
         });
@@ -285,14 +286,14 @@ class FrameworkDisplay {
                     canvas.width / img.naturalWidth,
                     canvas.height / img.naturalHeight
                 );
-                
+
                 const scaledWidth = img.naturalWidth * scale;
                 const scaledHeight = img.naturalHeight * scale;
-                
+
                 // Center image
                 const x = (canvas.width - scaledWidth) / 2;
                 const y = (canvas.height - scaledHeight) / 2;
-                
+
                 // Draw image - dalam urutan yang benar
                 ctx.drawImage(img, x, y, scaledWidth, scaledHeight);
             });
@@ -333,7 +334,7 @@ class FrameworkDisplay {
             });
             return;
         }
-        
+
         try {
             console.log(`�️ FrameworkPanel Click:`, {
                 layer: layer.name,
@@ -343,14 +344,14 @@ class FrameworkDisplay {
                 selectedCount: window.selectorInstance?.selectedLayers?.length || 0,
                 elementInDOM: layer.element.parentElement ? 'yes' : 'no'
             });
-            
+
             // 🔥 CRITICAL: Handle BOTH Ctrl+Click AND selector mode (SAMA seperti studiopose.js)
             if (isCtrl || window.__selectorActive) {
                 console.log(`✋ FrameworkPanel: INTERCEPTED Ctrl+Click/Selector Mode on "${layer.name}"`);
-                
+
                 // Toggle selection pada layer element di panel1
                 const wasSelected = layer.element.classList.contains('selected');
-                
+
                 if (wasSelected) {
                     // Remove from selection
                     layer.element.classList.remove('selected');
@@ -372,7 +373,7 @@ class FrameworkDisplay {
                         layerSelected: layer.selected
                     });
                 }
-                
+
                 // 🔥 CRITICAL: Sync selector.selectedLayers - SAME LOGIC as studiopose.js onLayerPointerDown
                 const selector = window.selectorInstance;
                 if (selector) {
@@ -380,26 +381,26 @@ class FrameworkDisplay {
                     if (!Array.isArray(selector.selectedLayers)) {
                         selector.selectedLayers = [];
                     }
-                    
+
                     // Toggle logic - remove if was selected, add otherwise
                     if (wasSelected) {
                         // Remove - filter by both layer instance and element (defensive)
-                        selector.selectedLayers = selector.selectedLayers.filter(s => 
+                        selector.selectedLayers = selector.selectedLayers.filter(s =>
                             s !== layer && s !== layer.element && s.__layerInstance !== layer
                         );
                     } else {
                         // Add - check for duplicates (defensive against race conditions)
-                        const alreadyExists = selector.selectedLayers.some(s => 
+                        const alreadyExists = selector.selectedLayers.some(s =>
                             s === layer || s === layer.element || s.__layerInstance === layer
                         );
                         if (!alreadyExists) {
                             selector.selectedLayers.push(layer);
                         }
                     }
-                    
+
                     console.log(`📊 FrameworkPanel: selector.selectedLayers updated, total: ${selector.selectedLayers.length}`);
                 }
-                
+
                 // Update visual feedback - SAME ORDER as studiopose.js
                 // Key: updateCoordInput() MUST be called last untuk reflect selection state
                 if (typeof updateMenuLayerSelectionForMultiSelect === 'function') {
@@ -408,26 +409,26 @@ class FrameworkDisplay {
                 if (window.frameworkDisplay && typeof window.frameworkDisplay.updateSelectionVisuals === 'function') {
                     window.frameworkDisplay.updateSelectionVisuals();
                 }
-                
+
                 // 🔥 CRITICAL: Sync DOM .selected classes dengan selector.selectedLayers
                 this.syncFrameworkSelectionWithPanel();
-                
+
                 if (typeof updateCoordInput === 'function') {
                     updateCoordInput();  // 🔥 MUST be last - updates Panel2 display with color indicator
                 }
-                
+
                 console.log(`✅ Toggle complete on "${layer.name}", total selected: ${selector?.selectedLayers?.length || 0}`);
                 return;
             }
-            
+
             // Single select mode - clear previous selection (DEFAULT behavior tanpa Ctrl)
             console.log(`👆 FrameworkPanel: Single-select on "${layer.name}"`);
-            
+
             // Clear framework card visuals
             document.querySelectorAll('.framework-card-selected').forEach(card => {
                 card.classList.remove('framework-card-selected');
             });
-            
+
             // Trigger selectLayer dari studiopose.js
             // selectLayer sẽ memanggil syncLayerSelectionAcrossAllPanels dan updateCoordInput()
             if (typeof selectLayer === 'function') {
@@ -446,10 +447,10 @@ class FrameworkDisplay {
      */
     updateMenuLayerSelection(layer) {
         if (!window.studioMenuLayer || !layer) return;
-        
+
         const menuItems = document.querySelectorAll('.menulayer-item');
         const layerName = layer.name;
-        
+
         for (const item of menuItems) {
             const nameEl = item.querySelector('.menulayer-name');
             if (nameEl && nameEl.textContent === layerName) {
@@ -466,16 +467,16 @@ class FrameworkDisplay {
      */
     updateSelectionVisuals() {
         if (!this.panel3) return;
-        
+
         const selectedElements = document.querySelectorAll('.layer.selected, .layer-group.selected');
         const selectedCards = this.panel3.querySelectorAll('.framework-card');
-        
+
         selectedCards.forEach(card => {
             const labelEl = card.querySelector('.framework-label');
             if (!labelEl) return;
-            
+
             const layerName = labelEl.textContent;
-            
+
             // Cek apakah ada layer yang selected dengan nama yang sama
             let isSelected = false;
             for (const selectedEl of selectedElements) {
@@ -486,7 +487,7 @@ class FrameworkDisplay {
                     break;
                 }
             }
-            
+
             if (isSelected) {
                 card.classList.add('framework-card-selected');
             } else {
@@ -510,7 +511,7 @@ class FrameworkDisplay {
         // Step 1: Ensure all selected layers punya .selected class di DOM
         selector.selectedLayers.forEach(layerOrEl => {
             let el = null;
-            
+
             if (layerOrEl && layerOrEl.element) {
                 // It's a Layer instance
                 el = layerOrEl.element;
@@ -518,7 +519,7 @@ class FrameworkDisplay {
                 // It's a DOM element
                 el = layerOrEl;
             }
-            
+
             if (el) {
                 // Add visual class untuk outline
                 if (!el.classList.contains('selected')) {
@@ -530,10 +531,10 @@ class FrameworkDisplay {
 
         // Step 2: Remove .selected dari layer yang TIDAK di selector.selectedLayers
         document.querySelectorAll('.layer.selected, .layer-group.selected').forEach(el => {
-            const isInSelector = selector.selectedLayers.some(s => 
+            const isInSelector = selector.selectedLayers.some(s =>
                 (s && s.element === el) || s === el || (s && s.__layerInstance && s.__layerInstance.element === el)
             );
-            
+
             if (!isInSelector) {
                 el.classList.remove('selected');
                 console.log(`✖ Removed .selected class from DOM element: ${el.className}`);
@@ -542,7 +543,7 @@ class FrameworkDisplay {
 
         // Step 3: Update framework card indicators
         this.updateSelectionVisuals();
-        
+
         console.log(`📊 Framework sync complete: ${selector.selectedLayers.length} layers selected`);
     }
 }
@@ -554,7 +555,7 @@ window.frameworkDisplay = new FrameworkDisplay();
  * 🔥 HELPER: Force sync framework selection dengan panel1
  * Panggil ini setiap kali ada perubahan selection untuk ensure visual consistency
  */
-window.syncFrameworkWithPanel1 = function() {
+window.syncFrameworkWithPanel1 = function () {
     if (window.frameworkDisplay) {
         window.frameworkDisplay.syncFrameworkSelectionWithPanel();
     }

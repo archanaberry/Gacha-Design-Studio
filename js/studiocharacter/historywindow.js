@@ -21,18 +21,27 @@
 
 // historywindow.js - History Editor Window (depends on windowhandler.js)
 
-(function() {
+(function () {
   // Add CSS for history window only (reuse fonts from windowhandler)
   const styleTag = document.createElement('style');
   styleTag.textContent = `
-  .history-container{display:flex;width:100%;height:100%;min-height:400px}
-  .history-sidebar{width:120px;border-right:2px solid #ddd;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:10px;background:#f5f5f5}
-  .history-item{display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;padding:5px;border:2px solid transparent;border-radius:5px;transition:all 0.2s}
-  .history-item:hover{background:#e8e8e8;border-color:#5E6CC9}
-  .history-item.active{background:#5E6CC9;border-color:#4a5ba7}
-  .history-thumbnail{width:100px;height:100px;border:1px solid #999;border-radius:3px;background:white;object-fit:contain;display:flex;align-items:center;justify-content:center;font-size:10px;color:#999}
-  .history-timestamp{font-size:9px;color:#666;text-align:center}
-  .history-content{flex:1;display:flex;flex-direction:column;overflow-y:auto;padding:15px}
+  .history-container{display:flex;width:100%;flex:1;height:100%;overflow:hidden;background:white;position:relative}
+  .history-sidebar{width:150px;border-right:1px solid #eee;overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;gap:12px;padding:12px;background:#fcfcfc;height:100%;flex-shrink:0;box-sizing:border-box}
+  .history-item{display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;padding:8px;border:1px solid #eee;border-radius:10px;transition:all 0.2s;background:white;box-shadow:0 2px 4px rgba(0,0,0,0.05);width:100%;box-sizing:border-box}
+  .history-item:hover{background:#f5f7ff;border-color:#5E6CC9;transform:translateY(-1px)}
+  .history-item.active{background:#5E6CC9;border-color:#4a5ba7;color:white;box-shadow:0 4px 8px rgba(94,108,201,0.3)}
+  .history-item.active .history-timestamp{color:rgba(255,255,255,0.9)}
+  .history-thumbnail{width:100%;height:80px;border-radius:6px;background:#fff;object-fit:contain;border:1px solid #f0f0f0;display:flex;align-items:center;justify-content:center}
+  .history-timestamp{font-size:10px;color:#999;font-family:monospace}
+  .history-content{flex:1;display:flex;flex-direction:column;overflow-y:auto;padding:20px;height:100%;background:white;box-sizing:border-box}
+  /* Ensure the window content area doesn't scroll itself when history is active */
+  .wh-window:has(.history-container) .wh-content { 
+     overflow: hidden !important; 
+     padding: 0 !important;
+     display: flex !important;
+     flex-direction: column !important;
+     height: 100% !important;
+  }
   .history-detail-title{font-family:"Comfortaa-Bold",sans-serif;font-size:16px;margin-bottom:15px;border-bottom:1px solid #ddd;padding-bottom:10px}
   .history-detail-section{margin-bottom:15px}
   .history-detail-label{font-family:"Comfortaa-Bold",sans-serif;font-size:12px;color:#666;text-transform:uppercase;margin-bottom:5px}
@@ -48,7 +57,7 @@
   document.head.appendChild(styleTag);
 
   // Open History Editor Window
-  window.openHistoryWindow = function() {
+  window.openHistoryWindow = function () {
     if (typeof window.openWindow !== 'function' || typeof window.HistoryManager === 'undefined') {
       console.error('Dependencies not loaded');
       return;
@@ -56,7 +65,7 @@
 
     const data = window.HistoryManager.getHistory();
     const noData = '<div class="history-empty">No history yet</div>';
-    
+
     let sidebar = data.length === 0 ? noData : data.map((item, i) => {
       const time = new Date(item.timestamp).toLocaleTimeString();
       const thumb = item.thumbnail || 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22%3E%3Crect width=%22100%22 height=%22100%22 fill=%22%23f0f0f0%22/%3E%3Ctext x=%2750%27 y=%2750%27 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%23999%22 font-size=%2212%22%3ENo snapshot%3C/text%3E%3C/svg%3E';
@@ -81,10 +90,10 @@
   };
 
   // Select history item and show details
-  window.selectHistoryItem = function(idx) {
+  window.selectHistoryItem = function (idx) {
     const data = window.HistoryManager.getHistory();
     if (idx < 0 || idx >= data.length) return;
-    
+
     const item = data[idx];
     const content = document.getElementById('historyContent');
     document.querySelectorAll('.history-item').forEach((el, i) => {
@@ -95,26 +104,51 @@
     <div class="history-detail-section"><div class="history-detail-label">Action Type</div><div class="history-detail-value">${item.actionType}</div></div>
     <div class="history-detail-section"><div class="history-detail-label">Timestamp</div><div class="history-detail-value">${new Date(item.timestamp).toLocaleString()}</div></div>
     <div class="history-divider"></div>`;
-    
-    if (item.thumbnail) detail += `<div class="history-detail-section"><div class="history-detail-label">Preview</div><img class="history-preview-image" src="${item.thumbnail}" alt="Snapshot"><div class="history-divider"></div></div>`;
+
+    if (item.thumbnail) {
+      detail += `<div class="history-detail-section">
+            <div class="history-detail-label">Preview</div>
+            <div style="position:relative; cursor:pointer;" onclick="window.HistoryManager.openPreviewWindow(${idx})">
+                <img class="history-preview-image" src="${item.thumbnail}" alt="Snapshot">
+                <div style="position:absolute; bottom:5px; right:5px; background:rgba(0,0,0,0.5); color:white; padding:3px 8px; border-radius:3px; font-size:10px;">Click to Enlarge</div>
+            </div>
+            <div class="history-divider"></div>
+        </div>`;
+    }
     if (item.id) detail += `<div class="history-detail-section"><div class="history-detail-label">Snapshot ID</div><div class="history-detail-value">${item.id}</div></div>`;
-    
-    detail += `<div class="history-footer-buttons"><button class="history-btn" onclick="restoreHistorySnapshot(${idx})">Restore This State</button></div>`;
-    
+
+    detail += `<div class="history-footer-buttons">
+        <button class="history-btn" onclick="window.HistoryManager.openPreviewWindow(${idx})">View Full Preview</button>
+        <button class="history-btn" onclick="restoreHistorySnapshot(${idx})">Restore This State</button>
+    </div>`;
+
     if (content) content.innerHTML = detail;
   };
 
   // Restore snapshot from history
-  window.restoreHistorySnapshot = function(idx) {
+  window.restoreHistorySnapshot = function (idx) {
     const data = window.HistoryManager.getHistory();
     if (idx < 0 || idx >= data.length) return console.error('Invalid history index');
-    console.log('Restoring snapshot:', idx, data[idx].description);
-    // TODO: Implement restore logic
-    alert('Restore to: ' + data[idx].description);
+
+    // Call HistoryManager to restore
+    const snapshot = window.HistoryManager.undoStack[idx]; // Access internal stack directly or use a better public method
+    if (snapshot && window.HistoryManager.restoreState) {
+      // We should probably warn user that this might clear redo stack if we were doing true undo
+      // But here we just restore state. 
+      // Best practice: treat this as a new action "Restored from history"? 
+      // Or just revert state. Let's just restore state for now.
+      window.HistoryManager.restoreState(snapshot);
+      window.HistoryManager.currentSnapshot = snapshot;
+
+      // Visual feedback
+      // alert('Restored to: ' + snapshot.description);
+      // Close window to show result
+      if (window.currentHistoryWindowId) window.closeWindow(window.currentHistoryWindowId);
+    }
   };
 
   // Clear history
-  window.clearHistoryButton = function() {
+  window.clearHistoryButton = function () {
     if (confirm('Clear all history? This cannot be undone.')) {
       window.HistoryManager.clearHistory();
       window.closeWindow(window.currentHistoryWindowId);
