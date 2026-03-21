@@ -218,7 +218,7 @@ input {
 
         /* Common style for other input boxes */
         input[type="text"]:not(#xCoord):not(#yCoord) {
-            width: 200px;
+            /* width: 200px; */
             height: 50px;
             border-radius: 10px;
             border: 5px solid black;

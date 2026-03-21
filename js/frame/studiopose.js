@@ -52,6 +52,9 @@
                 .empty-gap {
                     min-height: 20px;
                 }
+                .half-gap {
+                    min-height: 10px;
+                }
 
                 /* Framework container (Panel3) */
                 .panel3.framework-container {
@@ -89,6 +92,13 @@
                     margin: 0;
                     padding: 0;
                     position: relative;
+                }
+
+                /* Panel control title - gaya teks untuk teks judul kontrol */
+                .panel-control-title {
+                    font-size: 22px;
+                    font-weight: bold;
+                    margin-bottom: 10px;
                 }
 
                 /* Panel1 - UNLIMITED content canvas FULL SIZE */
@@ -272,19 +282,84 @@
                     <!-- Panel bawah -->
                     <div class="panel2 input-container" id="panel2">
 
-                        <!-- Tombol arah -->
-                        <label for="zoomSlider">Zoom Panel1:</label>
-                        <div class="panel2-slider-container">
-                            <input type="range" id="zoomSlider" min="10" max="10000" step="1" value="100" oninput="handleZoom(this.value)">
-                            <input type="text" id="zoomInput" oninput="handleZoomInput(this.value)">
-                        </div>
+                        <!-- Opsi Panel -->
+                        <div style="border: 2px solid #0805aa; padding: 15px; border-radius: 12px; background-color: #c5edff;">
+                            <p class="panel-control-title">Opsi Panel</p>
+                            <label for="zoomSlider">Zoom Panel1:</label>
+                            <div class="panel2-slider-container">
+                                <input type="range" id="zoomSlider" min="10" max="10000" step="1" value="100" oninput="handleZoom(this.value)">
+                                <input type="text" id="zoomInput" oninput="handleZoomInput(this.value)">
+                            </div>
+                            <div class="half-gap"></div>
 
+                            <p>Posisi Panel1:</p>
+                            <label for="centerOriginToggle">
+                                <input type="checkbox" id="centerOriginToggle" onchange="toggleCenterOrigin(this.checked)">
+                                Pusatkan Origin (0,0) ke Tengah Layar
+                            </label>
+                            <div class="half-gap"></div>
+                            
+                            <label for="dragPanel1Toggle">
+                                <input type="checkbox" id="dragPanel1Toggle" onchange="toggleDragPanel1(this.checked)">
+                                Nyalakan untuk menyeret panel1
+                            </label>
+                            <div class="half-gap"></div>
+
+                            <label for="opacitySlider1">Opasitas Panel1:</label>
+                            <div class="panel2-slider-container">
+                                <input type="range" id="opacitySlider1" class="opacitySlider" min="0" max="100" value="100" oninput="setOpacity('panel1')">
+                                <input type="text" id="opacityInput1" class="opacityInput" readonly>
+                            </div>
+                            <div class="half-gap"></div>
+                            
+                            <label for="opacitySlider2">Opasitas Panel2:</label>
+                            <div class="panel2-slider-container">
+                                <input type="range" id="opacitySlider2" class="opacitySlider" min="0" max="100" value="100" oninput="setOpacity('panel2')">
+                                <input type="text" id="opacityInput2" class="opacityInput" readonly>
+                            </div>
+                            <div class="half-gap"></div>
+                            
+                            <label for="opacitySlider3">Opasitas Panel3 (Kerangka):</label>
+                            <div class="panel2-slider-container">
+                                <input type="range" id="opacitySlider3" class="opacitySlider" min="0" max="100" value="100" oninput="setOpacity('panel3')">
+                                <input type="text" id="opacityInput3" class="opacityInput" readonly>
+                            </div>
+                            <div class="half-gap"></div>
+                            
+                            <p>Latar Belakang Panel1:</p>
+                            <input type="file" id="imageUpload1" accept="image/*">
+                            <button onclick="setBackground('panel1')">Setel Latar Belakang Panel1</button>
+                            <div class="half-gap"></div>
+                            
+                            <p>Latar Belakang Panel2:</p>
+                            <input type="file" id="imageUpload2" accept="image/*">
+                            <button onclick="setBackground('panel2')">Setel Latar Belakang Panel2</button>
+                            <div class="half-gap"></div>
+                            
+                            <p>Latar Belakang Panel3:</p>
+                            <input type="file" id="imageUpload3" accept="image/*">
+                            <button onclick="setBackground('panel3')">Setel Latar Belakang Panel3</button>
+                        </div>
+                        <div class="empty-gap"></div>
+
+                        <div style="border: 2px solid #ffd000; padding: 15px; border-radius: 12px; background-color: #ffea8e;">
+                            <p class="panel-control-title">Karakter</p>
+                            <label for="openFrameworkBtn">Kerangka Karakter:</label>
+                            <button id="openFrameworkBtn" onclick="toggleFrameworkPanel()" style="background-color: #ff9800; color: white; border: 5px solid black; border-radius: 10px; padding: 10px 10px; cursor: pointer;">🎚️ Tampilkan Daftar Kerangka (Panel3)</button>
+                            <div class="half-gap"></div>
+                            <label for="characterName">Nama Karakter:</label>
+                            <input type="text" id="characterName" oninput="handleCharacterName(this.value)">
+                        </div>
+                        <div class="empty-gap"></div>
+                        
                         <label for="sensitivitySlider">Sensitivitas:</label>
                         <div class="panel2-slider-container">
                             <input type="range" id="sensitivitySlider" min="0.1" max="100" step="0.1" value="0.1" oninput="handleSensitivity(this.value)">
                             <input type="text" id="sensitivityInput" readonly>
                         </div>
                         <div class="empty-gap"></div>
+                        
+                        <!-- Tombol arah -->
                         <div class="panel2-move-button-container">
                             <button class="button" id="move-up" onmousedown="startMove('up')"
                             ontouchstart="startMove('up')">🔼</button>
@@ -296,49 +371,6 @@
                             ontouchstart="startMove('right')">▶️️</button>
                         </div>
                         <div class="empty-gap"></div>
-                        <button id="openFrameworkBtn" onclick="toggleFrameworkPanel()" style="background-color: #ff9800; color: white;">📂 Buka Kerangka</button>
-                        
-                        <input type="file" id="imageUpload1" accept="image/*">
-                        <button onclick="setBackground('panel1')">Setel background panel atas</button>
-                        <input type="file" id="imageUpload2" accept="image/*">
-                        <button onclick="setBackground('panel2')">Setel background panel bawah</button>
-                        <label for="characterName">Nama Karakter:</label>
-                        <input type="text" id="characterName" oninput="handleCharacterName(this.value)">
-                        
-                        <input type="file" id="imageUpload3" accept="image/*">
-                        <button onclick="setBackground('panel3')">Setel background kerangka</button>
-                        <div class="empty-gap"></div>
-                        
-                        <label for="opacitySlider1">Opasitas Panel1:</label>
-                        <div class="panel2-slider-container">
-                            <input type="range" id="opacitySlider1" class="opacitySlider" min="0" max="100" value="100" oninput="setOpacity('panel1')">
-                            <input type="text" id="opacityInput1" class="opacityInput" readonly>
-                        </div>
-                        <div class="empty-gap"></div>
-                        
-                        <label for="opacitySlider2">Opasitas Panel2:</label>
-                        <div class="panel2-slider-container">
-                            <input type="range" id="opacitySlider2" class="opacitySlider" min="0" max="100" value="100" oninput="setOpacity('panel2')">
-                            <input type="text" id="opacityInput2" class="opacityInput" readonly>
-                        </div>
-                        <div class="empty-gap"></div>
-                        
-                        <label for="opacitySlider3">Opasitas Panel3 (Kerangka):</label>
-                        <div class="panel2-slider-container">
-                            <input type="range" id="opacitySlider3" class="opacitySlider" min="0" max="100" value="100" oninput="setOpacity('panel3')">
-                            <input type="text" id="opacityInput3" class="opacityInput" readonly>
-                        </div>
-                        <div class="empty-gap"></div>
-                        
-                        <label for="centerOriginToggle">
-                            <input type="checkbox" id="centerOriginToggle" onchange="toggleCenterOrigin(this.checked)">
-                            Pusatkan Origin (0,0) ke Tengah Layar
-                        </label>
-                        
-                        <label for="dragPanel1Toggle">
-                            <input type="checkbox" id="dragPanel1Toggle" onchange="toggleDragPanel1(this.checked)">
-                            Nyalakan untuk menyeret panel1
-                        </label>
                         
                         <label for="layerName">Layer:</label>
                         <input type="text" id="layerName" oninput="handleLayerName(this.value)">
