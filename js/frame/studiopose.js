@@ -303,7 +303,7 @@
                                 <input type="checkbox" id="dragPanel1Toggle" onchange="toggleDragPanel1(this.checked)">
                                 Nyalakan untuk menyeret panel1
                             </label>
-                            <div class="half-gap"></div>
+                            <div class="empty-gap"></div>
 
                             <label for="opacitySlider1">Opasitas Panel1:</label>
                             <div class="panel2-slider-container">
@@ -342,6 +342,7 @@
                         </div>
                         <div class="empty-gap"></div>
 
+                        <!-- Opsi Karakter -->
                         <div style="border: 2px solid #ffd000; padding: 15px; border-radius: 12px; background-color: #ffea8e;">
                             <p class="panel-control-title">Karakter</p>
                             <label for="openFrameworkBtn">Kerangka Karakter:</label>
@@ -351,49 +352,71 @@
                             <input type="text" id="characterName" oninput="handleCharacterName(this.value)">
                         </div>
                         <div class="empty-gap"></div>
-                        
-                        <label for="sensitivitySlider">Sensitivitas:</label>
-                        <div class="panel2-slider-container">
-                            <input type="range" id="sensitivitySlider" min="0.1" max="100" step="0.1" value="0.1" oninput="handleSensitivity(this.value)">
-                            <input type="text" id="sensitivityInput" readonly>
-                        </div>
-                        <div class="empty-gap"></div>
-                        
-                        <!-- Tombol arah -->
-                        <div class="panel2-move-button-container">
-                            <button class="button" id="move-up" onmousedown="startMove('up')"
-                            ontouchstart="startMove('up')">🔼</button>
-                            <button class="button" id="move-down" onmousedown="startMove('down')"
-                            ontouchstart="startMove('down')">🔽</button>
-                            <button class="button" id="move-left" onmousedown="startMove('left')"
-                            ontouchstart="startMove('left')">◀️️</button>
-                            <button class="button" id="move-right" onmousedown="startMove('right')"
-                            ontouchstart="startMove('right')">▶️️</button>
-                        </div>
-                        <div class="empty-gap"></div>
-                        
-                        <label for="layerName">Layer:</label>
-                        <input type="text" id="layerName" oninput="handleLayerName(this.value)">
-                        <label for="xCoord">Posisi X:</label>
-                        <input type="text" id="xCoord" oninput="handleXCoord(this.value)">
-                        <label for="yCoord">Posisi Y:</label>
-                        <input type="text" id="yCoord" oninput="handleYCoord(this.value)">
-                        <label for="width">Lebar:</label>
-                        <input type="number" id="width" placeholder="Lebar" oninput="updateLayerSize('width', this.value)">
-                        <label for="height">Tinggi:</label>
-                        <input type="number" id="height" placeholder="Tinggi" oninput="updateLayerSize('height', this.value)">
-                        <label for="scale">Skala:</label>
-                        <input type="text" id="scale" oninput="handleScale(this.value)">
-                        <label for="flipHorizontal">Flip Horizontal:</label>
-                        <input type="checkbox" id="flipHorizontal" onchange="handleFlipHorizontal(this.checked)">
-                        <label for="flipVertical">Flip Vertical:</label>
-                        <input type="checkbox" id="flipVertical" onchange="handleFlipVertical(this.checked)">
-                        <br>
 
-                        <label for="rotationControl">Rotate:</label>
-                        <div class="panel2-slider-container">
-                            <input type="range" id="rotationControl" min="0" max="360" value="0" oninput="handleRotation(this.value)">
-                            <div id="rotationIndicator">0</div>
+                        <!-- Opsi Kerangka -->
+                        <div style="border: 2px solid #5900ff; padding: 15px; border-radius: 12px; background-color: #bf8eff;">
+                            <p class="panel-control-title">Kerangka</p>
+                            <label for="layerName">Nama Kerangka:</label>
+                            <input type="text" id="layerName" oninput="handleLayerName(this.value)">
+                            <div class="half-gap"></div>
+                            <label for="layerName">Urutan Kerangka:</label>
+                            <button onclick="moveLayerUp()" class="button">⏫ Naikkan</button>
+                            <button onclick="moveLayerDown()" class="button">⏬ Turunkan</button>
+                            <div class="empty-gap"></div>
+                            
+                            <p class="panel-control-title">Transformasi Kerangka</p>
+                            <label for="xCoord">Posisi X:</label>
+                            <input type="text" id="xCoord" oninput="handleXCoord(this.value)">
+                            <label for="yCoord">Posisi Y:</label>
+                            <input type="text" id="yCoord" oninput="handleYCoord(this.value)">
+                            <div class="half-gap"></div>
+                            
+                            <p>Pindahkan:</p>
+                            <div class="panel2-move-button-container">
+                                <button class="button" id="move-up" onmousedown="startMove('up')"
+                                ontouchstart="startMove('up')">🔼</button>
+                                <button class="button" id="move-down" onmousedown="startMove('down')"
+                                ontouchstart="startMove('down')">🔽</button>
+                                <button class="button" id="move-left" onmousedown="startMove('left')"
+                                ontouchstart="startMove('left')">◀️️</button>
+                                <button class="button" id="move-right" onmousedown="startMove('right')"
+                                ontouchstart="startMove('right')">▶️️</button>
+                            </div>
+                            <div class="half-gap"></div>
+                            
+                            <label for="sensitivitySlider">Jarak Perpindahan:</label>
+                            <div class="panel2-slider-container">
+                                <input type="range" id="sensitivitySlider" min="0.1" max="100" step="0.1" value="0.1" oninput="handleSensitivity(this.value)">
+                                <input type="text" id="sensitivityInput" readonly>
+                            </div>
+                            <div class="empty-gap"></div>
+                            
+                            <p class="panel-control-title">Ukuran Kerangka</p>
+                            <label for="width">Lebar:</label>
+                            <input type="number" id="width" placeholder="Lebar" oninput="updateLayerSize('width', this.value)">
+                            
+                            <label for="height">Tinggi:</label>
+                            <input type="number" id="height" placeholder="Tinggi" oninput="updateLayerSize('height', this.value)">
+                            <div class="half-gap"></div>
+                            
+                            <label for="scale">Skala:</label>
+                            <input type="text" id="scale" oninput="handleScale(this.value)">
+                            <div class="empty-gap"></div>
+                            
+                            <p class="panel-control-title">Arah Kerangka</p>
+                            <label for="flipHorizontal">Balikkan secara Horizontal:</label>
+                            <input type="checkbox" id="flipHorizontal" onchange="handleFlipHorizontal(this.checked)">
+                            <div class="half-gap"></div>
+                            
+                            <label for="flipVertical">Balikkan secara Vertikal:</label>
+                            <input type="checkbox" id="flipVertical" onchange="handleFlipVertical(this.checked)">
+                            <div class="half-gap"></div>
+
+                            <label for="rotationControl">Putar:</label>
+                            <div class="panel2-slider-container">
+                                <input type="range" id="rotationControl" min="0" max="360" value="0" oninput="handleRotation(this.value)">
+                                <div id="rotationIndicator">0</div>
+                            </div>
                         </div>
                         <div class="empty-gap"></div>
                         
@@ -411,8 +434,6 @@
                         </div>
                         <div class="empty-gap"></div>
 
-                        <button onclick="moveLayerUp()">Naikkan</button>
-                        <button onclick="moveLayerDown()">Turunkan</button>
                         <button onclick="exportAsSVG()">Ekspor sebagai SVG</button>
                         <input type="text" id="svgFileName" placeholder="Nama file SVG">
                         <button onclick="exportAsHTML()">Ekspor sebagai HTML</button>

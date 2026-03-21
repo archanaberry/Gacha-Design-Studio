@@ -88,6 +88,7 @@ body, html {
     padding: 0;
     height: 100%;
     overflow: hidden;
+    font-family: 'Comfortaa';
 }
 
 
@@ -180,9 +181,9 @@ input {
     left: 0;
 }
 
-#rotationControl {
+/*#rotationControl {
     width: 200px;
-}
+}*/
 
 #rotationIndicator {
     text-align: center;
