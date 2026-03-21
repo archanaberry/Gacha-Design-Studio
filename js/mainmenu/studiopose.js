@@ -21,6 +21,11 @@
 
 // studiopose.js
 
+/* 
+    kenapa gak sekalian di gabungin di [frame/studiopose.js] ? kan fungsinya sama aja ?
+    ribet amat sih -_-
+    😒😒😒😒😒😒😒😒
+*/
 const styles = `
 /* Main container layout - Horizontal flex layout */
 #mainContainer {
@@ -236,9 +241,9 @@ input {
         }
 
         /* Additional styles */
-        #sensitivitySlider, #opacitySlider1, #opacitySlider2, #opacitySlider3, #rotationControl {
+        /* #sensitivitySlider, #opacitySlider1, #opacitySlider2, #opacitySlider3, #rotationControl {
             width: 100px;
-        }
+        } */
 
         /* Framework Display Styles */
         #frameworkGrid {
