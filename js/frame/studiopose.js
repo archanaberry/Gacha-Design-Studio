@@ -30,6 +30,18 @@
                     overflow: hidden;
                 }
 
+                input[type="checkbox"] {
+                    width: 30px;
+                    height: 30px;
+                }
+
+                input[type="text"], input[type="number"], select {
+                    height: 40px;
+                    border-radius: 6px;
+                    border: 1px solid black;
+                    font-size: 22px;
+                }
+
                 /* Media query buat nyesuain layout tergantung lebar layar */
                 @media (min-width: 1000px) { /* Adjust breakpoint as needed */
                     /* Panel2 - Tombol untuk memindahkan posisi kerangka */
@@ -227,7 +239,7 @@
                 /* Panel2 - Tombol untuk memindahkan posisi kerangka */
                 .panel2-move-button-container {
                     display: grid;
-                    grid-template-columns: repeat(auto-fit, minmax(min(250px, 100%), 1fr));
+                    grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr));
                     gap: 12px;
                 }
 
@@ -235,8 +247,16 @@
                 .panel2-slider-container {
                     display: grid;
                     align-items: center;
-                    grid-template-columns: 1fr 120px;
+                    grid-template-columns: 1fr 80px;
                     gap: 5px;
+                }
+
+                /* Ukuran Checkbox */
+                .checkbox-label {
+                    gap: 5px;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
                 }
 
                 /* CORNER MOVE HANDLE */
@@ -293,33 +313,33 @@
                             <div class="half-gap"></div>
 
                             <p>Posisi Panel1:</p>
-                            <label for="centerOriginToggle">
+                            <label for="centerOriginToggle" class="checkbox-label">
                                 <input type="checkbox" id="centerOriginToggle" onchange="toggleCenterOrigin(this.checked)">
                                 Pusatkan Origin (0,0) ke Tengah Layar
                             </label>
                             <div class="half-gap"></div>
                             
-                            <label for="dragPanel1Toggle">
+                            <label for="dragPanel1Toggle" class="checkbox-label">
                                 <input type="checkbox" id="dragPanel1Toggle" onchange="toggleDragPanel1(this.checked)">
                                 Nyalakan untuk menyeret panel1
                             </label>
                             <div class="empty-gap"></div>
 
-                            <label for="opacitySlider1">Opasitas Panel1:</label>
+                            <label for="opacitySlider1">Opasitas Panel1 (Kanvas):</label>
                             <div class="panel2-slider-container">
                                 <input type="range" id="opacitySlider1" class="opacitySlider" min="0" max="100" value="100" oninput="setOpacity('panel1')">
                                 <input type="text" id="opacityInput1" class="opacityInput" readonly>
                             </div>
                             <div class="half-gap"></div>
                             
-                            <label for="opacitySlider2">Opasitas Panel2:</label>
+                            <label for="opacitySlider2">Opasitas Panel2 (Panel Ini):</label>
                             <div class="panel2-slider-container">
                                 <input type="range" id="opacitySlider2" class="opacitySlider" min="0" max="100" value="100" oninput="setOpacity('panel2')">
                                 <input type="text" id="opacityInput2" class="opacityInput" readonly>
                             </div>
                             <div class="half-gap"></div>
                             
-                            <label for="opacitySlider3">Opasitas Panel3 (Kerangka):</label>
+                            <label for="opacitySlider3">Opasitas Panel3 (Lapisan):</label>
                             <div class="panel2-slider-container">
                                 <input type="range" id="opacitySlider3" class="opacitySlider" min="0" max="100" value="100" oninput="setOpacity('panel3')">
                                 <input type="text" id="opacityInput3" class="opacityInput" readonly>
@@ -345,30 +365,40 @@
                         <!-- Opsi Karakter -->
                         <div style="border: 2px solid #ffd000; padding: 15px; border-radius: 12px; background-color: #ffea8e;">
                             <p class="panel-control-title">Karakter</p>
-                            <label for="openFrameworkBtn">Kerangka Karakter:</label>
-                            <button id="openFrameworkBtn" onclick="toggleFrameworkPanel()" style="background-color: #ff9800; color: white; border: 5px solid black; border-radius: 10px; padding: 10px 10px; cursor: pointer;">🎚️ Tampilkan Daftar Kerangka (Panel3)</button>
+                            <label for="openFrameworkBtn">Lapisan Karakter:</label>
+                            <button id="openFrameworkBtn" onclick="toggleFrameworkPanel()" class="button" style="background-color: #ff9800; color: white;">🎚️ Tampilkan Daftar Lapisan (Panel3)</button>
                             <div class="half-gap"></div>
                             <label for="characterName">Nama Karakter:</label>
                             <input type="text" id="characterName" oninput="handleCharacterName(this.value)">
                         </div>
                         <div class="empty-gap"></div>
 
-                        <!-- Opsi Kerangka -->
-                        <div style="border: 2px solid #5900ff; padding: 15px; border-radius: 12px; background-color: #bf8eff;">
-                            <p class="panel-control-title">Kerangka</p>
-                            <label for="layerName">Nama Kerangka:</label>
+                        <!-- Opsi Lapisan -->
+                        <div style="border: 2px solid #512da8; padding: 15px; border-radius: 12px; background: linear-gradient(135deg, #f3e5f5 0%, #ede7f6 100%); box-shadow: 0 4px 15px rgba(103, 58, 183, 0.15); transition: all 0.3s ease;">
+                            <p class="panel-control-title">Lapisan</p>
+                            <label for="layerName">Nama:</label>
                             <input type="text" id="layerName" oninput="handleLayerName(this.value)">
                             <div class="half-gap"></div>
-                            <label for="layerName">Urutan Kerangka:</label>
-                            <button onclick="moveLayerUp()" class="button">⏫ Naikkan</button>
-                            <button onclick="moveLayerDown()" class="button">⏬ Turunkan</button>
+                            <label for="layerName">Urutkan:</label>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(min(140px, 100%), 1fr)); gap: 12px; align-items: start;">
+                                <button onclick="moveLayerUp()" class="button">⏫ Naikkan</button>
+                                <button onclick="moveLayerDown()" class="button">⏬ Turunkan</button>
+                            </div>
                             <div class="empty-gap"></div>
                             
-                            <p class="panel-control-title">Transformasi Kerangka</p>
-                            <label for="xCoord">Posisi X:</label>
-                            <input type="text" id="xCoord" oninput="handleXCoord(this.value)">
-                            <label for="yCoord">Posisi Y:</label>
-                            <input type="text" id="yCoord" oninput="handleYCoord(this.value)">
+                            <h3 style="color: #4527a0; margin: 0 0 12px 0; font-size: 18px; display: flex; align-items: center; gap: 8px;">
+                                <span style="font-size: 22px;">↘️</span> Transformasi
+                            </h3>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(min(140px, 100%), 1fr)); gap: 12px; align-items: start;">
+                                <div style="display: flex; flex-direction: column; gap: 4px;">
+                                    <label for="xCoord">Posisi X:</label>
+                                    <input type="text" id="xCoord" oninput="handleXCoord(this.value)">
+                                </div>
+                                <div style="display: flex; flex-direction: column; gap: 4px;">
+                                    <label for="yCoord">Posisi Y:</label>
+                                    <input type="text" id="yCoord" oninput="handleYCoord(this.value)">
+                                </div>
+                            </div>
                             <div class="half-gap"></div>
                             
                             <p>Pindahkan:</p>
@@ -391,90 +421,78 @@
                             </div>
                             <div class="empty-gap"></div>
                             
-                            <p class="panel-control-title">Ukuran Kerangka</p>
-                            <label for="width">Lebar:</label>
-                            <input type="number" id="width" placeholder="Lebar" oninput="updateLayerSize('width', this.value)">
-                            
-                            <label for="height">Tinggi:</label>
-                            <input type="number" id="height" placeholder="Tinggi" oninput="updateLayerSize('height', this.value)">
-                            <div class="half-gap"></div>
-                            
-                            <label for="scale">Skala:</label>
-                            <input type="text" id="scale" oninput="handleScale(this.value)">
+                            <h3 style="color: #4527a0; margin: 0 0 12px 0; font-size: 18px; display: flex; align-items: center; gap: 8px;">
+                                <span style="font-size: 22px;">*️⃣</span> Ukuran
+                            </h3>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(min(140px, 100%), 1fr)); gap: 12px; align-items: start;">
+                                <div style="display: flex; flex-direction: column; gap: 4px;">
+                                    <label for="width">Lebar:</label>
+                                    <input type="number" id="width" placeholder="Lebar" oninput="updateLayerSize('width', this.value)">
+                                </div>
+                                <div style="display: flex; flex-direction: column; gap: 4px;">
+                                    <label for="height">Tinggi:</label>
+                                    <input type="number" id="height" placeholder="Tinggi" oninput="updateLayerSize('height', this.value)">
+                                </div>
+                                <div style="display: flex; flex-direction: column; gap: 4px;">
+                                    <label for="scale">Skala:</label>
+                                    <input type="text" id="scale" oninput="handleScale(this.value)">
+                                </div>
+                            </div>
                             <div class="empty-gap"></div>
                             
-                            <p class="panel-control-title">Arah Kerangka</p>
-                            <label for="flipHorizontal">Balikkan secara Horizontal:</label>
-                            <input type="checkbox" id="flipHorizontal" onchange="handleFlipHorizontal(this.checked)">
+                            <h3 style="color: #4527a0; margin: 0 0 12px 0; font-size: 18px; display: flex; align-items: center; gap: 8px;">
+                                <span style="font-size: 22px;">⬅️</span> Arah
+                            </h3>
+                            <label for="flipHorizontal" class="checkbox-label">
+                                <input type="checkbox" id="flipHorizontal" onchange="handleFlipHorizontal(this.checked)">
+                                Balikkan secara Horizontal
+                            </label>
                             <div class="half-gap"></div>
                             
-                            <label for="flipVertical">Balikkan secara Vertikal:</label>
-                            <input type="checkbox" id="flipVertical" onchange="handleFlipVertical(this.checked)">
+                            <label for="flipVertical" class="checkbox-label">
+                                <input type="checkbox" id="flipVertical" onchange="handleFlipVertical(this.checked)">
+                                Balikkan secara Vertikal
+                            </label>
                             <div class="half-gap"></div>
-
+                            
                             <label for="rotationControl">Putar:</label>
                             <div class="panel2-slider-container">
                                 <input type="range" id="rotationControl" min="0" max="360" value="0" oninput="handleRotation(this.value)">
                                 <div id="rotationIndicator">0</div>
                             </div>
-                        </div>
-                        <div class="empty-gap"></div>
-                        
-                        <label for="skewXControl">Skew X:</label>
-                        <div class="panel2-slider-container">
-                            <input type="range" id="skewXSlider" min="-45" max="45" value="0" oninput="handleSkewXSlider(this.value)">
-                            <input type="text" id="skewXControl" placeholder="0" oninput="handleSkewX(this.value)">
-                        </div>
-                        <div class="empty-gap"></div>
-                        
-                        <label for="skewYControl">Skew Y:</label>
-                        <div class="panel2-slider-container">
-                            <input type="range" id="skewYSlider" min="-45" max="45" value="0" oninput="handleSkewYSlider(this.value)">
-                            <input type="text" id="skewYControl" placeholder="0" oninput="handleSkewY(this.value)">
-                        </div>
-                        <div class="empty-gap"></div>
+                            <div class="empty-gap"></div>
 
-                        <button onclick="exportAsSVG()">Ekspor sebagai SVG</button>
-                        <input type="text" id="svgFileName" placeholder="Nama file SVG">
-                        <button onclick="exportAsHTML()">Ekspor sebagai HTML</button>
-                        <input type="text" id="htmlFileName" placeholder="Nama file HTML">
-                        <br><br>
-                        <button onclick="exportStudioScene()" style="background-color: #4CAF50; color: white;">Ekspor Prasetel
-                            Studio (.gss/.gsj)</button>
-                        <button onclick="importStudioScene()" style="background-color: #9C27B0; color: white;">Impor Prasetel /
-                            Konfigurasi Studio</button>
+                            <h3 style="color: #4527a0; margin: 0 0 12px 0; font-size: 18px; display: flex; align-items: center; gap: 8px;">
+                                <span style="font-size: 22px;">↔️</span> Deformasi
+                            </h3>
+                            <label for="skewXControl">Miringkan X:</label>
+                            <div class="panel2-slider-container">
+                                <input type="range" id="skewXSlider" min="-45" max="45" value="0" oninput="handleSkewXSlider(this.value)">
+                                <input type="text" id="skewXControl" placeholder="0" oninput="handleSkewX(this.value)">
+                            </div>
+                            <div class="half-gap"></div>
+                            
+                            <label for="skewYControl">Miringkan Y:</label>
+                            <div class="panel2-slider-container">
+                                <input type="range" id="skewYSlider" min="-45" max="45" value="0" oninput="handleSkewYSlider(this.value)">
+                                <input type="text" id="skewYControl" placeholder="0" oninput="handleSkewY(this.value)">
+                            </div>
+                            <div class="empty-gap"></div>
 
-                        <br>
-                        <button id="toggleSelectorBtn">Nyalakan Seleksi</button>
-                        <button id="groupBtn" onclick="groupSelectedLayers()">Grupkan</button>
-                        <button id="ungroupBtn" onclick="ungroupSelectedLayers()">Pisahkan Grup</button>
-                        <button id="ungroupSrcBtn" onclick="ungroupSrcLayers()">Pisahkan Src</button>
-                        <button id="mergeBtn" onclick="mergeSelectedLayersSrc()">Gabung Src</button>
-                        <button id="duplicateBtn" onclick="duplicateSelectedLayers()">Duplikasi</button>
-                        <button id="copyBtn" onclick="copySelectedLayers()">Salin</button>
-                        <button id="pasteBtn" onclick="pasteCopiedLayers()">Tempel</button>
-                        <button id="deleteBtn" onclick="deleteSelectedLayer()">Hapus Lapisan</button>
-
-                        <!-- Multiplier Menu -->
-                        <div id="multiplier-container"
-                            style="margin-top: 15px; border: 2px solid #512da8; padding: 15px; border-radius: 12px; background: linear-gradient(135deg, #f3e5f5 0%, #ede7f6 100%); box-shadow: 0 4px 15px rgba(103, 58, 183, 0.15); transition: all 0.3s ease;">
-                            <h3
-                                style="color: #4527a0; margin: 0 0 12px 0; font-size: 18px; display: flex; align-items: center; gap: 8px;">
+                            <h3 style="color: #4527a0; margin: 0 0 12px 0; font-size: 18px; display: flex; align-items: center; gap: 8px;">
                                 <span style="font-size: 22px;">🔄</span> Multiplier (Cermin & Ubin)
                             </h3>
                             <div
                                 style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; align-items: start;">
                                 <label
                                     style="font-weight: bold; cursor: pointer; color: #311b92; display: flex; align-items: center; gap: 5px;">
-                                    <input type="checkbox" id="multiplierEnabled"
-                                        onchange="handleMultiplierEnabled(this.checked)"
-                                        style="width: 18px; height: 18px; cursor: pointer;"> Aktifkan
+                                    <input type="checkbox" id="multiplierEnabled" onchange="handleMultiplierEnabled(this.checked)"> Aktifkan
                                 </label>
 
                                 <div style="display: flex; flex-direction: column; gap: 4px;">
                                     <span style="font-size: 12px; color: #5e35b1; font-weight: bold;">Tipe Perulangan</span>
                                     <select id="multiplierRepeatType" onchange="handleMultiplierRepeatType(this.value)"
-                                        style="padding: 6px; border-radius: 6px; border: 1px solid #b39ddb; background: white; cursor: pointer;">
+                                        style="font-size: 16px; padding: 6px; border-radius: 6px; border: 1px solid #b39ddb; background: white; cursor: pointer;">
                                         <option value="sederet">Sederet (Lurus)</option>
                                         <option value="mirror">Cermin (Mirror)</option>
                                     </select>
@@ -500,14 +518,9 @@
                                 <div style="display: flex; flex-direction: column; gap: 4px;">
                                     <span style="font-size: 12px; color: #5e35b1; font-weight: bold;">Jumlah Copy</span>
                                     <div style="display: flex; gap: 5px; align-items: center;">
-                                        <input type="number" id="multiplierCount" min="0" max="100" value="0"
-                                            style="padding: 6px; border: 1px solid #b39ddb; border-radius: 6px; flex: 1; transition: border 0.3s;"
-                                            oninput="handleMultiplierCount(this.value)">
-                                        <label
-                                            style="cursor: pointer; display: flex; align-items: center; gap: 3px; font-size: 11px; white-space: nowrap;">
-                                            <input type="checkbox" id="multiplierUnlimited"
-                                                onchange="handleMultiplierUnlimited(this.checked)"
-                                                style="width: 14px; height: 14px;"> ∞
+                                        <input type="number" id="multiplierCount" min="0" max="100" value="0" style="padding: 6px; border: 1px solid #b39ddb; border-radius: 6px; flex: 1; transition: border 0.3s;" oninput="handleMultiplierCount(this.value)">
+                                        <label style="cursor: pointer; display: flex; align-items: center; gap: 3px; font-size: 22px; white-space: nowrap;">
+                                            <input type="checkbox" id="multiplierUnlimited" onchange="handleMultiplierUnlimited(this.checked)"> ∞
                                         </label>
                                     </div>
                                 </div>
@@ -528,8 +541,7 @@
 
                                 <div style="display: flex; flex-direction: column; gap: 4px;">
                                     <span style="font-size: 12px; color: #5e35b1; font-weight: bold;">Tipe Cermin</span>
-                                    <select id="multiplierMirrorType" onchange="handleMultiplierMirrorType(this.value)"
-                                        style="padding: 6px; border-radius: 6px; border: 1px solid #b39ddb; background: white; cursor: pointer;">
+                                    <select id="multiplierMirrorType" onchange="handleMultiplierMirrorType(this.value)" style="font-size: 16px; padding: 6px; border-radius: 6px; border: 1px solid #b39ddb; background: white; cursor: pointer;">
                                         <option value="1">q|p / d|b (Standard)</option>
                                         <option value="2">q|p / p|q (Flip Horizontal)</option>
                                         <option value="3">q|p / p|d (Atas Flip, Bawah Normal)</option>
@@ -537,9 +549,41 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="empty-gap"></div>
 
-                        <button id="resetBtn" onclick="resetStudio()" style="background-color: #ff6b6b;">Reset Studio</button>
+                        <!-- Alat Pemilihan -->
+                        <div style="border: 2px solid #ff00e0; padding: 15px; border-radius: 12px; background-color: #ffbef4;">
+                            <p class="panel-control-title">Pemilihan</p>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; align-items: start;">
+                                <button id="toggleSelectorBtn" class="button">Nyalakan Seleksi</button>
+                                <button id="groupBtn" onclick="groupSelectedLayers()" class="button">Grupkan</button>
+                                <button id="ungroupBtn" onclick="ungroupSelectedLayers()" class="button">Pisahkan Grup</button>
+                                <button id="ungroupSrcBtn" onclick="ungroupSrcLayers()" class="button">Pisahkan Src</button>
+                                <button id="mergeBtn" onclick="mergeSelectedLayersSrc()" class="button">Gabung Src</button>
+                                <button id="duplicateBtn" onclick="duplicateSelectedLayers()" class="button">Duplikasi</button>
+                                <button id="copyBtn" onclick="copySelectedLayers()" class="button">Salin</button>
+                                <button id="pasteBtn" onclick="pasteCopiedLayers()" class="button">Tempel</button>
+                                <button id="deleteBtn" onclick="deleteSelectedLayer()" class="button">Hapus Lapisan</button>
+                            </div>
+                        </div>
+                        <div class="empty-gap"></div>
 
+                        <!-- Opsi Studio -->
+                        <div style="border: 2px solid #ffab42; padding: 15px; border-radius: 12px; background-color: #ffdfbe;">
+                            <p class="panel-control-title">Opsi Studio</p>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; align-items: start;">
+                                <button id="settingsBtn" onclick="openSettingsWindow()" style="height: 100%; background-color: #4a5ba7; color: white;" class="button">⚙️ Setelan</button>
+                                <button onclick="exportStudioScene()" style="background-color: #4CAF50; color: white;" class="button">📤 Ekspor Prasetel Studio (.gss/.gsj)</button>
+                                <button onclick="importStudioScene()" style="background-color: #9C27B0; color: white;" class="button">📥 Impor Prasetel / Konfigurasi Studio</button>
+                                <button id="resetBtn" onclick="resetStudio()" style="height: 100%; background-color: #ff6b6b;" class="button">🧹 Reset Studio</button>
+                            </div>
+                        </div>
+
+                        <button onclick="exportAsSVG()">Ekspor sebagai SVG</button>
+                        <input type="text" id="svgFileName" placeholder="Nama file SVG">
+                        <button onclick="exportAsHTML()">Ekspor sebagai HTML</button>
+                        <input type="text" id="htmlFileName" placeholder="Nama file HTML">
+                        
                         <!-- Shortcut dan History Buttons -->
                         <div
                             style="margin-top: 10px; padding: 10px; border-top: 2px solid #ddd; border-bottom: 2px solid #ddd;">
@@ -553,9 +597,6 @@
                                 onclick="if(typeof window.openHistoryWindow !== 'undefined') window.openHistoryWindow()"
                                 title="View Edit History" style="background-color: #0275d8; color: white;">📋 History</button>
                         </div>
-
-                        <button id="settingsBtn" onclick="openSettingsWindow()"
-                            style="background-color: #4a5ba7; color: white;">⚙️ Setelan</button>
 
                         <input type="file" id="svgUpload" accept=".svg" multiple style="display:none"
                             onchange="addImage(event)">
