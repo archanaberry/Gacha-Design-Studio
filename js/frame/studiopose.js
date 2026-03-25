@@ -578,11 +578,31 @@
                                 <button id="resetBtn" onclick="resetStudio()" style="height: 100%; background-color: #ff6b6b;" class="button">🧹 Reset Studio</button>
                             </div>
                         </div>
+                        <div class="empty-gap"></div>
 
-                        <button onclick="exportAsSVG()">Ekspor sebagai SVG</button>
-                        <input type="text" id="svgFileName" placeholder="Nama file SVG">
-                        <button onclick="exportAsHTML()">Ekspor sebagai HTML</button>
-                        <input type="text" id="htmlFileName" placeholder="Nama file HTML">
+                        <!-- Proyek -->
+                        <div style="border: 2px solid #ffab42; padding: 15px; border-radius: 12px; background-color: #ffdfbe;">
+                            <p class="panel-control-title">Proyek</p>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; align-items: start;">
+                                <div style="display: flex; flex-direction: column; gap: 4px;">
+                                    <button onclick="exportAsSVG()" class="button">Ekspor sebagai SVG</button>
+                                    <input type="text" id="svgFileName" placeholder="Nama file SVG">
+                                </div>
+                                <div style="display: flex; flex-direction: column; gap: 4px;">
+                                    <button onclick="exportAsHTML()" class="button">Ekspor sebagai HTML</button>
+                                    <input type="text" id="htmlFileName" placeholder="Nama file HTML">
+                                </div>
+                                
+                                <input type="file" id="svgUpload" accept=".svg" multiple style="display:none" onchange="addImage(event)">
+                                <button onclick="document.getElementById('svgUpload').click()" style="height: 100%;" class="button">Tambahkan SVG</button>
+                                
+                                <input type="file" id="imageUpload" accept="image/*" multiple style="display:none" onchange="addImage(event)">
+                                <button onclick="document.getElementById('imageUpload').click()" style="height: 100%;" class="button">Tambahkan Sisipan</button>
+                                
+                                <button id="addHtmlShapeBtn" onclick="openHtmlShapeStudio()" style="height: 100%; background-color: #5E6CC9; color: white; transition: all 0.2s;" class="button">Tambahkan Markah Web</button>
+                            </div>
+                        </div>
+                        <div class="empty-gap"></div>
                         
                         <!-- Shortcut dan History Buttons -->
                         <div
@@ -597,23 +617,13 @@
                                 onclick="if(typeof window.openHistoryWindow !== 'undefined') window.openHistoryWindow()"
                                 title="View Edit History" style="background-color: #0275d8; color: white;">📋 History</button>
                         </div>
-
-                        <input type="file" id="svgUpload" accept=".svg" multiple style="display:none"
-                            onchange="addImage(event)">
-                        <button onclick="document.getElementById('svgUpload').click()">Tambahkan SVG</button>
-                        <input type="file" id="imageUpload" accept="image/*" multiple style="display:none"
-                            onchange="addImage(event)">
-                        <button onclick="document.getElementById('imageUpload').click()">Tambahkan Sisipan</button>
-                        <button id="addHtmlShapeBtn" onclick="openHtmlShapeStudio()"
-                            style="background-color: #5E6CC9; color: white; transition: all 0.2s;">Tambahkan Markah Web</button>
-
-
+                        
                         <!-- Layer SRC Manager Container -->
                         <div id="menusrcContainer" style="margin-top: 15px; border-top: 2px solid #ddd; padding-top: 15px;">
                         </div>
 
                         <!-- Child Layers Manager Container -->
-                        <div id="menulayerContainer" style="margin-top: 15px; border-top: 2px solid #333; padding-top: 15px;">
+                        <div id="menulayerContainer" style="margin-top: 15px; margin-bottom: 15px; border-top: 2px solid #333; padding-top: 15px;">
                         </div>
                     </div>
                 </div>
